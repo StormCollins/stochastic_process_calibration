@@ -25,6 +25,15 @@ def read_vol_surface(
     return vols
 
 
+def get_vol(vol_surface, moneyness, tenor) -> float:
+    """
+    Returns an interpolated vol from a vol surface for a given moneyness and tenor.
+
+    :param vol_surface:
+    :return:
+    """
+    # TODO: Bilinear interpolation.
+
 file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\vol-surface-data-2022-06-30.xlsx'
 sheet_name: str = 'S&P500 Clean Vol Surface'
 
