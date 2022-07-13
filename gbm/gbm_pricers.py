@@ -9,40 +9,8 @@ from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D
 
 
-
-# Code up Black-Scholes
-def black_scholes(
-        initial_spot: float,
-        strike: float,
-        interest_rate: float,
-        volatility: float,
-        time_to_maturity: float,
-        call_or_put: str) -> float | str:
-    """
-    Returns the standard Black-Scholes price for a 'CALL' or 'PUT' option (does not take into account whether you
-    are 'long' or 'short' the option.
-
-    :param initial_spot: The initial spot price of the option.
-    :param strike: The option strike price.
-    :param interest_rate: The interest rate/drift used for the option.
-    :param volatility: The option volatility.
-    :param time_to_maturity: The time (in years) at which the option expires.
-    :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'
-    :return: Black-Scholes price for an option.
-    """
-    d_1: float = (np.log(initial_spot / strike) + ((interest_rate + 0.5 * volatility ** 2) * time_to_maturity)) / \
-                 (volatility * math.sqrt(time_to_maturity))
-    d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
-
-    if str.upper(call_or_put) == 'CALL':
-        return initial_spot * norm.cdf(d_1) - strike * math.exp(-interest_rate * time_to_maturity) * norm.cdf(d_2)
-    elif str.upper(call_or_put) == 'PUT':
-        return - initial_spot * norm.cdf(-d_1) + strike * math.exp(-interest_rate * time_to_maturity) * norm.cdf(-d_2)
-    else:
-        return f'Unknown option type: {call_or_put}'
-
-
-# Code up Monte Carlo for option.
+#TODO: Rename to slow_equity_european_option_monte_carlo_pricer
+#TODO: Put a description in the comments.
 def slow_european_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
@@ -99,6 +67,8 @@ def slow_european_option_monte_carlo_pricer(
     else:
         return f'Unknown option type: {call_or_put}'
 
+
+#TODO: Rename to fast_equity_european_option_monte_carlo_pricer
 def fast_european_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
@@ -107,7 +77,8 @@ def fast_european_option_monte_carlo_pricer(
         time_to_maturity: float,
         call_or_put: str,
         number_of_paths: int,
-        number_of_time_steps: int) -> [float | str, time]:
+        number_of_time_steps: int,
+        plot_paths: bool = False) -> [float | str, time]:
     """
     This function uses 'vectorisation' unlike the slow_european_option_monte_carlo_pricer function thus speeding up
     performance.
@@ -120,6 +91,7 @@ def fast_european_option_monte_carlo_pricer(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :param number_of_paths: Number of paths to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
+    :param plot_paths: If set to True plots the paths.
     :return: Fast Monte Carlo price for an option.
     """
     start_time: time = time.time()
@@ -135,12 +107,12 @@ def fast_european_option_monte_carlo_pricer(
         paths[:, j] = paths[:, j - 1] * np.exp(
             (interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
 
-    #Plot the paths
-
-    plt.plot(np.transpose(paths))
-    plt.grid(True)
-    plt.xlabel('Number of time steps')
-    plt.ylabel('Number of paths')
+    # Plot the paths
+    if plot_paths:
+        plt.plot(np.transpose(paths))
+        plt.grid(True)
+        plt.xlabel('Number of time steps')
+        plt.ylabel('Number of paths')
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-interest_rate * time_to_maturity)
@@ -158,89 +130,9 @@ def fast_european_option_monte_carlo_pricer(
         return f'Unknown option type: {call_or_put}'
 
 
-# TEST THE FUNCTIONS
-
-initial_spot: float = 50
-strike: float = 52
-interest_rate: float = 0.1
-volatility: float = 0.4
-time_to_maturity: float = 5 / 12
-number_of_paths: int = 10000
-number_of_time_steps: int = 2
-
-# Compare Monte Carlo to Black-Scholes
-slow_price, slow_time = slow_european_option_monte_carlo_pricer(initial_spot, strike, interest_rate, volatility,
-                                                                time_to_maturity, "put", number_of_paths,
-                                                                number_of_time_steps)
-fast_price, fast_time = fast_european_option_monte_carlo_pricer(initial_spot, strike, interest_rate, volatility,
-                                                                time_to_maturity, "put", number_of_paths,
-                                                                number_of_time_steps)
-print(f'Black-Scholes Price: {black_scholes(initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")}')
-print(f'Slow European Option Price: {slow_price} (time taken {slow_time})')
-print(f'Fast European Option Price: {fast_price} (time taken {fast_time})')
-
-# print(f'\nSlow Monte Carlo / Fast Monte Carlo: {slow_time / fast_time}')
-
-# FX Forward
-def FX_Forward(
-        initial_spot: float,
-        rd: float,
-        rf: float,
-        time_of_contract: float) -> float:
-    """
-    :param initial_spot: The initial forward spot price.
-    :param rd: The domestic currency interest rate.
-    :param rf: The foreign currency interest rate.
-    :param time_of_contract: Time of the contract in years.
-    :return: The FX Forward price of the forward.
-    """
-    return initial_spot * math.exp((rd - rf) * time_of_contract)
-
-initial_spot: float = 50
-rd: float = 0.1
-rf: float = 0
-time_of_contract: float = 5/12
-
-print(f'FX Forward Price: {FX_Forward(initial_spot, rd, rf, time_of_contract)}')
-
-#Analytical Pricer for FX forward
-
-
-
-#Black Scholes Pricer for FX option [Garman-Kohlhagen]
-def black_scholes_FX(
-        initial_spot: float,
-        strike: float,
-        rd: float,
-        rf: float,
-        volatility: float,
-        time_to_maturity: float,
-        call_or_put: str) -> float | str:
-
-    """
-
-    :param initial_spot: Initial spot rate of the FX option.
-    :param strike: Strike price of the FX option.
-    :param rd: Domestic interest rate.
-    :param rf: Foreign interest rate.
-    :param volatility: Volatility of the FX rate.
-    :param time_to_maturity: Time to maturity (in years) of the FX option.
-    :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :return: Black Scholes price for an FX option.
-    """
-
-    d_1: float = (np.log(initial_spot / strike) + ((rd - rf + 0.5 * volatility ** 2) * time_to_maturity)) / \
-                 (volatility * math.sqrt(time_to_maturity))
-    d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
-
-    if str.upper(call_or_put) == 'CALL':
-        return initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(d_1) - strike * math.exp(-rd * time_to_maturity) * norm.cdf(d_2)
-    elif str.upper(call_or_put) == 'PUT':
-        return - initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(-d_1) + strike * math.exp(-rd * time_to_maturity) * norm.cdf(-d_2)
-    else:
-        return f'Unknown option type: {call_or_put}'
-
-#GBM pricer for FX option
+# TODO: Make the name all lower case
+# TODO: Add description in comments below
+# TODO: Rename 'rd' and 'rf'
 def FX_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
@@ -250,9 +142,11 @@ def FX_option_monte_carlo_pricer(
         time_to_maturity: float,
         call_or_put: str,
         number_of_paths: int,
-        number_of_time_steps: int) -> [float | str]:
+        number_of_time_steps: int,
+        plot_paths: bool = False) -> [float | str]:
 
     """
+
 
     :param initial_spot: Initial spot price for the FX option.
     :param strike: Strike price for the FX option.
@@ -263,7 +157,8 @@ def FX_option_monte_carlo_pricer(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :param number_of_paths: Number of paths for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
-    :return: Monte Carlo price for an FX Opiton.
+    :param plot_paths: If set to True plots the paths.
+    :return: Monte Carlo price for an FX Option.
     """
 
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
@@ -278,12 +173,12 @@ def FX_option_monte_carlo_pricer(
         paths[:, j] = paths[:, j - 1] * np.exp(
             (rd - rf - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
 
-    #Plot the FX paths
-
-    plt.plot(np.transpose(paths))
-    plt.grid(True)
-    plt.xlabel('Number of time steps')
-    plt.ylabel('Number of paths')
+    # Plot the FX paths
+    if plot_paths:
+        plt.plot(np.transpose(paths))
+        plt.grid(True)
+        plt.xlabel('Number of time steps')
+        plt.ylabel('Number of paths')
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-rd * time_to_maturity)
@@ -298,31 +193,18 @@ def FX_option_monte_carlo_pricer(
     else:
         return f'Unknown option type: {call_or_put}'
 
-initial_spot: float = 50
-strike: float = 52
-rd: float = 0.2
-rf: float = 0.1
-volatility: float = 0.4
-time_to_maturity: float = 5 / 12
-number_of_paths: int = 10
-number_of_time_steps: int = 50
 
-print(f'Black Scholes FX option price: { black_scholes_FX(initial_spot, strike, rd, rf, volatility, time_of_contract, "put")}')
-print(f'Monte Carlo FX option price: {FX_option_monte_carlo_pricer(initial_spot, strike, rd, rf, volatility, time_of_contract, "put", number_of_paths, number_of_time_steps)}')
 
-#Import the data using pandas
-data = pd.read_excel(r'C:\Users\nerasmus\OneDrive - Deloitte (O365D)\Project\Data\vol-surface-data-2022-06-30.xlsx', sheet_name= 'S&P500')
-print(data)
-
-#Create the volatility surface
-def plot3D(X, Y, Z):
-    fig = plt.figure()
-    ax = Axes3D(fig, azim=-29, elev=50)
-
-    ax.plot(X, Y, Z, 'o')
-
-    plt.xlabel("expiry")
-    plt.ylabel("strike")
-    plt.show()
-
-    return plot3D(X,Y,Z)
+#
+# #Create the volatility surface
+# def plot3D(X, Y, Z):
+#     fig = plt.figure()
+#     ax = Axes3D(fig, azim=-29, elev=50)
+#
+#     ax.plot(X, Y, Z, 'o')
+#
+#     plt.xlabel("expiry")
+#     plt.ylabel("strike")
+#     plt.show()
+#
+#     return plot3D(X,Y,Z)
