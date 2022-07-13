@@ -2,8 +2,12 @@ import math
 import numpy as np
 from scipy.stats import norm
 import time
-import matplotlib as plt
+import matplotlib as cm
 import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.interpolate import griddata
+from mpl_toolkits.mplot3d import Axes3D
+
 
 
 # Code up Black-Scholes
@@ -178,7 +182,6 @@ print(f'Fast European Option Price: {fast_price} (time taken {fast_time})')
 # print(f'\nSlow Monte Carlo / Fast Monte Carlo: {slow_time / fast_time}')
 
 # FX Forward
-#why is it complaining?
 def FX_Forward(
         initial_spot: float,
         rd: float,
@@ -193,7 +196,7 @@ def FX_Forward(
     """
     return initial_spot * math.exp((rd - rf) * time_of_contract)
 
-initial_fx: float = 50
+initial_spot: float = 50
 rd: float = 0.1
 rf: float = 0
 time_of_contract: float = 5/12
@@ -202,9 +205,9 @@ print(f'FX Forward Price: {FX_Forward(initial_spot, rd, rf, time_of_contract)}')
 
 #Analytical Pricer for FX forward
 
-#Black Scholes Pricer for FX option [Garman-Kohlhagen]
 
-# Code up Black-Scholes
+
+#Black Scholes Pricer for FX option [Garman-Kohlhagen]
 def black_scholes_FX(
         initial_spot: float,
         strike: float,
@@ -231,9 +234,9 @@ def black_scholes_FX(
     d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
-        return initial_spot * math.exp(rf * time_to_maturity) * norm.cdf(d_1) - strike * math.exp(-rd * time_to_maturity) * norm.cdf(d_2)
+        return initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(d_1) - strike * math.exp(-rd * time_to_maturity) * norm.cdf(d_2)
     elif str.upper(call_or_put) == 'PUT':
-        return - initial_spot * math.exp(rf * time_to_maturity) * norm.cdf(-d_1) + strike * math.exp(-rd * time_to_maturity) * norm.cdf(-d_2)
+        return - initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(-d_1) + strike * math.exp(-rd * time_to_maturity) * norm.cdf(-d_2)
     else:
         return f'Unknown option type: {call_or_put}'
 
@@ -275,13 +278,20 @@ def FX_option_monte_carlo_pricer(
         paths[:, j] = paths[:, j - 1] * np.exp(
             (rd - rf - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
 
+    #Plot the FX paths
+
+    plt.plot(np.transpose(paths))
+    plt.grid(True)
+    plt.xlabel('Number of time steps')
+    plt.ylabel('Number of paths')
+
     if str.upper(call_or_put) == 'CALL':
-        payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-(rd-rf) * time_to_maturity)
+        payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-rd * time_to_maturity)
         price: float = np.average(payoffs)
         return price
 
     elif str.upper(call_or_put) == 'PUT':
-        payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-(rd-rf) * time_to_maturity)
+        payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-rd * time_to_maturity)
         price: float = np.average(payoffs)
         return price
 
@@ -294,8 +304,25 @@ rd: float = 0.2
 rf: float = 0.1
 volatility: float = 0.4
 time_to_maturity: float = 5 / 12
-number_of_paths: int = 100_000
-number_of_time_steps: int = 2
+number_of_paths: int = 10
+number_of_time_steps: int = 50
 
-print(f'Black Scholes FX option price: { black_scholes_FX(initial_spot, strike, rd, rf, volatility, time_of_contract, "call")}')
-print(f'Monte Carlo FX option price: {FX_option_monte_carlo_pricer(initial_spot, strike, rd, rf, volatility, time_of_contract, "call", number_of_paths, number_of_time_steps)}')
+print(f'Black Scholes FX option price: { black_scholes_FX(initial_spot, strike, rd, rf, volatility, time_of_contract, "put")}')
+print(f'Monte Carlo FX option price: {FX_option_monte_carlo_pricer(initial_spot, strike, rd, rf, volatility, time_of_contract, "put", number_of_paths, number_of_time_steps)}')
+
+#Import the data using pandas
+data = pd.read_excel(r'C:\Users\nerasmus\OneDrive - Deloitte (O365D)\Project\Data\vol-surface-data-2022-06-30.xlsx', sheet_name= 'S&P500')
+print(data)
+
+#Create the volatility surface
+def plot3D(X, Y, Z):
+    fig = plt.figure()
+    ax = Axes3D(fig, azim=-29, elev=50)
+
+    ax.plot(X, Y, Z, 'o')
+
+    plt.xlabel("expiry")
+    plt.ylabel("strike")
+    plt.show()
+
+    return plot3D(X,Y,Z)
