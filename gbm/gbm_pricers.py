@@ -1,7 +1,6 @@
 import math
 import numpy as np
 from scipy.stats import norm
-import time
 import matplotlib as cm
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -9,9 +8,7 @@ from scipy.interpolate import griddata
 from mpl_toolkits.mplot3d import Axes3D
 
 
-#TODO: Rename to slow_equity_european_option_monte_carlo_pricer
-#TODO: Put a description in the comments.
-def slow_european_option_monte_carlo_pricer(
+def slow_equity_european_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
         interest_rate: float,
@@ -19,8 +16,11 @@ def slow_european_option_monte_carlo_pricer(
         time_to_maturity: float,
         call_or_put: str,
         number_of_paths: int,
-        number_of_time_steps: int) -> [float | str, time]:
+        number_of_time_steps: int) -> [float | str]:
     """
+    Returns the price  for a 'CALL' or 'PUT' equity european option using monte carlo simulations.
+    This is the slow equity european option monte carlo pricer, because it takes a longer time to run with more
+    simulations.
 
     :param initial_spot: The initial spot price for the option.
     :param strike: The strike price for the option.
@@ -30,9 +30,8 @@ def slow_european_option_monte_carlo_pricer(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :param number_of_paths: Number of paths to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
-    :return: Slow Monte Carlo price for an option.
+    :return: Slow Monte Carlo price for an equity european option.
     """
-    start_time: time = time.time()
 
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
 
@@ -53,23 +52,20 @@ def slow_european_option_monte_carlo_pricer(
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([paths[i, -1] - strike, 0]) * math.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        end_time: time = time.time()
-        return price, end_time - start_time
+        return price
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs: np.ndarray = np.zeros(number_of_paths)
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([strike - paths[i, -1], 0]) * math.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        end_time: time = time.time()
-        return price, end_time - start_time
+        return price
 
     else:
         return f'Unknown option type: {call_or_put}'
 
 
-#TODO: Rename to fast_equity_european_option_monte_carlo_pricer
-def fast_european_option_monte_carlo_pricer(
+def fast_equity_european_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
         interest_rate: float,
@@ -78,10 +74,12 @@ def fast_european_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = False) -> [float | str, time]:
+        plot_paths: bool = False) -> [float | str]:
     """
-    This function uses 'vectorisation' unlike the slow_european_option_monte_carlo_pricer function thus speeding up
-    performance.
+    Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations
+    (does not take into account whether you are 'long' or 'short' the option.
+    This function uses 'vectorisation' unlike the slow_equity_european_option_monte_carlo_pricer function thus
+    speeding up performance.
 
     :param initial_spot:The initial spot price of the option.
     :param strike: The option strike price.
@@ -92,9 +90,9 @@ def fast_european_option_monte_carlo_pricer(
     :param number_of_paths: Number of paths to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
     :param plot_paths: If set to True plots the paths.
-    :return: Fast Monte Carlo price for an option.
+    :return: Fast Monte Carlo price for an equity european option.
     """
-    start_time: time = time.time()
+
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
 
     paths[:, 0] = initial_spot
@@ -117,27 +115,22 @@ def fast_european_option_monte_carlo_pricer(
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        end_time: time = time.time()
-        return price, end_time - start_time
+        return price
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        end_time: time = time.time()
-        return price, end_time - start_time
+        return price
 
     else:
         return f'Unknown option type: {call_or_put}'
 
 
-# TODO: Make the name all lower case
-# TODO: Add description in comments below
-# TODO: Rename 'rd' and 'rf'
-def FX_option_monte_carlo_pricer(
+def fx_option_monte_carlo_pricer(
         initial_spot: float,
         strike: float,
-        rd: float,
-        rf: float,
+        domestic_interest_rate: float,
+        foreign_interest_rate: float,
         volatility: float,
         time_to_maturity: float,
         call_or_put: str,
@@ -146,12 +139,13 @@ def FX_option_monte_carlo_pricer(
         plot_paths: bool = False) -> [float | str]:
 
     """
-
+    Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations (does not take into account whether
+     you are 'long' or 'short' the option.
 
     :param initial_spot: Initial spot price for the FX option.
     :param strike: Strike price for the FX option.
-    :param rd: Domestic interest rate.
-    :param rf: Foreign interest rate.
+    :param domestic_interest_rate: Domestic interest rate.
+    :param foreign_interest_rate: Foreign interest rate.
     :param volatility: Volatility of the FX rate.
     :param time_to_maturity: Time to maturity (in years) of the FX option.
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
@@ -171,7 +165,9 @@ def FX_option_monte_carlo_pricer(
     for j in range(1, number_of_time_steps):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
         paths[:, j] = paths[:, j - 1] * np.exp(
-            (rd - rf - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+            (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+# Reference to this formula?
+
 
     # Plot the FX paths
     if plot_paths:
@@ -181,30 +177,65 @@ def FX_option_monte_carlo_pricer(
         plt.ylabel('Number of paths')
 
     if str.upper(call_or_put) == 'CALL':
-        payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-rd * time_to_maturity)
+        payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         return price
 
     elif str.upper(call_or_put) == 'PUT':
-        payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-rd * time_to_maturity)
+        payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         return price
 
     else:
         return f'Unknown option type: {call_or_put}'
 
+def fx_forward_monte_carlo_pricer(
+        initial_spot: float,
+        strike: float,
+        domestic_interest_rate: float,
+        foreign_interest_rate: float,
+        volatility: float,
+        time_to_maturity: float,
+        number_of_paths: int,
+        number_of_time_steps: int,
+        plot_paths: bool = False) -> [float | str]:
+
+    """
+    Returns the price for an FX forward using monte carlo simulations.
+
+    :param initial_spot: Initial spot price for the FX option.
+    :param strike: Strike price for the FX option.
+    :param domestic_interest_rate: Domestic interest rate.
+    :param foreign_interest_rate: Foreign interest rate.
+    :param volatility: Volatility of the FX rate.
+    :param time_to_maturity: Time to maturity (in years) of the FX option.
+    :param number_of_paths: Number of paths for the FX option.
+    :param number_of_time_steps: Number of time steps for the FX option.
+    :param plot_paths: If set to True plots the paths.
+    :return: Monte Carlo price for an FX forward.
+    """
+
+    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
+
+    paths[:, 0] = initial_spot
+
+    dt: float = time_to_maturity / (number_of_time_steps - 1)
+
+    # Actual Monte Carlo for the FX option
+    for j in range(1, number_of_time_steps):
+        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+        paths[:, j] = paths[:, j - 1] * np.exp(
+            (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+# Reference to this formula?
 
 
-#
-# #Create the volatility surface
-# def plot3D(X, Y, Z):
-#     fig = plt.figure()
-#     ax = Axes3D(fig, azim=-29, elev=50)
-#
-#     ax.plot(X, Y, Z, 'o')
-#
-#     plt.xlabel("expiry")
-#     plt.ylabel("strike")
-#     plt.show()
-#
-#     return plot3D(X,Y,Z)
+    # Plot the FX paths
+    if plot_paths:
+        plt.plot(np.transpose(paths))
+        plt.grid(True)
+        plt.xlabel('Number of time steps')
+        plt.ylabel('Number of paths')
+
+    payoffs = paths[:, -1] - strike * np.exp(-domestic_interest_rate * time_to_maturity)
+    price: float = np.average(payoffs)
+    return price

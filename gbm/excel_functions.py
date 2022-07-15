@@ -43,3 +43,18 @@ print(data)
 
 
 #print(data['End Date'])
+
+
+
+# #Create the volatility surface
+# def plot3D(X, Y, Z):
+#     fig = plt.figure()
+#     ax = Axes3D(fig, azim=-29, elev=50)
+#
+#     ax.plot(X, Y, Z, 'o')
+#
+#     plt.xlabel("expiry")
+#     plt.ylabel("strike")
+#     plt.show()
+#
+#     return plot3D(X,Y,Z)

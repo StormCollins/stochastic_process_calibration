@@ -34,60 +34,60 @@ def black_scholes(
         return f'Unknown option type: {call_or_put}'
 
 
-# TODO: Add description of function in comments below.
-# TODO: Rename 'rd' to domestic_interest_rate
-# TODO: Rename 'rf' to foreign_interest_rate
-# TODO: Rename time_of_contract to time_to_maturity.
 def fx_forward(
         initial_spot: float,
-        rd: float,
-        rf: float,
-        time_of_contract: float) -> float:
+        domestic_interest_rate: float,
+        foreign_interest_rate: float,
+        time_to_maturity: float) -> float:
     """
 
+    Returns the FX forward price.
 
     :param initial_spot: The initial forward spot price.
-    :param rd: The domestic currency interest rate.
-    :param rf: The foreign currency interest rate.
-    :param time_of_contract: Time of the contract in years.
+    :param domestic_interest_rate: The domestic currency interest rate.
+    :param foreign_interest_rate: The foreign currency interest rate.
+    :param time_to_maturity: The time (in years) at which the option expires.
     :return: The FX Forward price of the forward.
     """
-    return initial_spot * math.exp((rd - rf) * time_of_contract)
+    return initial_spot * math.exp((domestic_interest_rate - foreign_interest_rate) * time_to_maturity)
 
 
-# TODO: Rename function to garman_kohlhagen.
-# TODO: Add a description of the function in the comments.
-# TODO: Rename rd and rf to be the same as fx_forward inputs above.
-def black_scholes_FX(
+def garman_kohlhagen(
         initial_spot: float,
         strike: float,
-        rd: float,
-        rf: float,
+        domestic_interest_rate: float,
+        foreign_interest_rate: float,
         volatility: float,
         time_to_maturity: float,
         call_or_put: str) -> float | str:
 
     """
 
+    The Garman-Kohlahgen model is an analytical model for valuing European options on currencies in the
+    spot foreign exchange.
+    This model is a modification to the Black-Scholes option pricing model such that he model can deal with
+    two interest rates, the domestic interest rate and the foreign interest rate.
+    Returns the Black-Scholes (Garman-Kohlahgen) price for a 'CALL' or 'PUT' FX option (does not take into account
+    whether you are 'long' or 'short' the option..
 
     :param initial_spot: Initial spot rate of the FX option.
     :param strike: Strike price of the FX option.
-    :param rd: Domestic interest rate.
-    :param rf: Foreign interest rate.
+    :param domestic_interest_rate: Domestic interest rate.
+    :param foreign_interest_rate: Foreign interest rate.
     :param volatility: Volatility of the FX rate.
     :param time_to_maturity: Time to maturity (in years) of the FX option.
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :return: Black Scholes price for an FX option.
+    :return: Garman_kohlhagen price for an FX option.
     """
-    d_1: float = (np.log(initial_spot / strike) + ((rd - rf + 0.5 * volatility ** 2) * time_to_maturity)) / \
+    d_1: float = (np.log(initial_spot / strike) + ((domestic_interest_rate - foreign_interest_rate + 0.5 * volatility ** 2) * time_to_maturity)) / \
                  (volatility * math.sqrt(time_to_maturity))
     d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
-        return initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(d_1) - \
-               strike * math.exp(-rd * time_to_maturity) * norm.cdf(d_2)
+        return initial_spot * math.exp(-foreign_interest_rate * time_to_maturity) * norm.cdf(d_1) - \
+               strike * math.exp(-domestic_interest_rate * time_to_maturity) * norm.cdf(d_2)
     elif str.upper(call_or_put) == 'PUT':
-        return - initial_spot * math.exp(-rf * time_to_maturity) * norm.cdf(-d_1) + \
-               strike * math.exp(-rd * time_to_maturity) * norm.cdf(-d_2)
+        return - initial_spot * math.exp(-foreign_interest_rate * time_to_maturity) * norm.cdf(-d_1) + \
+               strike * math.exp(-domestic_interest_rate * time_to_maturity) * norm.cdf(-d_2)
     else:
         return f'Unknown option type: {call_or_put}'
