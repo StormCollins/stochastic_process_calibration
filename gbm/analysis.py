@@ -1,10 +1,14 @@
 from analytical_pricers import *
 from gbm_pricers import *
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 # TEST THE FUNCTIONS
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Compare Monte Carlo to Black-Scholes for equity
+# European Equity Option
+# Comparison of Monte Carlo pricing to Black-Scholes pricing for a European equity option
 initial_spot: float = 50
 strike: float = 52
 interest_rate: float = 0.1
@@ -12,12 +16,29 @@ volatility: float = 0.4
 time_to_maturity: float = 5 / 12
 number_of_paths: int = 10_000
 number_of_time_steps: int = 2
-slow_price = slow_equity_european_option_monte_carlo_pricer(initial_spot, strike, interest_rate, volatility,
-                                                            time_to_maturity, "put", number_of_paths,
-                                                            number_of_time_steps)
-fast_price = fast_equity_european_option_monte_carlo_pricer(initial_spot, strike, interest_rate, volatility,
-                                                            time_to_maturity, "put", number_of_paths,
-                                                            number_of_time_steps)
+
+slow_price: float =\
+      slow_equity_european_option_monte_carlo_pricer(
+            initial_spot,
+            strike,
+            interest_rate,
+            volatility,
+            time_to_maturity,
+            "put",
+            number_of_paths,
+            number_of_time_steps)
+
+fast_price: float = \
+      fast_equity_european_option_monte_carlo_pricer(
+            initial_spot,
+            strike,
+            interest_rate,
+            volatility,
+            time_to_maturity,
+            "put",
+            number_of_paths,
+            number_of_time_steps)
+
 print()
 print('----------------------------------------------------------------------------------')
 print('Equity Option Price Comparison')
@@ -26,60 +47,120 @@ print(f'Slow European Option Price: {slow_price}')
 print(f'Fast European Option Price: {fast_price}')
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Analytical FX Forward
+# FX Forward
+# Comparison of Monte Carlo pricing to analytical pricing for an FX Forward
 initial_spot: float = 50
+strike: float = 52
 domestic_interest_rate: float = 0.2
 foreign_interest_rate: float = 0.1
-time_of_contract: float = 5 / 12
+volatility: float = 0.1
+time_to_maturity: float = 5 / 12
+number_of_paths: int = 100_000
+number_of_time_steps: int = 2
+
 print()
 print('----------------------------------------------------------------------------------')
 print('FX Forward Price Comparison')
-print(f'Analytical FX Forward Price: {fx_forward(initial_spot, domestic_interest_rate, foreign_interest_rate, time_of_contract)}')
+fx_forward_price: float = fx_forward(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
+print(f'Analytical FX Forward Price: '
+      f'{fx_forward(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)}')
+print(f'Monte Carlo FX Forward Price: ' +
+      str(fx_forward_monte_carlo_pricer(
+            initial_spot,
+            strike,
+            domestic_interest_rate,
+            foreign_interest_rate,
+            volatility,
+            time_to_maturity,
+            number_of_paths,
+            number_of_time_steps)))
+
+# Convergence comparison
+number_of_paths_list = [50_000 * x for x in range(1, 101)]
+monte_carlo_prices = list()
+for number_of_paths in number_of_paths_list:
+    monte_carlo_prices.append(
+          fx_forward_monte_carlo_pricer(
+            initial_spot,
+            strike,
+            domestic_interest_rate,
+            foreign_interest_rate,
+            volatility,
+            time_to_maturity,
+            number_of_paths,
+            number_of_time_steps))
+
+#plt.title('FX Forward Price Convergence for Monte Carlo')
+fx_forward_convergence_figure = plt.figure()
+plt.plot(number_of_paths_list, monte_carlo_prices, '-o')
+plt.plot([number_of_paths_list[0], number_of_paths_list[-1]], [fx_forward_price, fx_forward_price])
+
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # FX Option
-initial_spot: float = 50
-strike: float = 52
-domestic_interest_rate: float = 0.4
-foreign_interest_rate: float = 0.1
-volatility: float = 0.4
-time_to_maturity: float = 5 / 12
-number_of_paths: int = 10_000
-number_of_time_steps: int = 2
+# Comparison of Monte Carlo pricing to Garman-Kohlhagen pricing for an FX option
+# initial_spot: float = 50
+# strike: float = 52
+# domestic_interest_rate: float = 0.4
+# foreign_interest_rate: float = 0.1
+# volatility: float = 0.4
+# time_to_maturity: float = 5 / 12
+# number_of_paths: int = 10_000
+# number_of_time_steps: int = 2
 
-print()
-print('----------------------------------------------------------------------------------')
-print('FX Option Price Comparison')
-print(f'Black Scholes (Garman-Kohlhagen) FX option price: '
-      f'{garman_kohlhagen(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, volatility, time_of_contract, "put")}')
-print(f'Monte Carlo FX option price: '
-      f'{fx_option_monte_carlo_pricer(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, volatility, time_of_contract, "put", number_of_paths, number_of_time_steps, True)}')
+# print()
+# print('----------------------------------------------------------------------------------')
+# print('FX Option Price Comparison')
+# print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
+#       str(garman_kohlhagen(
+#             initial_spot,
+#             strike,
+#             domestic_interest_rate,
+#             foreign_interest_rate,
+#             volatility,
+#             time_to_maturity,
+#             "put")))
 
-print()
-print('----------------------------------------------------------------------------------')
-print(f'FX Forward Price:'
-      f'{fx_forward_monte_carlo_pricer(initial_spot,strike,domestic_interest_rate,foreign_interest_rate,volatility,time_to_maturity,number_of_paths,number_of_time_steps)}')
-
-print()
-print('----------------------------------------------------------------------------------')
-print(f'Ensure GBM pricer for FX option gives same price as FX forward if vol is zero')
-print(f'FX Forward Price:'
-      f'{fx_forward_monte_carlo_pricer(initial_spot,strike,domestic_interest_rate,foreign_interest_rate,volatility,time_to_maturity,number_of_paths,number_of_time_steps)}')
-
-initial_spot: float = 50
-strike: float = 52
-domestic_interest_rate: float = 0.4
-foreign_interest_rate: float = 0.1
-volatility: float = 0
-time_to_maturity: float = 5 / 12
-number_of_paths: int = 10_000
-number_of_time_steps: int = 2
-
-print(f'Monte Carlo FX option price: '
-      f'{fx_option_monte_carlo_pricer(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, volatility, time_of_contract, "put", number_of_paths, number_of_time_steps, True)}')
+# print(f'Monte Carlo FX option price: ' +
+#       str(fx_option_monte_carlo_pricer(
+#             initial_spot,
+#             strike,
+#             domestic_interest_rate,
+#             foreign_interest_rate,
+#             volatility,
+#             time_to_maturity,
+#             "put",
+#             number_of_paths,
+#             number_of_time_steps,
+#             True)))
 
 
+# print()
+# print('----------------------------------------------------------------------------------')
+# print(f'Comparison of FX Forward Price to FX Option with Zero Vol')
 
+# initial_spot: float = 50
+# strike: float = 52
+# domestic_interest_rate: float = 0.4
+# foreign_interest_rate: float = 0.1
+# volatility: float = 0
+# time_to_maturity: float = 5 / 12
+# number_of_paths: int = 1
+# number_of_time_steps: int = 2
 
-
+# print(f'FX Forward Price: '
+#       f'{fx_forward(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)}')
+# print('Monte Carlo FX option price: ' +
+#       str(fx_option_monte_carlo_pricer(
+#             initial_spot,
+#             strike,
+#             domestic_interest_rate,
+#             foreign_interest_rate,
+#             volatility,
+#             time_to_maturity,
+#             "call",
+#             number_of_paths,
+#             number_of_time_steps,
+#             False)))
 

@@ -36,20 +36,25 @@ def black_scholes(
 
 def fx_forward(
         initial_spot: float,
+        strike: float,
         domestic_interest_rate: float,
         foreign_interest_rate: float,
         time_to_maturity: float) -> float:
     """
+    Returns the FX forward price. We follow the convention of quoting domestic currency per foreign currency i.e.
+    FORDOM e.g. USDZAR = 17 means ZAR is the domestic currency, USD is the foreign it is 17 domestic (ZAR) to 1 foreign
+    (USD).
 
-    Returns the FX forward price.
-
-    :param initial_spot: The initial forward spot price.
+    :param initial_spot: The initial forward spot price in terms of domestic currency per foreign currency.
+    :param strike: The strike in terms of domestic currency per foreign currency.
     :param domestic_interest_rate: The domestic currency interest rate.
     :param foreign_interest_rate: The foreign currency interest rate.
     :param time_to_maturity: The time (in years) at which the option expires.
     :return: The FX Forward price of the forward.
     """
-    return initial_spot * math.exp((domestic_interest_rate - foreign_interest_rate) * time_to_maturity)
+    payoff: float = initial_spot * np.exp((domestic_interest_rate - foreign_interest_rate) * time_to_maturity) - strike
+    discount_payoff: float = payoff * np.exp(-domestic_interest_rate * time_to_maturity)
+    return discount_payoff
 
 
 def garman_kohlhagen(
