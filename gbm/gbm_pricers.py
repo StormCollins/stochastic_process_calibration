@@ -145,7 +145,7 @@ def fx_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = False) -> [float | str]:
+        plot_paths: bool = False) -> [MonteCarloResult | str]:
 
     """
     Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations (does not take into account whether
@@ -187,12 +187,14 @@ def fx_option_monte_carlo_pricer(
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - strike, 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        return price
+        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        return MonteCarloResult(price, error)
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs = np.maximum(strike - paths[:, -1], 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        return price
+        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        return MonteCarloResult(price, error)
 
     else:
         return f'Unknown option type: {call_or_put}'
@@ -207,7 +209,7 @@ def fx_forward_monte_carlo_pricer(
         time_to_maturity: float,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = False) -> [float | str]:
+        plot_paths: bool = False) -> [MonteCarloResult | str]:
 
     """
     Returns the price for an FX forward using monte carlo simulations.
@@ -249,4 +251,5 @@ def fx_forward_monte_carlo_pricer(
 
     payoffs = (paths[:, -1] - strike) * np.exp(-domestic_interest_rate * time_to_maturity)
     price: float = np.average(payoffs)
-    return price
+    error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+    return MonteCarloResult(price, error)

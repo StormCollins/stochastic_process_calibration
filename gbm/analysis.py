@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# TEST THE FUNCTIONS
-
 # ----------------------------------------------------------------------------------------------------------------------
 # European Equity Option
 # Comparison of Monte Carlo pricing to Black-Scholes pricing for a European equity option
@@ -100,27 +98,27 @@ plt.plot([number_of_paths_list[0], number_of_paths_list[-1]], [fx_forward_price,
 # ----------------------------------------------------------------------------------------------------------------------
 # FX Option
 # Comparison of Monte Carlo pricing to Garman-Kohlhagen pricing for an FX option
-# initial_spot: float = 50
-# strike: float = 52
-# domestic_interest_rate: float = 0.4
-# foreign_interest_rate: float = 0.1
-# volatility: float = 0.4
-# time_to_maturity: float = 5 / 12
-# number_of_paths: int = 10_000
-# number_of_time_steps: int = 2
+initial_spot: float = 50
+strike: float = 52
+domestic_interest_rate: float = 0.2
+foreign_interest_rate: float = 0.1
+volatility: float = 0.4
+time_to_maturity: float = 5 / 12
+number_of_paths: int = 10_000
+number_of_time_steps: int = 2
 
-# print()
-# print('----------------------------------------------------------------------------------')
-# print('FX Option Price Comparison')
-# print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
-#       str(garman_kohlhagen(
-#             initial_spot,
-#             strike,
-#             domestic_interest_rate,
-#             foreign_interest_rate,
-#             volatility,
-#             time_to_maturity,
-#             "put")))
+print()
+print('----------------------------------------------------------------------------------')
+print('FX Option Price Comparison')
+print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
+      str(garman_kohlhagen(
+            initial_spot,
+            strike,
+            domestic_interest_rate,
+            foreign_interest_rate,
+            volatility,
+            time_to_maturity,
+            "put")))
 
 # print(f'Monte Carlo FX option price: ' +
 #       str(fx_option_monte_carlo_pricer(

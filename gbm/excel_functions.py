@@ -1,12 +1,18 @@
 import datetime
+
+import scipy
 from dateutil.relativedelta import relativedelta
 import pandas as pd
+from scipy import interpolate
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp2d
 
 
 def read_vol_surface(
         file_path: str,
         sheet_name: str,
-        data_date: datetime.date): # -> pd.DataFrame:
+        data_date: datetime.date):  # -> pd.DataFrame:
     data: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name)
     column_titles: pd.Index = data.columns
     moneyness: list[float] = list()
@@ -25,28 +31,37 @@ def read_vol_surface(
     return vols
 
 
-def get_vol(vol_surface, moneyness, tenor) -> float:
-    """
-    Returns an interpolated vol from a vol surface for a given moneyness and tenor.
-
-    :param vol_surface:
-    :return:
-    """
-    # TODO: Bilinear interpolation.
-
 file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\vol-surface-data-2022-06-30.xlsx'
 sheet_name: str = 'S&P500 Clean Vol Surface'
-
 data = read_vol_surface(file_path, sheet_name, datetime.date(2022, 6, 30))
-
-print(data)
-
-
-#print(data['End Date'])
+print(data[data.columns[1:17]])
 
 
+def get_vol(vol_surface, moneyness, tenor) -> interp2d:
+    """
+    Returns an interpolated volatility from a volatility surface for a given moneyness and tenor.
 
-# #Create the volatility surface
+    :param vol_surface:
+    :param moneyness:
+    :param tenor: The length of time remaining in the contract.
+    :return: Interpolated volatility.
+    """
+
+    bi_linear_interpolation = scipy.interpolate.interp2d(tenor, moneyness, vol_surface, kind='linear')
+    return bi_linear_interpolation
+
+
+vol_surface = data
+tenor = data['Tenors']
+moneyness = data[data.columns[1:17]]
+
+print(f'bi-linear interpolation is:'
+      f'{get_vol(vol_surface, tenor, moneyness)}')
+
+# print(data['End Date'])
+
+# Create the volatility surface
+
 # def plot3D(X, Y, Z):
 #     fig = plt.figure()
 #     ax = Axes3D(fig, azim=-29, elev=50)
