@@ -131,25 +131,34 @@ def fast_equity_european_option_monte_carlo_pricer(
         paths[:, j] = paths[:, j - 1] * np.exp(
             (interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
 
+    # Path statistics
+    mean: float = math.exp(interest_rate + (volatility ** 2 / 2))
+    standard_deviation: float = \
+        np.sqrt((math.exp(volatility ** 2) - 1) * math.exp((2 * interest_rate + volatility ** 2)))
+    percentile: float = math.exp(
+        interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+
     # Plot the paths
     if plot_paths:
-        plt.plot(np.transpose(paths))
-        plt.grid(True)
-        plt.xlabel('Number of time steps')
-        plt.ylabel('Number of paths')
+        fig1, ax1 = plt.subplots()
+        ax1.plot(np.transpose(paths))
+        ax1.grid(True)
+        ax1.set_xlabel('Number of time steps')
+        ax1.set_ylabel('Number of paths')
+
+        fig2, ax2 = plt.subplots()
+        log_returns = np.log(paths[:, -1] / paths[:, 0])
+        ax2.hist(log_returns, 50)
+        x = np.arange(-2, 2, 21)
+        y = number_of_paths * norm.pdf(x, loc=interest_rate, scale=volatility)
+        ax2.plot(x, y, "r-")
+        plt.show()
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        mu = np.mean(payoffs)
-        sigma = np.std(payoffs)
-        mean: float = math.exp(mu + (sigma ** 2 / 2))
-        standard_deviation: float = np.sqrt((math.exp(sigma ** 2) - 1) * math.exp((
-                2 * mu + sigma ** 2)))
-        percentile: float = initial_spot * math.exp(
-            mu * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
         return MonteCarloResult(price, error, mean, standard_deviation, percentile)
 
     elif str.upper(call_or_put) == 'PUT':
@@ -157,13 +166,6 @@ def fast_equity_european_option_monte_carlo_pricer(
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        mu = np.mean(payoffs)
-        sigma = np.std(payoffs)
-        mean: float = math.exp(mu + (sigma ** 2 / 2))
-        standard_deviation: float = np.sqrt((math.exp(sigma ** 2) - 1) * math.exp((
-                2 * mu + sigma ** 2)))
-        percentile: float = initial_spot * math.exp(
-            mu * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
         return MonteCarloResult(price, error, mean, standard_deviation, percentile)
 
     else:

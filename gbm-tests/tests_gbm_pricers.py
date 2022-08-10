@@ -24,7 +24,7 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
-                False)
+                True)
         expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
@@ -74,18 +74,22 @@ class TestsGbmPricers:
                 number_of_paths,
                 number_of_time_steps,
                 False)
-        expected_price: float = garman_kohlhagen(
-                                                notional,
-                                                initial_spot,
-                                                strike,
-                                                domestic_interest_rate,
-                                                foreign_interest_rate,
-                                                volatility,
-                                                time_to_maturity,
-                                                "put")
+        expected_price: float\
+            = garman_kohlhagen(
+                notional,
+                initial_spot,
+                strike,
+                domestic_interest_rate,
+                foreign_interest_rate,
+                volatility,
+                time_to_maturity,
+                "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
     def test_fx_forward_monte_carlo_pricer(self):
+        """
+        Note where these values come from i.e. give the file names.
+        """
         notional: float = 1_000_000
         initial_spot: float = 14.6038
         strike: float = 17
