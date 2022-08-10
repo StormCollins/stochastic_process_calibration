@@ -4,6 +4,7 @@ from scipy.stats import norm
 
 
 def black_scholes(
+        notional: float,
         initial_spot: float,
         strike: float,
         interest_rate: float,
@@ -14,6 +15,11 @@ def black_scholes(
     Returns the standard Black-Scholes price for a 'CALL' or 'PUT' option (does not take into account whether you
     are 'long' or 'short' the option.
 
+    :param notional: The notional of the FX forward denominated in the foreign currency
+        i.e. we exchange the notional amount in the foreign currency for
+        strike * notional amount in the domestic currency
+        e.g. if strike = 17 USDZAR and notional = 1,000,000
+        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
     :param initial_spot: The initial spot price of the option.
     :param strike: The option strike price.
     :param interest_rate: The interest rate/drift used for the option.
@@ -22,6 +28,9 @@ def black_scholes(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'
     :return: Black-Scholes price for an option.
     """
+    initial_spot = initial_spot * notional
+    strike = strike * notional
+
     d_1: float = (np.log(initial_spot / strike) + ((interest_rate + 0.5 * volatility ** 2) * time_to_maturity)) / \
                  (volatility * math.sqrt(time_to_maturity))
     d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
@@ -35,6 +44,7 @@ def black_scholes(
 
 
 def fx_forward(
+        notional: float,
         initial_spot: float,
         strike: float,
         domestic_interest_rate: float,
@@ -45,6 +55,11 @@ def fx_forward(
     FORDOM e.g. USDZAR = 17 means ZAR is the domestic currency, USD is the foreign it is 17 domestic (ZAR) to 1 foreign
     (USD).
 
+    :param notional: The notional of the FX forward denominated in the foreign currency
+        i.e. we exchange the notional amount in the foreign currency for
+        strike * notional amount in the domestic currency
+        e.g. if strike = 17 USDZAR and notional = 1,000,000
+        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
     :param initial_spot: The initial forward spot price in terms of domestic currency per foreign currency.
     :param strike: The strike in terms of domestic currency per foreign currency.
     :param domestic_interest_rate: The domestic currency interest rate.
@@ -52,12 +67,14 @@ def fx_forward(
     :param time_to_maturity: The time (in years) at which the option expires.
     :return: The FX Forward price of the forward.
     """
-    payoff: float = initial_spot * np.exp((domestic_interest_rate - foreign_interest_rate) * time_to_maturity) - strike
+    payoff: float = notional * initial_spot * np.exp(
+        (domestic_interest_rate - foreign_interest_rate) * time_to_maturity) - notional * strike
     discount_payoff: float = payoff * np.exp(-domestic_interest_rate * time_to_maturity)
     return discount_payoff
 
 
 def garman_kohlhagen(
+        notional: float,
         initial_spot: float,
         strike: float,
         domestic_interest_rate: float,
@@ -75,6 +92,11 @@ def garman_kohlhagen(
     Returns the Black-Scholes (Garman-Kohlahgen) price for a 'CALL' or 'PUT' FX option (does not take into account
     whether you are 'long' or 'short' the option..
 
+    :param notional: The notional of the FX forward denominated in the foreign currency
+        i.e. we exchange the notional amount in the foreign currency for
+        strike * notional amount in the domestic currency
+        e.g. if strike = 17 USDZAR and notional = 1,000,000
+        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
     :param initial_spot: Initial spot rate of the FX option.
     :param strike: Strike price of the FX option.
     :param domestic_interest_rate: Domestic interest rate.
@@ -84,6 +106,9 @@ def garman_kohlhagen(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :return: Garman_kohlhagen price for an FX option.
     """
+    initial_spot = initial_spot * notional
+    strike = strike * notional
+
     d_1: float = (np.log(initial_spot / strike) + ((domestic_interest_rate - foreign_interest_rate + 0.5 * volatility ** 2) * time_to_maturity)) / \
                  (volatility * math.sqrt(time_to_maturity))
     d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
