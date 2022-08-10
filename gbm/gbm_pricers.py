@@ -1,17 +1,14 @@
 import math
 import numpy as np
 from scipy.stats import norm
-import matplotlib as cm
 import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.interpolate import griddata
-from mpl_toolkits.mplot3d import Axes3D
 from collections import namedtuple
 
-MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
+MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error', 'mean', 'standard_deviation', 'percentile'])
 
 
 def slow_equity_european_option_monte_carlo_pricer(
+        notional: float,
         initial_spot: float,
         strike: float,
         interest_rate: float,
@@ -25,6 +22,11 @@ def slow_equity_european_option_monte_carlo_pricer(
     This is the slow equity european option monte carlo pricer, because it takes a longer time to run with more
     simulations.
 
+    :param notional: The notional of the FX forward denominated in the foreign currency
+        i.e. we exchange the notional amount in the foreign currency for
+        strike * notional amount in the domestic currency
+        e.g. if strike = 17 USDZAR and notional = 1,000,000
+        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
     :param initial_spot: The initial spot price for the option.
     :param strike: The strike price for the option.
     :param interest_rate:  The interest rate/drift used for the option.
@@ -39,7 +41,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
 
     for i in range(0, number_of_paths):
-        paths[i, 0] = initial_spot
+        paths[i, 0] = notional * initial_spot
 
     dt: float = time_to_maturity / (number_of_time_steps - 1)
 
@@ -53,7 +55,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     if str.upper(call_or_put) == 'CALL':
         payoffs: np.ndarray = np.zeros(number_of_paths)
         for i in range(0, number_of_paths):
-            payoffs[i] = np.max([paths[i, -1] - strike, 0]) * math.exp(-interest_rate * time_to_maturity)
+            payoffs[i] = np.max([paths[i, -1] - notional * strike, 0]) * math.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloResult(price, error)
@@ -65,7 +67,14 @@ def slow_equity_european_option_monte_carlo_pricer(
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        mu = np.mean(payoffs)
+        sigma = np.std(payoffs)
+        mean: float = math.exp(mu + (sigma ** 2 / 2))
+        standard_deviation: float = np.sqrt((math.exp(sigma ** 2) - 1) * math.exp((
+                              2 * mu + sigma ** 2)))
+        percentile: float = initial_spot * math.exp(
+            mu * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
 
     else:
         return f'Unknown option type: {call_or_put}'
@@ -121,6 +130,13 @@ def fast_equity_european_option_monte_carlo_pricer(
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        mu = np.mean(payoffs)
+        sigma = np.std(payoffs)
+        mean: float = math.exp(mu + (sigma ** 2 / 2))
+        standard_deviation: float = np.sqrt((math.exp(sigma ** 2) - 1) * math.exp((
+                2 * mu + sigma ** 2)))
+        percentile: float = initial_spot * math.exp(
+            mu * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
         return MonteCarloResult(price, error)
 
     elif str.upper(call_or_put) == 'PUT':
@@ -200,6 +216,7 @@ def fx_option_monte_carlo_pricer(
 
 
 def fx_forward_monte_carlo_pricer(
+        notional: float,
         initial_spot: float,
         strike: float,
         domestic_interest_rate: float,
@@ -212,6 +229,11 @@ def fx_forward_monte_carlo_pricer(
     """
     Returns the price for an FX forward using monte carlo simulations.
 
+    :param notional: The notional of the FX forward denominated in the foreign currency
+        i.e. we exchange the notional amount in the foreign currency for
+        strike * notional amount in the domestic currency
+        e.g. if strike = 17 USDZAR and notional = 1,000,000
+        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
     :param initial_spot: Initial spot price for the FX option.
     :param strike: Strike price for the FX option.
     :param domestic_interest_rate: Domestic interest rate.
@@ -221,12 +243,12 @@ def fx_forward_monte_carlo_pricer(
     :param number_of_paths: Number of paths for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
     :param plot_paths: If set to True plots the paths.
-    :return: Monte Carlo price for an FX forward.
+    :return: Monte Carlo price for an FX forward in the domestic currency.
     """
 
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
 
-    paths[:, 0] = initial_spot
+    paths[:, 0] = initial_spot * notional
 
     dt: float = time_to_maturity / (number_of_time_steps - 1)
 
@@ -246,7 +268,14 @@ def fx_forward_monte_carlo_pricer(
         plt.xlabel('Number of time steps')
         plt.ylabel('Number of paths')
 
-    payoffs = (paths[:, -1] - strike) * np.exp(-domestic_interest_rate * time_to_maturity)
+    payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
     price: float = np.average(payoffs)
     error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-    return MonteCarloResult(price, error)
+    mu = np.mean(payoffs)
+    sigma = np.std(payoffs)
+    mean: float = math.exp(mu + (sigma ** 2 / 2))
+    standard_deviation: float = np.sqrt((math.exp(sigma ** 2) - 1) * math.exp((
+            2 * mu + sigma ** 2)))
+    percentile: float = initial_spot * math.exp(
+        mu * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+    return MonteCarloResult(price, error, mean, standard_deviation, percentile)
