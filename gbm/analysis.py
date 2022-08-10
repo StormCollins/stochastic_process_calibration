@@ -22,7 +22,7 @@ slow_price: float =\
             interest_rate,
             volatility,
             time_to_maturity,
-            "put",
+            "call",
             number_of_paths,
             number_of_time_steps)
 
@@ -35,7 +35,9 @@ fast_price: float = \
             time_to_maturity,
             "put",
             number_of_paths,
-            number_of_time_steps)
+            number_of_time_steps,
+            True)
+
 
 print()
 print('----------------------------------------------------------------------------------')
@@ -72,26 +74,26 @@ print(f'Monte Carlo FX Forward Price: ' +
             time_to_maturity,
             number_of_paths,
             number_of_time_steps)))
-
-# Convergence comparison
-number_of_paths_list = [50_000 * x for x in range(1, 101)]
-monte_carlo_prices = list()
-for number_of_paths in number_of_paths_list:
-    monte_carlo_prices.append(
-          fx_forward_monte_carlo_pricer(
-            initial_spot,
-            strike,
-            domestic_interest_rate,
-            foreign_interest_rate,
-            volatility,
-            time_to_maturity,
-            number_of_paths,
-            number_of_time_steps))
-
-#plt.title('FX Forward Price Convergence for Monte Carlo')
-fx_forward_convergence_figure = plt.figure()
-plt.plot(number_of_paths_list, monte_carlo_prices, '-o')
-plt.plot([number_of_paths_list[0], number_of_paths_list[-1]], [fx_forward_price, fx_forward_price])
+#
+# # Convergence comparison
+# number_of_paths_list = [50_000 * x for x in range(1, 101)]
+# monte_carlo_prices = list()
+# for number_of_paths in number_of_paths_list:
+#     monte_carlo_prices.append(
+#           fx_forward_monte_carlo_pricer(
+#             initial_spot,
+#             strike,
+#             domestic_interest_rate,
+#             foreign_interest_rate,
+#             volatility,
+#             time_to_maturity,
+#             number_of_paths,
+#             number_of_time_steps))
+#
+# #plt.title('FX Forward Price Convergence for Monte Carlo')
+# fx_forward_convergence_figure = plt.figure()
+# plt.plot(number_of_paths_list, monte_carlo_prices, '-o')
+# plt.plot([number_of_paths_list[0], number_of_paths_list[-1]], [fx_forward_price, fx_forward_price])
 
 
 

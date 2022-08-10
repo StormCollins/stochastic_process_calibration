@@ -55,7 +55,6 @@ def slow_equity_european_option_monte_carlo_pricer(
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([paths[i, -1] - strike, 0]) * math.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
-        # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloResult(price, error)
 
@@ -146,7 +145,6 @@ def fx_option_monte_carlo_pricer(
         number_of_paths: int,
         number_of_time_steps: int,
         plot_paths: bool = False) -> [MonteCarloResult | str]:
-
     """
     Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations (does not take into account whether
     you are 'long' or 'short' the option).
@@ -175,7 +173,8 @@ def fx_option_monte_carlo_pricer(
         # Reference to this formula: Brandimarte, Numerical Methods in Finance and Economics, pg 432, eq. 8.5
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
         paths[:, j] = paths[:, j - 1] * np.exp(
-            (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+            (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(
+                dt) * z)
 
     # Plot the FX paths
     if plot_paths:
@@ -210,7 +209,6 @@ def fx_forward_monte_carlo_pricer(
         number_of_paths: int,
         number_of_time_steps: int,
         plot_paths: bool = False) -> [MonteCarloResult | str]:
-
     """
     Returns the price for an FX forward using monte carlo simulations.
 
@@ -235,12 +233,11 @@ def fx_forward_monte_carlo_pricer(
     # Actual Monte Carlo for the FX option
     for j in range(1, number_of_time_steps):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        paths[:, j] =\
+        paths[:, j] = \
             paths[:, j - 1] * \
             np.exp(
                 (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt +
                 volatility * math.sqrt(dt) * z)
-        # Reference to this formula?
 
     # Plot the FX paths
     if plot_paths:

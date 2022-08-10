@@ -34,8 +34,8 @@ def get_vol(moneyness: list[float], tenor: list[float], vol_surface: VolData) ->
     """
     Returns an interpolated volatility from a volatility surface for a given moneyness and tenor.
 
-    :param vol_surface:
-    :param moneyness:
+    :param vol_surface: The volatilities.
+    :param moneyness: The moneyness strikes.
     :param tenor: The length of time remaining in the contract.
     :return: Interpolated volatility.
     """
