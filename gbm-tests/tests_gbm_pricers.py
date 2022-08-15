@@ -9,7 +9,7 @@ class TestsGbmPricers:
         initial_spot: float = 50
         strike: float = 52
         interest_rate: float = 0.1
-        volatility: float = 0.4
+        volatility: float = 0.1  # 0.4
         time_to_maturity: float = 5 / 12
         number_of_paths: int = 100_000
         number_of_time_steps: int = 50

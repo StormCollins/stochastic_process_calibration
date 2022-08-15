@@ -3,7 +3,6 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from collections import namedtuple
-import seaborn as sns
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error', 'mean', 'standard_deviation', 'percentile'])
 
@@ -134,37 +133,8 @@ def fast_equity_european_option_monte_carlo_pricer(
     percentile: float = initial_spot * math.exp(
         interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
 
-    # Plot the paths
     if plot_paths:
-        # fig1, ax1 = plt.subplots()
-        # ax1.plot(np.transpose(paths))
-        # ax1.grid(True)
-        # ax1.set_xlabel('Number of time steps')
-        # ax1.set_ylabel('Number of paths')
-
-        # fig2, ax2 = plt.subplots()
-        x = np.linspace(-2, 2, 21)
-        # z = np.arange(-2, 2, 21)
-        y = number_of_paths * norm.pdf(x, loc=interest_rate, scale=volatility)
-        # ax2.hist(y)
-        #sns.distplot(y, norm_hist=True)
-        # ax2.plot(x, y)
-
-        #log_returns = np.log(paths[:, -1] / paths[:, 0])
-        #plt.plot(log_returns)
-        #plt.show()
-
-        plt.style.use('ggplot')
-
-        fig, ax0 = plt.subplots(ncols=1, nrows=1)  # creating plot axes
-        (values, bins, _) = ax0.hist(y, bins=100, density=True, label="Histogram of samples")
-
-        #bin_centers = 0.5 * (bins[1:] + bins[:-1])
-        pdf = norm.pdf(np.arange(-2, 2, 21), loc=interest_rate, scale=volatility)  # Compute probability density function
-        ax0.plot(np.arange(-2, 2, 21), pdf, label="PDF", color='black')  # Plot PDF
-        ax0.legend()  # Legend entries
-        ax0.set_title('PDF of samples from numpy.random.normal()');
-        plt.show()
+        create_gbm_plots(paths, interest_rate, volatility, time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-interest_rate * time_to_maturity)
@@ -336,15 +306,38 @@ def fx_forward_monte_carlo_pricer(
             ax1.set_xlabel('Number of time steps')
             ax1.set_ylabel('Number of paths')
 
-            #fig2, ax2 = plt.subplots()
-            #log_returns = np.log(paths[:, -1] / paths[:, 0])
-            #ax2.hist(log_returns, 50)
-            #x = np.arange(-2, 2, 21)
-            #y = number_of_paths * norm.pdf(x, loc=domestic_interest_rate, scale=volatility)
-            #ax2.plot(x, y, "r-")
-            #plt.show()
+            # fig2, ax2 = plt.subplots()
+            # log_returns = np.log(paths[:, -1] / paths[:, 0])
+            # ax2.hist(log_returns, 50)
+            # x = np.arange(-2, 2, 21)
+            # y = number_of_paths * norm.pdf(x, loc=domestic_interest_rate, scale=volatility)
+            # ax2.plot(x, y, "r-")
+            # plt.show()
 
     payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
     price: float = np.average(payoffs)
     error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
     return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+
+
+def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
+    fig1, ax1 = plt.subplots()
+    ax1.plot(np.transpose(paths))
+    ax1.grid(True)
+    ax1.set_xlabel('Number of time steps')
+    ax1.set_ylabel('Number of paths')
+
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    ax.set_facecolor('#AAAAAA')
+    ax.grid(False)
+    log_returns = np.log(paths[:, -1] / paths[:, 0])
+    (values, bins, _) = ax.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    mu: float = (interest_rate - 0.5 * volatility ** 2) * time_to_maturity
+    sigma: float = volatility * np.sqrt(time_to_maturity)
+    pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
+    ax.plot(bin_centers, pdf, label='PDF', color='white')
+    ax.set_title('Comparison of GBM log-returns to normal PDF');
+    ax.legend()
+    plt.show()
