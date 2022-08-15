@@ -1,8 +1,9 @@
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.stats import norm
-import matplotlib.pyplot as plt
+from scipy.stats import shapiro
 from collections import namedtuple
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error', 'mean', 'standard_deviation', 'percentile'])
@@ -130,6 +131,8 @@ def fast_equity_european_option_monte_carlo_pricer(
     if plot_paths:
         create_gbm_plots(paths, interest_rate, volatility, time_to_maturity)
 
+
+
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
@@ -248,11 +251,10 @@ def fx_forward_monte_carlo_pricer(
     paths: np.ndarray = \
         generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility, time_to_maturity)
 
-
     # Path statistics
     mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
-    standard_deviation: float = initial_spot * \
-                                np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
+    standard_deviation: float = \
+        initial_spot * np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
                                     (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
     percentile: float = initial_spot * math.exp(
         domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
@@ -294,8 +296,6 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     # Path plot
     indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
     sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-
-    # sns.set_palette(sns.cubehelix_palette(paths.shape[0], start=.5, rot=-.75))
     sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
     fig1, ax1 = plt.subplots()
     ax1.plot(sorted_paths)
@@ -318,3 +318,10 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     ax2.set_title('Comparison of GBM log-returns to normal PDF');
     ax2.legend()
     plt.show()
+
+    shapiro_test = shapiro(log_returns)
+    print(f'p-value: {shapiro_test.pvalue}')
+    if shapiro_test.pvalue > 0.05:
+        print('GBM paths are normally distributed.')
+    else:
+        print('GBM paths are not normally distributed.')
