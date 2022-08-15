@@ -11,8 +11,8 @@ class TestsGbmPricers:
         interest_rate: float = 0.1
         volatility: float = 0.4
         time_to_maturity: float = 5 / 12
-        number_of_paths: int = 10_000
-        number_of_time_steps: int = 2
+        number_of_paths: int = 100_000
+        number_of_time_steps: int = 50
         actual: MonteCarloResult = \
             fast_equity_european_option_monte_carlo_pricer(
                 notional,
@@ -97,8 +97,8 @@ class TestsGbmPricers:
         foreign_interest_rate: float = 0.020564138
         volatility: float = 0.154
         time_to_maturity: float = 1
-        number_of_paths: int = 100_000
-        number_of_time_steps: int = 2
+        number_of_paths: int = 1_000_000
+        number_of_time_steps: int = 50
         actual: MonteCarloResult = \
             fx_forward_monte_carlo_pricer(
                 notional,

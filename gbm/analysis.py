@@ -7,6 +7,7 @@ import numpy as np
 # ----------------------------------------------------------------------------------------------------------------------
 # European Equity Option
 # Comparison of Monte Carlo pricing to Black-Scholes pricing for a European equity option
+notional: float = 1_000_000
 initial_spot: float = 50
 strike: float = 52
 interest_rate: float = 0.1
@@ -17,6 +18,7 @@ number_of_time_steps: int = 2
 
 slow_price: float =\
       slow_equity_european_option_monte_carlo_pricer(
+          notional,
             initial_spot,
             strike,
             interest_rate,
@@ -28,6 +30,7 @@ slow_price: float =\
 
 fast_price: float = \
       fast_equity_european_option_monte_carlo_pricer(
+          notional,
             initial_spot,
             strike,
             interest_rate,
@@ -42,13 +45,14 @@ fast_price: float = \
 print()
 print('----------------------------------------------------------------------------------')
 print('Equity Option Price Comparison')
-print(f'Black-Scholes Price: {black_scholes(initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")}')
+print(f'Black-Scholes Price: {black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")}')
 print(f'Slow European Option Price: {slow_price}')
 print(f'Fast European Option Price: {fast_price}')
 
 # ----------------------------------------------------------------------------------------------------------------------
 # FX Forward
 # Comparison of Monte Carlo pricing to analytical pricing for an FX Forward
+notional: float = 1_000_000
 initial_spot: float = 50
 strike: float = 52
 domestic_interest_rate: float = 0.2
@@ -61,11 +65,12 @@ number_of_time_steps: int = 2
 print()
 print('----------------------------------------------------------------------------------')
 print('FX Forward Price Comparison')
-fx_forward_price: float = fx_forward(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
+fx_forward_price: float = fx_forward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
 print(f'Analytical FX Forward Price: '
-      f'{fx_forward(initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)}')
+      f'{fx_forward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)}')
 print(f'Monte Carlo FX Forward Price: ' +
       str(fx_forward_monte_carlo_pricer(
+            notional,
             initial_spot,
             strike,
             domestic_interest_rate,
@@ -100,6 +105,7 @@ print(f'Monte Carlo FX Forward Price: ' +
 # ----------------------------------------------------------------------------------------------------------------------
 # FX Option
 # Comparison of Monte Carlo pricing to Garman-Kohlhagen pricing for an FX option
+notional: float = 1_000_000
 initial_spot: float = 50
 strike: float = 52
 domestic_interest_rate: float = 0.2
@@ -114,6 +120,7 @@ print('-------------------------------------------------------------------------
 print('FX Option Price Comparison')
 print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
       str(garman_kohlhagen(
+            notional,
             initial_spot,
             strike,
             domestic_interest_rate,
