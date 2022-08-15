@@ -11,7 +11,7 @@ class TestsGbmPricers:
         interest_rate: float = 0.1
         volatility: float = 0.1  # 0.4
         time_to_maturity: float = 5 / 12
-        number_of_paths: int = 100_000
+        number_of_paths: int = 10_000
         number_of_time_steps: int = 50
         actual: MonteCarloResult = \
             fast_equity_european_option_monte_carlo_pricer(
@@ -60,7 +60,7 @@ class TestsGbmPricers:
         volatility: float = 0.1
         time_to_maturity: float = 5 / 12
         number_of_paths: int = 10_000
-        number_of_time_steps: int = 2
+        number_of_time_steps: int = 100
         actual: MonteCarloResult = \
             fx_option_monte_carlo_pricer(
                 notional,
@@ -73,9 +73,9 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
-                False)
-        expected_price: float\
-            = garman_kohlhagen(
+                True)
+        expected_price: float = \
+            garman_kohlhagen(
                 notional,
                 initial_spot,
                 strike,
@@ -97,8 +97,8 @@ class TestsGbmPricers:
         foreign_interest_rate: float = 0.020564138
         volatility: float = 0.154
         time_to_maturity: float = 1
-        number_of_paths: int = 1_000_000
-        number_of_time_steps: int = 50
+        number_of_paths: int = 10_000
+        number_of_time_steps: int = 10
         actual: MonteCarloResult = \
             fx_forward_monte_carlo_pricer(
                 notional,
@@ -110,12 +110,13 @@ class TestsGbmPricers:
                 time_to_maturity,
                 number_of_paths,
                 number_of_time_steps,
-                False)
-        expected_price: float = fx_forward(
-                                            notional,
-                                            initial_spot,
-                                            strike,
-                                            domestic_interest_rate,
-                                            foreign_interest_rate,
-                                            time_to_maturity)
+                True)
+        expected_price: float = \
+            fx_forward(
+                notional,
+                initial_spot,
+                strike,
+                domestic_interest_rate,
+                foreign_interest_rate,
+                time_to_maturity)
         assert expected_price == pytest.approx(actual.price, actual.error)

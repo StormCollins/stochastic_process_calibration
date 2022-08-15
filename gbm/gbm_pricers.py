@@ -115,15 +115,8 @@ def fast_equity_european_option_monte_carlo_pricer(
     :return: Fast Monte Carlo price for an equity european option.
     """
 
-    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
-    paths[:, 0] = notional * initial_spot
-    dt: float = time_to_maturity / (number_of_time_steps - 1)
-
-    # Actual Monte Carlo
-    for j in range(1, number_of_time_steps):
-        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        paths[:, j] = paths[:, j - 1] * np.exp(
-            (interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+    paths: np.ndarray = \
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility, time_to_maturity)
 
     # Path statistics
     mean: float = initial_spot * math.exp(interest_rate + (volatility ** 2 / 2))
@@ -187,45 +180,21 @@ def fx_option_monte_carlo_pricer(
     :param plot_paths: If set to True plots the paths.
     :return: Monte Carlo price for an FX Option.
     """
+    drift: float = domestic_interest_rate - foreign_interest_rate
+    paths: np.ndarray = \
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility, time_to_maturity)
 
-    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
+    # Path statistics
+    mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
+    standard_deviation: float = initial_spot * \
+                                np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
+                                    (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
+    percentile: float = initial_spot * math.exp(
+        domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
+            time_to_maturity))
 
-    paths[:, 0] = notional * initial_spot
-
-    dt: float = time_to_maturity / (number_of_time_steps - 1)
-
-    # Actual Monte Carlo for the FX option
-    for j in range(1, number_of_time_steps):
-        # Reference to this formula: Brandimarte, Numerical Methods in Finance and Economics, pg 432, eq. 8.5
-        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        paths[:, j] = paths[:, j - 1] * np.exp(
-            (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(
-                dt) * z)
-
-        # Path statistics
-        mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
-        standard_deviation: float = initial_spot * \
-                                    np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
-                                        (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
-        percentile: float = initial_spot * math.exp(
-            domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
-                time_to_maturity))
-
-        # Plot the paths
-        if plot_paths:
-            fig1, ax1 = plt.subplots()
-            ax1.plot(np.transpose(paths))
-            ax1.grid(True)
-            ax1.set_xlabel('Number of time steps')
-            ax1.set_ylabel('Number of paths')
-
-            fig2, ax2 = plt.subplots()
-            log_returns = np.log(paths[:, -1] / paths[:, 0])
-            ax2.hist(log_returns, 50)
-            x = np.arange(-2, 2, 21)
-            y = number_of_paths * norm.pdf(x, loc=domestic_interest_rate, scale=volatility)
-            ax2.plot(x, y, "r-")
-            plt.show()
+    if plot_paths:
+        create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-domestic_interest_rate * time_to_maturity)
@@ -274,45 +243,22 @@ def fx_forward_monte_carlo_pricer(
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
 
-    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
+    drift: float = domestic_interest_rate - foreign_interest_rate
+    paths: np.ndarray = \
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility, time_to_maturity)
 
-    paths[:, 0] = initial_spot * notional
 
-    dt: float = time_to_maturity / (number_of_time_steps - 1)
+    # Path statistics
+    mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
+    standard_deviation: float = initial_spot * \
+                                np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
+                                    (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
+    percentile: float = initial_spot * math.exp(
+        domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
+            time_to_maturity))
 
-    # Actual Monte Carlo for the FX option
-    for j in range(1, number_of_time_steps):
-        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        paths[:, j] = \
-            paths[:, j - 1] * \
-            np.exp(
-                (domestic_interest_rate - foreign_interest_rate - 0.5 * volatility ** 2) * dt +
-                volatility * math.sqrt(dt) * z)
-
-        # Path statistics
-        mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
-        standard_deviation: float = initial_spot * \
-                                    np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
-                                        (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
-        percentile: float = initial_spot * math.exp(
-            domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
-                time_to_maturity))
-
-        # Plot the paths
-        if plot_paths:
-            fig1, ax1 = plt.subplots()
-            ax1.plot(np.transpose(paths))
-            ax1.grid(True)
-            ax1.set_xlabel('Number of time steps')
-            ax1.set_ylabel('Number of paths')
-
-            # fig2, ax2 = plt.subplots()
-            # log_returns = np.log(paths[:, -1] / paths[:, 0])
-            # ax2.hist(log_returns, 50)
-            # x = np.arange(-2, 2, 21)
-            # y = number_of_paths * norm.pdf(x, loc=domestic_interest_rate, scale=volatility)
-            # ax2.plot(x, y, "r-")
-            # plt.show()
+    if plot_paths:
+        create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
 
     payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
     price: float = np.average(payoffs)
@@ -320,24 +266,49 @@ def fx_forward_monte_carlo_pricer(
     return MonteCarloResult(price, error, mean, standard_deviation, percentile)
 
 
+def generate_gbm_paths(
+        number_of_paths: int,
+        number_of_time_steps: int,
+        notional: float,
+        initial_spot: float,
+        drift: float,
+        volatility: float,
+        time_to_maturity) -> np.ndarray:
+    # TODO: Add function description.
+    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
+    paths[:, 0] = initial_spot * notional
+    dt: float = time_to_maturity / (number_of_time_steps - 1)
+
+    for j in range(1, number_of_time_steps):
+        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+        paths[:, j] = \
+            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+
+    return paths
+
+
 def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
+    # Todo: Add function description.
+
+    # Path plot
     fig1, ax1 = plt.subplots()
     ax1.plot(np.transpose(paths))
     ax1.grid(True)
     ax1.set_xlabel('Number of time steps')
     ax1.set_ylabel('Number of paths')
 
+    # Histogram of log-returns
     plt.style.use('ggplot')
-    fig, ax = plt.subplots(ncols=1, nrows=1)
-    ax.set_facecolor('#AAAAAA')
-    ax.grid(False)
+    fig2, ax2 = plt.subplots(ncols=1, nrows=1)
+    ax2.set_facecolor('#AAAAAA')
+    ax2.grid(False)
     log_returns = np.log(paths[:, -1] / paths[:, 0])
-    (values, bins, _) = ax.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
+    (values, bins, _) = ax2.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
     bin_centers = 0.5 * (bins[1:] + bins[:-1])
     mu: float = (interest_rate - 0.5 * volatility ** 2) * time_to_maturity
     sigma: float = volatility * np.sqrt(time_to_maturity)
     pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
-    ax.plot(bin_centers, pdf, label='PDF', color='white')
-    ax.set_title('Comparison of GBM log-returns to normal PDF');
-    ax.legend()
+    ax2.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
+    ax2.set_title('Comparison of GBM log-returns to normal PDF');
+    ax2.legend()
     plt.show()
