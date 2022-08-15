@@ -296,7 +296,8 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     # Path plot
     indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
     sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-    sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
+    # sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
+    sns.set_palette(sns.diverging_palette(274, 20, as_cmap=True))
     fig1, ax1 = plt.subplots()
     ax1.plot(sorted_paths)
     ax1.grid(True)
