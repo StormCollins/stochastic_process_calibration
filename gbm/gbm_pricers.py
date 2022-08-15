@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import seaborn as sns
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from collections import namedtuple
@@ -291,8 +292,13 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     # Todo: Add function description.
 
     # Path plot
+    indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
+    sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
+
+    # sns.set_palette(sns.cubehelix_palette(paths.shape[0], start=.5, rot=-.75))
+    sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
     fig1, ax1 = plt.subplots()
-    ax1.plot(np.transpose(paths))
+    ax1.plot(sorted_paths)
     ax1.grid(True)
     ax1.set_xlabel('Number of time steps')
     ax1.set_ylabel('Number of paths')
