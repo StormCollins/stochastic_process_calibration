@@ -24,6 +24,7 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
@@ -47,7 +48,8 @@ class TestsGbmPricers:
                 time_to_maturity,
                 "put",
                 number_of_paths,
-                number_of_time_steps)
+                number_of_time_steps,
+                True)
         expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
@@ -73,6 +75,7 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = \
             garman_kohlhagen(
@@ -118,6 +121,7 @@ class TestsGbmPricers:
                 time_to_maturity,
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = \
             fx_forward(
@@ -128,3 +132,4 @@ class TestsGbmPricers:
                 foreign_interest_rate,
                 time_to_maturity)
         assert expected_price == pytest.approx(actual.price, actual.error)
+

@@ -9,7 +9,7 @@ from scipy.stats import shapiro
 from scipy.stats import jarque_bera
 from collections import namedtuple
 
-MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error', 'mean', 'standard_deviation', 'percentile'])
+MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 
 
 def slow_equity_european_option_monte_carlo_pricer(
@@ -21,7 +21,8 @@ def slow_equity_european_option_monte_carlo_pricer(
         time_to_maturity: float,
         call_or_put: str,
         number_of_paths: int,
-        number_of_time_steps: int) -> [MonteCarloResult | str]:
+        number_of_time_steps: int,
+        show_stats: bool = False) -> [MonteCarloResult | str]:
     """
     Returns the price  for a 'CALL' or 'PUT' equity european option using monte carlo simulations.
     This is the slow equity european option monte carlo pricer, because it takes a longer time to run with more
@@ -40,6 +41,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :param number_of_paths: Number of paths to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
+    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Slow Monte Carlo price for an equity european option.
     """
 
@@ -57,13 +59,8 @@ def slow_equity_european_option_monte_carlo_pricer(
             paths[i, j] = paths[i, j - 1] * math.exp(
                 (interest_rate - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
 
-    # Path statistics
-    mean: float = initial_spot * math.exp(interest_rate + (volatility ** 2 / 2))
-    standard_deviation: float = initial_spot * \
-                                np.sqrt(
-                                    (math.exp(volatility ** 2) - 1) * math.exp((2 * interest_rate + volatility ** 2)))
-    percentile: float = initial_spot * math.exp(
-        interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+    if show_stats:
+        statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
         payoffs: np.ndarray = np.zeros(number_of_paths)
@@ -71,7 +68,7 @@ def slow_equity_european_option_monte_carlo_pricer(
             payoffs[i] = np.max([paths[i, -1] - notional * strike, 0]) * math.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs: np.ndarray = np.zeros(number_of_paths)
@@ -80,7 +77,7 @@ def slow_equity_european_option_monte_carlo_pricer(
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     else:
         return f'Unknown option type: {call_or_put}'
@@ -96,7 +93,8 @@ def fast_equity_european_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = False) -> [MonteCarloResult | str]:
+        plot_paths: bool = False,
+        show_stats: bool = False) -> [MonteCarloResult | str]:
     """
     Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations
     (does not take into account whether you are 'long' or 'short' the option).
@@ -117,38 +115,33 @@ def fast_equity_european_option_monte_carlo_pricer(
     :param number_of_paths: Number of paths to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
     :param plot_paths: If set to True plots the paths.
+    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Fast Monte Carlo price for an equity european option.
     """
 
     paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility, time_to_maturity)
-
-    # Path statistics
-    mean: float = initial_spot * math.exp(interest_rate + (volatility ** 2 / 2))
-    standard_deviation: float = initial_spot * \
-                                np.sqrt(
-                                    (math.exp(volatility ** 2) - 1) * math.exp((2 * interest_rate + volatility ** 2)))
-    percentile: float = initial_spot * math.exp(
-        interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility,
+                           time_to_maturity)
 
     if plot_paths:
         create_gbm_plots(paths, interest_rate, volatility, time_to_maturity)
 
-
+    if show_stats:
+        statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs = np.maximum(notional * strike - paths[:, -1], 0) * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     else:
         return f'Unknown option type: {call_or_put}'
@@ -165,7 +158,8 @@ def fx_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = True) -> [MonteCarloResult | str]:
+        plot_paths: bool = True,
+        show_stats: bool = False) -> [MonteCarloResult | str]:
     """
     Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations (does not take into account whether
     you are 'long' or 'short' the option).
@@ -185,35 +179,31 @@ def fx_option_monte_carlo_pricer(
     :param number_of_paths: Number of paths for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
     :param plot_paths: If set to True plots the paths.
+    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX Option.
     """
     drift: float = domestic_interest_rate - foreign_interest_rate
     paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility, time_to_maturity)
-
-    # Path statistics
-    mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
-    standard_deviation: float = initial_spot * \
-                                np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
-                                    (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
-    percentile: float = initial_spot * math.exp(
-        domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
-            time_to_maturity))
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
+                           time_to_maturity)
 
     if plot_paths:
         create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
+
+    if show_stats:
+        statistics(paths, initial_spot, drift, volatility, time_to_maturity)
 
     if str.upper(call_or_put) == 'CALL':
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     elif str.upper(call_or_put) == 'PUT':
         payoffs = np.maximum(notional * strike - paths[:, -1], 0) * np.exp(-domestic_interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+        return MonteCarloResult(price, error)
 
     else:
         return f'Unknown option type: {call_or_put}'
@@ -229,7 +219,8 @@ def fx_forward_monte_carlo_pricer(
         time_to_maturity: float,
         number_of_paths: int,
         number_of_time_steps: int,
-        plot_paths: bool = True) -> [MonteCarloResult | str]:
+        plot_paths: bool = True,
+        show_stats: bool = True) -> [MonteCarloResult | str]:
     """
     Returns the price for an FX forward using monte carlo simulations.
 
@@ -247,29 +238,25 @@ def fx_forward_monte_carlo_pricer(
     :param number_of_paths: Number of paths for the FX forward.
     :param number_of_time_steps: Number of time steps for the FX forward.
     :param plot_paths: If set to True plots the paths.
+    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
 
     drift: float = domestic_interest_rate - foreign_interest_rate
     paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility, time_to_maturity)
-
-    # Path statistics
-    mean: float = initial_spot * math.exp(domestic_interest_rate - foreign_interest_rate + (volatility ** 2 / 2))
-    standard_deviation: float = \
-        initial_spot * np.sqrt((math.exp(volatility ** 2) - 1) * math.exp(
-                                    (2 * domestic_interest_rate - foreign_interest_rate + volatility ** 2)))
-    percentile: float = initial_spot * math.exp(
-        domestic_interest_rate - foreign_interest_rate * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(
-            time_to_maturity))
+        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
+                           time_to_maturity)
 
     if plot_paths:
         create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
 
+    if show_stats:
+        statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+
     payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
     price: float = np.average(payoffs)
     error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-    return MonteCarloResult(price, error, mean, standard_deviation, percentile)
+    return MonteCarloResult(price, error)
 
 
 def generate_gbm_paths(
@@ -282,7 +269,7 @@ def generate_gbm_paths(
         time_to_maturity) -> np.ndarray:
     """
 
-    Returns the number of monte carlo simulated Geometric Brownian Motion Paths.
+    Returns the monte carlo simulated Geometric Brownian Motion Paths.
 
     """
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
@@ -348,6 +335,9 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     ax3.legend()
     plt.show()
 
+
+def statistics(paths, initial_spot, drift, volatility, time_to_maturity) -> float:
+    log_returns = np.log(paths[:, -1] / paths[:, 0])
     jarque_bera_test = jarque_bera(log_returns)
     print(f'p-value: {jarque_bera_test.pvalue}')
     if jarque_bera_test.pvalue > 0.05:
@@ -355,3 +345,13 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     else:
         print('GBM paths are not normally distributed.')
 
+    # Path statistics
+    mean: float = initial_spot * math.exp(drift + (volatility ** 2 / 2))
+    standard_deviation: float = \
+        initial_spot * np.sqrt((math.exp(volatility ** 2) - 1) * math.exp((2 * drift + volatility ** 2)))
+    percentile: float = initial_spot * math.exp(
+        drift * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
+
+    print(f'Mean: {mean}')
+    print(f'Standard Deviation: {standard_deviation}')
+    print(f'95% PFE: {percentile}')
