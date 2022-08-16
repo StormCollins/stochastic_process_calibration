@@ -1,12 +1,3 @@
-import math
-import numpy as np
-from scipy.stats import norm
-import matplotlib as cm
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.interpolate import griddata
-from mpl_toolkits.mplot3d import Axes3D
-from collections import namedtuple
 from gbm.gbm_pricers import *
 
 notional: float = 1_000_000

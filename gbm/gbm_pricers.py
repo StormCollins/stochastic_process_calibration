@@ -2,8 +2,11 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pylab
 from scipy.stats import norm
+from scipy.stats import lognorm
 from scipy.stats import shapiro
+from scipy.stats import jarque_bera
 from collections import namedtuple
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error', 'mean', 'standard_deviation', 'percentile'])
@@ -277,7 +280,11 @@ def generate_gbm_paths(
         drift: float,
         volatility: float,
         time_to_maturity) -> np.ndarray:
-    # TODO: Add function description.
+    """
+
+    Returns the number of monte carlo simulated Geometric Brownian Motion Paths.
+
+    """
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps)))
     paths[:, 0] = initial_spot * notional
     dt: float = time_to_maturity / (number_of_time_steps - 1)
@@ -291,7 +298,13 @@ def generate_gbm_paths(
 
 
 def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
-    # Todo: Add function description.
+    """
+
+    This function plots different figures such as:
+    1. The paths of the Geometric Brownian Motion,
+    2. The histogram of the log-returns, including the theoretical PDF of a normal distribution.
+       This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
+    """
 
     # Path plot
     indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
@@ -319,9 +332,26 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     ax2.legend()
     plt.show()
 
-    shapiro_test = shapiro(log_returns)
-    print(f'p-value: {shapiro_test.pvalue}')
-    if shapiro_test.pvalue > 0.05:
+    # Histogram of the returns
+    plt.style.use('ggplot')
+    fig3, ax3 = plt.subplots(ncols=1, nrows=1)
+    ax3.set_facecolor('#AAAAAA')
+    ax3.grid(False)
+    normal_returns = paths[:, -1] / paths[:, 0]
+    (values, bins, _) = ax3.hist(normal_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    mu: float = (interest_rate - 0.5 * volatility ** 2) * time_to_maturity
+    sigma: float = volatility * np.sqrt(time_to_maturity)
+    pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
+    ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
+    ax3.set_title('Comparison of GBM normal-returns to normal PDF');
+    ax3.legend()
+    plt.show()
+
+    jarque_bera_test = jarque_bera(log_returns)
+    print(f'p-value: {jarque_bera_test.pvalue}')
+    if jarque_bera_test.pvalue > 0.05:
         print('GBM paths are normally distributed.')
     else:
         print('GBM paths are not normally distributed.')
+

@@ -88,7 +88,15 @@ class TestsGbmPricers:
 
     def test_fx_forward_monte_carlo_pricer(self):
         """
-        Note where these values come from i.e. give the file names.
+        Note where these values come from:
+        1. xvalite_fec_trade-data_2022-03-31.xlsx
+            Strike - Forward Exchange Contracts Sheet
+        2. xvalite_fec-and-fx-option_market-data_2022-03-31.xlsx
+            initial_spot - FXHistories Sheet
+            volatility - ATMFxOptions
+        3. xvalite_fec-and-fx-option_discount-curves_2022-03-31.xlsx
+            domestic_interest_rate - Discount Curves
+            foreign_interest_rate - Discount Curves
         """
         notional: float = 1_000_000
         initial_spot: float = 14.6038
