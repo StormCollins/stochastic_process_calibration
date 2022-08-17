@@ -9,10 +9,10 @@ class TestsGbmPricers:
         initial_spot: float = 50
         strike: float = 52
         interest_rate: float = 0.1
-        volatility: float = 0.1  # 0.4
+        volatility: float = 0.4
         time_to_maturity: float = 5 / 12
         number_of_paths: int = 10_000
-        number_of_time_steps: int = 50
+        number_of_time_steps: int = 100
         actual: MonteCarloResult = \
             fast_equity_european_option_monte_carlo_pricer(
                 notional,
@@ -24,6 +24,7 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
@@ -47,7 +48,8 @@ class TestsGbmPricers:
                 time_to_maturity,
                 "put",
                 number_of_paths,
-                number_of_time_steps)
+                number_of_time_steps,
+                True)
         expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
@@ -73,6 +75,7 @@ class TestsGbmPricers:
                 "put",
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = \
             garman_kohlhagen(
@@ -88,7 +91,15 @@ class TestsGbmPricers:
 
     def test_fx_forward_monte_carlo_pricer(self):
         """
-        Note where these values come from i.e. give the file names.
+        Note where these values come from:
+        1. xvalite_fec_trade-data_2022-03-31.xlsx
+            Strike - Forward Exchange Contracts Sheet
+        2. xvalite_fec-and-fx-option_market-data_2022-03-31.xlsx
+            initial_spot - FXHistories Sheet
+            volatility - ATMFxOptions
+        3. xvalite_fec-and-fx-option_discount-curves_2022-03-31.xlsx
+            domestic_interest_rate - Discount Curves
+            foreign_interest_rate - Discount Curves
         """
         notional: float = 1_000_000
         initial_spot: float = 14.6038
@@ -110,6 +121,7 @@ class TestsGbmPricers:
                 time_to_maturity,
                 number_of_paths,
                 number_of_time_steps,
+                True,
                 True)
         expected_price: float = \
             fx_forward(
@@ -120,3 +132,4 @@ class TestsGbmPricers:
                 foreign_interest_rate,
                 time_to_maturity)
         assert expected_price == pytest.approx(actual.price, actual.error)
+
