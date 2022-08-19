@@ -171,3 +171,13 @@ print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
 #             number_of_time_steps,
 #             False)))
 
+"""
+This function returns the estimated Hull-White parameter theta.
+
+:param forward_rate: Continuously compounded forward rate.
+:param interest_rate_sim_times: Times to maturity. (I don't really know about this one)
+:param alpha: Calibration parameter from Josh Knipe's Jupyter Notebook.
+:param sigma: Calibration parameter from Josh Knipe's Jupyter Notebook.
+:return: Estimated Hull-White Theta parameter.
+
+"""

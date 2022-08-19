@@ -335,7 +335,7 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     sigma: float = volatility * np.sqrt(time_to_maturity)
     pdf = lognorm.pdf(x=bin_centers, s=sigma, scale=np.exp(mu))
     ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
-    ax3.set_title('Comparison of GBM normal-returns to normal PDF');
+    ax3.set_title('Comparison of GBM normal-returns to log-normal PDF');
     ax3.legend()
     plt.show()
 
