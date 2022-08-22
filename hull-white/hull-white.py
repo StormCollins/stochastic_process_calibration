@@ -6,6 +6,8 @@ def theta(alpha: float, sigma: float):
 
     interest_rate_sim_times = np.arange(0, 30.25, 0.25)
 
+# Don't know if this should be included...
+
     # Times to maturity for given swap curve
     swap_time_to_maturity = [0, 0.00273972602739726, 0.0821917808219178, 0.249315068493151, 0.495890410958904,
                              0.747945205479452, 1, 1.24931506849315, 1.4958904109589, 1.74794520547945, 2,
