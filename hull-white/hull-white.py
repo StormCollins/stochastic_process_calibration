@@ -3,10 +3,9 @@ from scipy.interpolate import interp1d
 
 
 def theta(alpha: float, sigma: float):
+    t = np.arange(0, 30.25, 0.25)
 
-    interest_rate_sim_times = np.arange(0, 30.25, 0.25)
-
-# Don't know if this should be included...
+    # Don't know if this should be included...
 
     # Times to maturity for given swap curve
     swap_time_to_maturity = [0, 0.00273972602739726, 0.0821917808219178, 0.249315068493151, 0.495890410958904,
@@ -24,7 +23,7 @@ def theta(alpha: float, sigma: float):
 
     # Interpolate swap curve at simulation dates
     interp_func = interp1d(swap_time_to_maturity, swap_discount_factors, kind='cubic')
-    discount_factors = interp_func(interest_rate_sim_times)
+    discount_factors = interp_func(t)
 
     discount_factors = np.array(
         [1, 0.9909, 0.9818, 0.9727, 0.9634, 0.9541, 0.9445, 0.9348, 0.9248, 0.9129, 0.8989, 0.8831, 0.8655, 0.8492,
@@ -41,13 +40,15 @@ def theta(alpha: float, sigma: float):
          0.0752, 0.0733, 0.0715, 0.0697,
          0.068, 0.0664, 0.0647, 0.0632, 0.0617, 0.0602, 0.0588, 0.0574, 0.0561, 0.0548, 0.0536, 0.0523])
 
-    forward_rate = -1 / (interest_rate_sim_times[1:] - interest_rate_sim_times[0:-1]) * np.log(
-        discount_factors[1:] / discount_factors[0:-1])
-    forward_rate = np.concatenate(([forward_rate[0]], forward_rate))  # Why do we do this?
+    forward_rates = \
+        1 / (t[1:] - t[0:-1]) * \
+        np.log(discount_factors[0:-1] / discount_factors[1:])
 
-    return (forward_rate[1:] - forward_rate[0:-1]) / (interest_rate_sim_times[1:] - interest_rate_sim_times[0:-1]) + \
-           alpha * forward_rate[0:-1] + sigma ** 2 / (2 * alpha) * \
-           (1 - np.exp(-2 * alpha * interest_rate_sim_times[0:-1]))
+    forward_rates = np.concatenate(([forward_rates[0]], forward_rates))  # Why do we do this?
+
+    return (forward_rates[1:] - forward_rates[0:-1]) / (t[1:] - t[0:-1]) + \
+           alpha * forward_rates[0:-1] + sigma ** 2 / (2 * alpha) * \
+           (1 - np.exp(-2 * alpha * t[0:-1]))
 
 
 # Hull-White calibration parameters from Josh's code
