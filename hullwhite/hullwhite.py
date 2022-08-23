@@ -32,10 +32,11 @@ def theta(
     forward_rates = np.concatenate(([forward_rates[0]], forward_rates))
 
     thetas: np.ndarray = (forward_rates[1:] - forward_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
-        alpha * forward_rates[0:-1] + \
-        sigma ** 2 / (2 * alpha) * (1 - np.exp(-2 * alpha * theta_times[0:-1]))
+                         alpha * forward_rates[0:-1] + \
+                         sigma ** 2 / (2 * alpha) * (1 - np.exp(-2 * alpha * theta_times[0:-1]))
     theta_interpolator: interp1d = interp1d(theta_times, thetas, kind='cubic')
     return theta_interpolator
 
+
 # Hull-White calibration parameters from Josh's code
-print(theta(0.05, 0.01))
+# print(theta(0.05, 0.01))

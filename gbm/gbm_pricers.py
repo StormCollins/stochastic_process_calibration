@@ -179,7 +179,7 @@ def fx_option_monte_carlo_pricer(
     :param number_of_paths: Number of paths for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
     :param plot_paths: If set to True plots the paths.
-    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+    :show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX Option.
     """
     drift: float = domestic_interest_rate - foreign_interest_rate
