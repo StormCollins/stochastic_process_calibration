@@ -37,6 +37,5 @@ def theta(
     theta_interpolator: interp1d = interp1d(theta_times, thetas, kind='cubic')
     return theta_interpolator
 
-
 # Hull-White calibration parameters from Josh's code
 # print(theta(0.05, 0.01))
