@@ -7,12 +7,18 @@ class HullWhite:
     alpha: float
     sigma: float
     initial_curve: Curve
+    short_rate_tenor: float
 
-    def __init__(self, alpha: float, sigma: float, initial_curve: Curve):
+    def __init__(self, alpha: float, sigma: float, initial_curve: Curve, short_rate_tenor: float):
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
+        self.short_rate_tenor = short_rate_tenor
+        self.initial_short_rate = initial_curve.get_forward_rate(0, self.short_rate_tenor)
 
+    def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
+        # implement r(t_i+1) = ...
+        # r(0) = self.initial_short_rate
 
     def theta(
             self,
@@ -30,7 +36,6 @@ class HullWhite:
         :return:
         An interpolator which allows one to calculate theta for a given time.
         """
-        discount_factor_interpolator = interp1d(curve_tenors, curve_discount_factors, kind='cubic')
         discount_factors = self.initial_curve.get_discount_factor(theta_times)
 
         forward_rates = \
