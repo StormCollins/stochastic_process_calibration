@@ -30,7 +30,7 @@ def swap_rate(
 
         denominator = 0
         for i in range(1, number_of_payments + 1):  # this ensures that we have an i for each payment
-            denominator += Curve.interpolator(swaption_tenor + i * 1 / m) * 1 / m
+            denominator += Curve.discount_factor_interpolator(swaption_tenor + i * 1 / m) * 1 / m
 
         return numerator / denominator
     else:
@@ -59,7 +59,7 @@ def swaption(notional: int, swaption_tenor: float, swap_tenor: float, volatility
 
     A = 0
     for i in range(1, number_of_payments + 1):
-        A += 1 / m * Curve.interpolator(swaption_tenor + i * 1 / m)
+        A += 1 / m * Curve.discount_factor_interpolator(swaption_tenor + i * 1 / m)
 
     atm_swap_rate: float = swap_rate(swaption_tenor, swap_tenor, m)
 
