@@ -1,6 +1,5 @@
 import math
 from scipy.stats import norm
-from scipy.interpolate import interp1d
 import numpy as np
 from curves.curve import Curve
 
@@ -72,8 +71,23 @@ def caplet(
         delta: float,
         forward_interest_rate: float,
         volatility: float,
-        interest_rate: float,
         time_to_maturity: float) -> float:
-    d1 = (np.log(forward_interest_rate / interest_rate)
-          + 0.5 * (volatility ** 2 * time_to_maturity)) / (volatility * math.sqrt(time_to_maturity))
-    d2 = d1 - volatility * math.sqrt(time_to_maturity)
+    """
+    This functions calculates an at-the-money caplet.
+
+    :param notional: The notional principal amount.
+    :param delta: t_k+1 - t_k (Something to do with day count issues.
+    :param forward_interest_rate: Forward interest rate at time 0.
+    :param volatility: The volatility for the forward interest rate.
+    :param time_to_maturity: The time (in years) at which the option expires.
+    :return: At-the-money Caplet.
+
+    """
+
+    d1 = np.log(volatility * math.sqrt(time_to_maturity) / 2)
+    d2 = -d1
+
+    discount_factor: float = Curve.get_discount_factor(time_to_maturity)
+
+    return notional * delta * discount_factor * (
+            forward_interest_rate * norm.cdf(d1) - forward_interest_rate * norm.cdf(d2))
