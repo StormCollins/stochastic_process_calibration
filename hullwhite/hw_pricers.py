@@ -24,9 +24,9 @@ def swap_rate(
     # df_interpolator = interp1d(curve_tenors, curve_discount_factors, kind='linear', fill_value='extrapolate')
     # check if the discount curve goes far enough for given swaption
     if (swaption_tenor + swap_tenor) < Curve.tenors[-1]:
-        numerator: float = Curve.interpolator(swaption_tenor) - \
-                           Curve.interpolator(swaption_tenor + swap_tenor)
-        number_of_payments: float = swap_tenor * m
+        numerator: float = Curve.get_discount_factor(swaption_tenor) - \
+                           Curve.get_discount_factor(swaption_tenor + swap_tenor)
+        number_of_payments: int = np.round(swap_tenor * m, 0)
 
         denominator = 0
         for i in range(1, number_of_payments + 1):  # this ensures that we have an i for each payment
