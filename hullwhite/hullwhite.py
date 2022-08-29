@@ -9,16 +9,20 @@ import matplotlib.pyplot as plt
 class HullWhite:
     alpha: float
     sigma: float
+    theta: interp1d
     initial_curve: Curve
     short_rate_tenor: float
 
     def __init__(self,
                  alpha: float,
                  sigma: float,
+                 theta_times: np.ndarray,
                  initial_curve: Curve,
                  short_rate_tenor: float):
         self.alpha = alpha
         self.sigma = sigma
+        self.theta_times = theta_times
+        self.theta = self.setup_theta(theta_times)
         self.initial_curve = initial_curve
         self.short_rate_tenor = short_rate_tenor
         self.initial_short_rate = initial_curve.get_forward_rate(0, self.short_rate_tenor)
@@ -40,7 +44,7 @@ class HullWhite:
         for j in range(number_of_paths):
             z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
             paths[:, j] = paths[:, j - 1] + (
-                    self.theta() - self.alpha * paths[:, j - 1]) * dt + self.sigma * z * math.sqrt(dt)
+                    self.theta((j - 1) * dt) - self.alpha * paths[:, j - 1]) * dt + self.sigma * z * math.sqrt(dt)
 
             time, paths = self.simulate(maturity, number_of_paths, number_of_time_steps)
             for i in range(number_of_paths):
@@ -49,15 +53,15 @@ class HullWhite:
             plt.show()
         return paths
 
-    def theta(
+    def setup_theta(
             self,
             theta_times: np.ndarray) -> interp1d:
         """
-        Used to generate the theta function, used in the Hull-White model to represent the
+        Used to generate the setup_theta function, used in the Hull-White model to represent the
         long term discount curve.
 
-        :param theta_times: The time points at which we'd like to calculate theta.
-        :return: An interpolator which allows one to calculate theta for a given time.
+        :param theta_times: The time points at which we'd like to calculate setup_theta.
+        :return: An interpolator which allows one to calculate setup_theta for a given time.
 
         """
         discount_factors = self.initial_curve.get_discount_factor(theta_times)
@@ -77,4 +81,4 @@ class HullWhite:
         return theta_interpolator
 
     # Hull-White calibration parameters from Josh's code
-    # print(theta(0.05, 0.01))
+    # print(setup_theta(0.05, 0.01))

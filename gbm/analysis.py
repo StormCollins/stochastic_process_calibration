@@ -172,7 +172,7 @@ print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
 #             False)))
 
 """
-This function returns the estimated Hull-White parameter theta.
+This function returns the estimated Hull-White parameter setup_theta.
 
 :param forward_rate: Continuously compounded forward rate.
 :param interest_rate_sim_times: Times to maturity. (I don't really know about this one)
