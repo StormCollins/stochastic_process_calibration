@@ -1,4 +1,4 @@
-from curves.curve import Curve
+from curves.curve import *
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.stats import norm
@@ -13,19 +13,20 @@ class HullWhite:
     initial_curve: Curve
     short_rate_tenor: float
 
-    def __init__(self,
-                 alpha: float,
-                 sigma: float,
-                 theta_times: np.ndarray,
-                 initial_curve: Curve,
-                 short_rate_tenor: float):
+    def __init__(
+            self,
+            alpha: float,
+            sigma: float,
+            initial_curve: Curve,
+            theta_times: np.ndarray,
+            short_rate_tenor: float):
         self.alpha = alpha
         self.sigma = sigma
+        self.initial_curve = initial_curve
         self.theta_times = theta_times
         self.theta = self.setup_theta(theta_times)
-        self.initial_curve = initial_curve
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate = initial_curve.get_forward_rate(0, self.short_rate_tenor)
+        self.initial_short_rate = initial_curve.get_forward_rate(0, self.short_rate_tenor, CompoundingConvention.Simple)
 
     def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
         """
@@ -43,14 +44,14 @@ class HullWhite:
 
         for j in range(number_of_paths):
             z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-            paths[:, j] = paths[:, j - 1] + (
-                    self.theta((j - 1) * dt) - self.alpha * paths[:, j - 1]) * dt + self.sigma * z * math.sqrt(dt)
+            paths[:, j + 1] = paths[:, j] + (
+                    self.theta(j * dt) - self.alpha * paths[:, j]) * dt + self.sigma * z * math.sqrt(dt)
 
-            time, paths = self.simulate(maturity, number_of_paths, number_of_time_steps)
-            for i in range(number_of_paths):
-                plt.plot(time, paths[i, :], lw=0.8, alpha=0.6)
-            plt.title("Hull-White Short Rate Simulation")
-            plt.show()
+        # time, paths = self.simulate(maturity, number_of_paths, number_of_time_steps)
+        # for i in range(number_of_paths):
+        #     plt.plot(time, paths[i, :], lw=0.8, alpha=0.6)
+        # plt.title("Hull-White Short Rate Simulation")
+        # plt.show()
         return paths
 
     def setup_theta(
@@ -77,7 +78,7 @@ class HullWhite:
             (forward_rates[1:] - forward_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
             self.alpha * forward_rates[0:-1] + \
             self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
-        theta_interpolator: interp1d = interp1d(theta_times, thetas, kind='cubic')
+        theta_interpolator: interp1d = interp1d(theta_times[:-1], thetas, kind='cubic')
         return theta_interpolator
 
     # Hull-White calibration parameters from Josh's code

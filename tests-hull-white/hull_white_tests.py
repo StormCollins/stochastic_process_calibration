@@ -65,7 +65,8 @@ class TestsHullWhite:
              0.16274196335192,
              0.104570874377476,
              0.0717007182261533])
-        hw = HullWhite(alpha, sigma, theta_times, Curve(curve_tenors,curve_discount_factors), 0.25)
-
-
+        initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
+        hw = HullWhite(alpha, sigma, initial_curve, theta_times, 0.25)
+        paths = hw.simulate(maturity, 5, 5)
+        print(paths)
 

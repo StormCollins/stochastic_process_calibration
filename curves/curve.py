@@ -29,6 +29,7 @@ class Curve:
         :param end_tenor: The time we want to discount back from.
         :return: The forward discount factor.
         """
+        # TODO: Nicole convert this to taking in an np.ndarray of start_tenors and end_tenors and returning ndarray of float.
         return self.discount_factor_interpolator(end_tenor) / self.discount_factor_interpolator(start_tenor)
 
     def get_forward_rate(
@@ -36,8 +37,8 @@ class Curve:
             start_tenor: float,
             end_tenor: float,
             compounding_convention: CompoundingConvention) -> float:
-        start_discount_factor: float = self.get_discount_factor(np.array(start_tenor))[0]
-        end_discount_factor: float = self.get_discount_factor(np.array(end_tenor))[0]
+        start_discount_factor: float = self.get_discount_factor(np.array([start_tenor]))[0]
+        end_discount_factor: float = self.get_discount_factor(np.array([end_tenor]))[0]
         if compounding_convention == compounding_convention.NACC:
             return -1 / (end_tenor - start_tenor) * np.log(end_discount_factor / start_discount_factor)
         elif compounding_convention == compounding_convention.Simple:
