@@ -1,6 +1,9 @@
 from curves.curve import Curve
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.stats import norm
+import math
+import matplotlib.pyplot as plt
 
 
 class HullWhite:
@@ -9,7 +12,11 @@ class HullWhite:
     initial_curve: Curve
     short_rate_tenor: float
 
-    def __init__(self, alpha: float, sigma: float, initial_curve: Curve, short_rate_tenor: float):
+    def __init__(self,
+                 alpha: float,
+                 sigma: float,
+                 initial_curve: Curve,
+                 short_rate_tenor: float):
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
@@ -17,24 +24,41 @@ class HullWhite:
         self.initial_short_rate = initial_curve.get_forward_rate(0, self.short_rate_tenor)
 
     def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
-        # implement r(t_i+1) = ...
-        # r(0) = self.initial_short_rate
+        """
+        This function gives the simulated short rates.
+
+        :param maturity: The maturity of the short rate.
+        :param number_of_paths:
+        :param number_of_time_steps:
+        :return:
+
+        """
+        paths: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
+        paths[:, 0] = self.initial_short_rate
+        dt: float = maturity / number_of_time_steps
+
+        for j in range(number_of_paths):
+            z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+            paths[:, j] = paths[:, j - 1] + (
+                    self.theta() - self.alpha * paths[:, j - 1]) * dt + self.sigma * z * math.sqrt(dt)
+
+            time, paths = self.simulate(maturity, number_of_paths, number_of_time_steps)
+            for i in range(number_of_paths):
+                plt.plot(time, paths[i, :], lw=0.8, alpha=0.6)
+            plt.title("Hull-White Short Rate Simulation")
+            plt.show()
+        return paths
 
     def theta(
             self,
-            theta_times: np.ndarray,
-            curve_tenors: np.ndarray,
-            curve_discount_factors: np.ndarray) -> interp1d:
+            theta_times: np.ndarray) -> interp1d:
         """
         Used to generate the theta function, used in the Hull-White model to represent the
         long term discount curve.
 
         :param theta_times: The time points at which we'd like to calculate theta.
-        :param curve_tenors: The tenors of the discount curve.
-        :param curve_discount_factors: The discount factors associated with the curve_tenors of the
-        discount curve.
-        :return:
-        An interpolator which allows one to calculate theta for a given time.
+        :return: An interpolator which allows one to calculate theta for a given time.
+
         """
         discount_factors = self.initial_curve.get_discount_factor(theta_times)
 
