@@ -11,7 +11,8 @@ class Irs:
 
     def calculate_par_rate(self, curve: Curve):
         numerator: float = \
-            curve.get_discount_factor(self.start_tenor) - curve.get_discount_factor(self.payment_tenors[-1])
+            curve.get_discount_factor(np.array(self.start_tenor)) - curve.get_discount_factor(np.array(
+                self.payment_tenors[-1]))
 
         day_count_fractions = list(np.array(self.payment_tenors[1:]) - np.array(self.payment_tenors[0:-1]))
         day_count_fractions.insert(0, self.payment_tenors[0] - self.start_tenor)

@@ -19,9 +19,9 @@ class Curve:
         self.discount_factor_interpolator = interp1d(tenors, discount_factors, 'cubic')
 
     def get_discount_factor(self, tenor: np.ndarray) -> np.ndarray:
-        return self.discount_factor_interpolator(tenor)
+        return self.discount_factor_interpolator(np.array(tenor))
 
-    def get_forward_discount_factor(self, start_tenor: float, end_tenor: float) -> float:
+    def get_forward_discount_factor(self, start_tenor: np.ndarray, end_tenor: np.ndarray) -> np.ndarray:
         """
         Calculates the discount factor between times start_tenor and end_tenor.
 
@@ -29,8 +29,8 @@ class Curve:
         :param end_tenor: The time we want to discount back from.
         :return: The forward discount factor.
         """
-        # TODO: Nicole convert this to taking in an np.ndarray of start_tenors and end_tenors and returning ndarray of float.
-        return self.discount_factor_interpolator(end_tenor) / self.discount_factor_interpolator(start_tenor)
+        return self.discount_factor_interpolator(np.array(end_tenor)) / self.discount_factor_interpolator(
+            np.array(start_tenor))
 
     def get_forward_rate(
             self,
@@ -45,4 +45,4 @@ class Curve:
             return 1 / (end_tenor - start_tenor) * (start_discount_factor / end_discount_factor - 1)
 
     def get_zero_rate(self, tenor: float) -> float:
-        return -1 / tenor * np.log(self.get_discount_factor(tenor)[0])
+        return -1 / tenor * np.log(self.get_discount_factor(np.array(tenor))[0])

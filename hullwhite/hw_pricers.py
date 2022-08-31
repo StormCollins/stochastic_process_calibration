@@ -12,7 +12,7 @@ def swap_rate(
         swap_tenor: float,
         m: float) -> float:
     """
-    This function calculates the at-the-money swap rate for a given swaption tenor and a given swap tenor.
+    This function calculates the at-the-money swap rate for a given swaption tenors and a given swap tenors.
 
     :param swaption_tenor: The length of time remaining before the swaption expires.
     :param swap_tenor: The length of time remaining before the swap expires.

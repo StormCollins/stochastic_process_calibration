@@ -32,7 +32,7 @@ def read_vol_surface(
 
 def get_vol(moneyness: list[float], tenor: list[float], vol_surface: VolData) -> list[float]:
     """
-    Returns an interpolated volatility from a volatility surface for a given moneyness and tenor.
+    Returns an interpolated volatility from a volatility surface for a given moneyness and tenors.
 
     :param vol_surface: The volatilities.
     :param moneyness: The moneyness strikes.
