@@ -30,6 +30,7 @@ class HullWhite:
     initial_curve: Curve
     short_rate_tenor: float
 
+    # TODO: Make theta_times the same as initial_curve tenors.
     def __init__(
             self,
             alpha: float,
@@ -55,16 +56,18 @@ class HullWhite:
         :return:
 
         """
-        paths: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
-        paths[:, 0] = self.initial_short_rate
+        short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
+        short_rates[:, 0] = self.initial_short_rate
         dt: float = maturity / number_of_time_steps
+        time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
         for j in range(number_of_time_steps):
             z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-            paths[:, j + 1] = paths[:, j] + (
-                    self.theta(j * dt) - self.alpha * paths[:, j]) * dt + self.sigma * z * math.sqrt(dt)
-        plot_paths(paths, maturity)
-        return paths
+            short_rates[:, j + 1] = short_rates[:, j] + (
+                    self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + self.sigma * z * math.sqrt(dt)
+
+        plot_paths(short_rates, maturity)
+        return time_steps, short_rates
 
     def setup_theta(self, theta_times: np.ndarray) -> interp1d:
         """
@@ -93,6 +96,35 @@ class HullWhite:
 
     # Hull-White calibration parameters from Josh's code
     # print(setup_theta(0.05, 0.01))
+
+    def get_discount_curve(
+            self,
+            maturity: float,
+            number_of_time_steps: int,
+            r: float,
+            s: float) -> Curve:
+        tenors = self.initial_curve.tenors
+        b = (1 - np.exp(- self.alpha * (tenors - s))) / self.alpha
+        current_time_step: np.ndarray = np.array(s)
+
+        dt: float = maturity / number_of_time_steps
+        curve: Curve = self.initial_curve
+
+        forward_discount_factor: np.ndarray = \
+            curve.get_discount_factor(tenors) / curve.get_discount_factor(current_time_step)
+        discount_differential: np.ndarray = \
+            -b * (np.log(curve.get_discount_factor(current_time_step)) -
+                  np.log(curve.get_discount_factor(current_time_step - dt))) / dt
+
+        a = forward_discount_factor * \
+            np.exp(discount_differential -
+                   (self.sigma ** 2 *
+                    (np.exp(-self.alpha * tenors) - (np.exp(-self.alpha * current_time_step))) ** 2 *
+                    (np.exp(2 * self.alpha * current_time_step) - 1)) / 4 * self.alpha ** 3)
+        discount_factors: np.ndarray = a * np.exp(-b * r)
+        current_tenors = tenors[tenors >= s] - dt
+        current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]
+        return Curve(current_tenors, current_discount_factors)
 
 
 class HullWhiteCurve:

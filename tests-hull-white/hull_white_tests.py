@@ -16,9 +16,11 @@ class TestsHullWhite:
         number_of_time_steps = 2
         alpha = 2
         sigma = 0.01
-        curve_tenors = np.array([0,
-                                 0.00273972602739726,
-                                 0.0821917808219178,
+        curve_tenors = \
+            np.array([
+                0.0000000,
+                0.0027397,
+                0.0821918,
                                  0.249315068493151,
                                  0.495890410958904,
                                  0.747945205479452,
