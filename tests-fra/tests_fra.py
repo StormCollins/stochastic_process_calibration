@@ -14,14 +14,15 @@ class TestsFra:
         assert 0.10126 == pytest.approx(fra.get_fair_forward_rate(curve), 0.0001)
 
     def test_get_monte_carlo_value(self):
-        tenors = np.array([0.00, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50])
+        tenors = np.array([0.00, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75])
         # assumes a constant rate of 10%
-        discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708])
+        discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708, 0.839457])
         initial_curve = Curve(tenors, discount_factors)
         theta_times = np.array(tenors)
         short_rate_tenor = 0.25
         hw = HullWhite(0.1, 0.1, initial_curve, theta_times, short_rate_tenor)
 
         fra = Fra(1_000_000, 1.00, 1.25, 0.1)
-        fra.get_monte_carlo_value(hw)
-        plt.show()
+        fra_value = fra.get_monte_carlo_value(hw, 2, 2)
+        print(fra_value)
+        # plt.show()

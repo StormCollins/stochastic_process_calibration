@@ -50,10 +50,13 @@ class Fra:
     def get_value(self, curve: Curve, current_time: float = 0) -> float:
         return self.notional * \
                (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
-               (self.forward_rate_end_tenor - self.forward_rate_start_tenor) * \
-               curve.get_discount_factor(np.array([self.forward_rate_start_tenor - current_time]))[0]
+               (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
 
-    def get_monte_carlo_value(self, hw: HullWhite):
+    def get_monte_carlo_value(
+            self,
+            hw: HullWhite,
+            number_of_paths: int,
+            number_of_time_steps: int) -> float:
         """
         1. Simulate the short rate
         2. Get the discount curve at each time step of the simulation
@@ -63,27 +66,30 @@ class Fra:
         :return:
         """
         maturity: float = self.forward_rate_start_tenor
-        number_of_paths: int = 1
-        number_of_time_steps: int = 4
         time_steps, short_rates = hw.simulate(maturity, number_of_paths, number_of_time_steps)
-        # maturity: float
 
-        # maturity: float = time_steps[1]
-        # current_short_rate: float = short_rates[0][1]
-        # current_discount_curve: Curve = \
-        #     hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, maturity)
-        # current_value: float = self.get_value(current_discount_curve, maturity)
-        # # TODO: Try to plot the values.
-        # plot_fra_values(maturity, current_value)
-        # return current_value
+        fra_values: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1), float)
+        initial_fra_value: float = self.get_value(hw.initial_curve, 0)
+        fra_values[:, 0] = initial_fra_value
 
-        for i in range(1, number_of_time_steps + 1):
-            current_time_step: float = time_steps[i]
-            current_short_rate: float = short_rates[i - 1][i]
-            current_discount_curve: Curve = \
-                hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, current_time_step)
-            current_values: float = self.get_value(current_discount_curve, current_time_step)
-            # plot_fra_values(current_time_step, current_values)
-            print(current_values)
-            return current_values
+        step_wise_stochastic_discount_factors: np.ndarray = np.zeros((number_of_paths, number_of_time_steps))
+        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factor(np.array([time_steps[1]]))[0]
+        step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
+
+        for i in range(0, number_of_paths):
+            for j in range(1, number_of_time_steps + 1):
+                current_time_step: float = time_steps[j]
+                current_short_rate: float = short_rates[i][j]
+                current_discount_curve: Curve = \
+                    hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, current_time_step)
+                current_value: float = self.get_value(current_discount_curve, current_time_step)
+                fra_values[i][j] = current_value
+                if j < number_of_time_steps:
+                    step_wise_stochastic_discount_factors[i][j] =\
+                        current_discount_curve.get_discount_factor(time_steps[j + 1])
+                # plot_fra_values(current_time_step, current_values)
+
+        stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
+        fra_value: float = np.average(fra_values[:, -1] * stochastic_discount_factors)
+        return fra_value
 

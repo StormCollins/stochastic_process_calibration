@@ -122,7 +122,7 @@ class HullWhite:
                     (np.exp(-self.alpha * tenors) - (np.exp(-self.alpha * current_time_step))) ** 2 *
                     (np.exp(2 * self.alpha * current_time_step) - 1)) / 4 * self.alpha ** 3)
         discount_factors: np.ndarray = a * np.exp(-b * r)
-        current_tenors = tenors[tenors >= s] - dt
+        current_tenors = tenors[tenors >= s] - s
         current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
 
