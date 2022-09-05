@@ -71,7 +71,7 @@ class TestsHullWhite:
         initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
         hw = HullWhite(alpha, sigma, initial_curve, theta_times, 0.25)
         paths = hw.simulate(maturity, 1000, 50)
-        # plot_paths(paths, maturity)
+        # plot_paths(current_value, maturity)
         plt.show()
         print(paths)
 

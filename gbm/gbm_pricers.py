@@ -39,7 +39,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     :param volatility: The option volatility.
     :param time_to_maturity: The time (in years) at which the option expires.
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :param number_of_paths: Number of paths to simulate for the option.
+    :param number_of_paths: Number of current_value to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
     :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Slow Monte Carlo price for an equity european option.
@@ -112,9 +112,9 @@ def fast_equity_european_option_monte_carlo_pricer(
     :param volatility: The option volatility.
     :param time_to_maturity: The time (in years) at which the option expires.
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :param number_of_paths: Number of paths to simulate for the option.
+    :param number_of_paths: Number of current_value to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
-    :param plot_paths: If set to True plots the paths.
+    :param plot_paths: If set to True plots the current_value.
     :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Fast Monte Carlo price for an equity european option.
     """
@@ -176,9 +176,9 @@ def fx_option_monte_carlo_pricer(
     :param volatility: Volatility of the FX rate.
     :param time_to_maturity: Time to maturity (in years) of the FX option.
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :param number_of_paths: Number of paths for the FX option.
+    :param number_of_paths: Number of current_value for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
-    :param plot_paths: If set to True plots the paths.
+    :param plot_paths: If set to True plots the current_value.
     :show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX Option.
     """
@@ -235,9 +235,9 @@ def fx_forward_monte_carlo_pricer(
     :param foreign_interest_rate: Foreign interest rate.
     :param volatility: Volatility of the FX rate.
     :param time_to_maturity: Time to maturity (in years) of the FX forward.
-    :param number_of_paths: Number of paths for the FX forward.
+    :param number_of_paths: Number of current_value for the FX forward.
     :param number_of_time_steps: Number of time steps for the FX forward.
-    :param plot_paths: If set to True plots the paths.
+    :param plot_paths: If set to True plots the current_value.
     :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
@@ -288,7 +288,7 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     """
 
     This function plots different figures such as:
-    1. The paths of the Geometric Brownian Motion,
+    1. The current_value of the Geometric Brownian Motion,
     2. The histogram of the log-returns, including the theoretical PDF of a normal distribution.
        This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
     """
@@ -345,9 +345,9 @@ def statistics(paths, initial_spot, drift, volatility, time_to_maturity) -> floa
     jarque_bera_test = jarque_bera(log_returns)
     print(f'p-value: {jarque_bera_test.pvalue}')
     if jarque_bera_test.pvalue > 0.05:
-        print('GBM paths are normally distributed.')
+        print('GBM current_value are normally distributed.')
     else:
-        print('GBM paths are not normally distributed.')
+        print('GBM current_value are not normally distributed.')
 
     # Path statistics
     mean: float = initial_spot * math.exp(drift + (volatility ** 2 / 2))

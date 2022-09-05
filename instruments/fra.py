@@ -4,6 +4,22 @@ from curves.curve import *
 from hullwhite.hullwhite import *
 
 
+def plot_fra_values(current_value: float, maturity: float):
+    time = np.linspace(0, maturity, current_value)
+
+    # Path plot
+    # indices_sorted_by_path_averages = np.argsort(np.average(current_value, 1))
+    # sorted_fra_values = np.transpose(current_value[indices_sorted_by_path_averages])
+    # sns.set_palette(sns.color_palette('dark:purple', current_value))
+    fig1, ax1 = plt.subplots()
+    ax1.plot(time, current_value)
+    ax1.grid(True)
+    ax1.set_facecolor('#AAAAAA')
+    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Value of FRA')
+    ax1.set_xlim([0, maturity])
+
+
 class Fra:
     """
     Used to encapsulate a FRA (forward rate agreement) with all it's parameters and functions.
@@ -50,33 +66,24 @@ class Fra:
         number_of_paths: int = 1
         number_of_time_steps: int = 4
         time_steps, short_rates = hw.simulate(maturity, number_of_paths, number_of_time_steps)
-        current_time_step: float
+        # maturity: float
 
-        # TODO: Turn into a loop.
-        current_time_step: float = time_steps[1]
-        current_short_rate: float = short_rates[0][1]
-        current_discount_curve: Curve = \
-            hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, current_time_step)
-        current_value: float = self.get_value(current_discount_curve, current_time_step)
-        # TODO: Try to plot the values.
-        print(current_value)
+        # maturity: float = time_steps[1]
+        # current_short_rate: float = short_rates[0][1]
+        # current_discount_curve: Curve = \
+        #     hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, maturity)
+        # current_value: float = self.get_value(current_discount_curve, maturity)
+        # # TODO: Try to plot the values.
+        # plot_fra_values(maturity, current_value)
+        # return current_value
 
-
-
-    # Use the discount factors curve to value a FRA
-    def value_a_fra(self, dt, tenors, alpha, sigma, s, r):
-        b = (1 - math.exp(- alpha * (tenors - s))) / alpha
-        a = Curve.get_discount_factor(tenors) / Curve.get_discount_factor(s) * math.exp(
-            -b * (math.log(Curve.get_discount_factor(s)) -
-                  math.log(Curve.get_discount_factor(s - 1))) / dt - (sigma ** 2 * ((math.exp(
-                -alpha * tenors)) - (math.exp(-alpha * s))) ** 2 * (math.exp(
-                2 * alpha * s) - 1)) / 4 * alpha ** 3)
-        discount_factors: np.ndarray = a * math.exp(-b * r)
-
-        forward_rates_at_payment_dates = -1 / dt * (
-                discount_factors / HullWhiteCurve.get_discount_curve(tenors, dt, r, s)) - 1  # Luke's Code
-        return forward_rates_at_payment_dates - self.strike
-
-
-
+        for i in range(1, number_of_time_steps + 1):
+            current_time_step: float = time_steps[i]
+            current_short_rate: float = short_rates[i - 1][i]
+            current_discount_curve: Curve = \
+                hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, current_time_step)
+            current_values: float = self.get_value(current_discount_curve, current_time_step)
+            # plot_fra_values(current_time_step, current_values)
+            print(current_values)
+            return current_values
 

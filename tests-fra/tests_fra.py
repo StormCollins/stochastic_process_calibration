@@ -24,3 +24,4 @@ class TestsFra:
 
         fra = Fra(1_000_000, 1.00, 1.25, 0.1)
         fra.get_monte_carlo_value(hw)
+        plt.show()
