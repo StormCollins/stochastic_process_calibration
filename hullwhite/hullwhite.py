@@ -44,17 +44,20 @@ class HullWhite:
         self.theta_times = theta_times
         self.theta = self.setup_theta(theta_times)
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate = initial_curve.get_forward_rates(0, self.short_rate_tenor, CompoundingConvention.Simple)
+        self.initial_short_rate =\
+            initial_curve.get_forward_rates(
+                np.array([0]),
+                np.array([self.short_rate_tenor]),
+                CompoundingConvention.NACQ)
 
     def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
         """
-        This function gives the simulated short rates.
+        This function generates the simulated short rates.
 
-        :param maturity: The maturity of the short rate.
-        :param number_of_paths:
-        :param number_of_time_steps:
+        :param maturity: The maturity of the simulation.
+        :param number_of_paths: The number of paths.
+        :param number_of_time_steps: The number of time steps.
         :return:
-
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
         short_rates[:, 0] = self.initial_short_rate
