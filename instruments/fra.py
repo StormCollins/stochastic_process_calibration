@@ -48,9 +48,16 @@ class Fra:
             compounding_convention=CompoundingConvention.Simple)
 
     def get_value(self, curve: Curve, current_time: float = 0) -> float:
+        """
+        Calculates the value of the FRA at the current time using the given interest rate curve.
+
+        :param curve: Interest rate curve at the current time.
+        :param current_time: The current time - this may be some time step in a Monte Carlo simulation.
+        :return: The value of the FRA.
+        """
         return self.notional * \
-               (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
-               (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
+            (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
+            (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
 
     def get_monte_carlo_value(
             self,
@@ -85,11 +92,10 @@ class Fra:
                 current_value: float = self.get_value(current_discount_curve, current_time_step)
                 fra_values[i][j] = current_value
                 if j < number_of_time_steps:
-                    step_wise_stochastic_discount_factors[i][j] =\
+                    step_wise_stochastic_discount_factors[i][j] = \
                         current_discount_curve.get_discount_factor(time_steps[j + 1])
                 # plot_fra_values(current_time_step, current_values)
 
         stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
         fra_value: float = np.average(fra_values[:, -1] * stochastic_discount_factors)
         return fra_value
-

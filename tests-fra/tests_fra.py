@@ -15,7 +15,7 @@ class TestsFra:
 
     def test_get_monte_carlo_value(self):
         tenors = np.array([0.00, 0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 1.75])
-        # assumes a constant rate of 10%
+        # We assume a constant rate of 10%
         discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708, 0.839457])
         initial_curve = Curve(tenors, discount_factors)
         theta_times = np.array(tenors)
@@ -23,6 +23,6 @@ class TestsFra:
         hw = HullWhite(0.1, 0.1, initial_curve, theta_times, short_rate_tenor)
 
         fra = Fra(1_000_000, 1.00, 1.25, 0.1)
-        fra_value = fra.get_monte_carlo_value(hw, 2, 2)
+        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=2, number_of_paths=10000)
         print(fra_value)
         # plt.show()
