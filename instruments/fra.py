@@ -42,9 +42,9 @@ class Fra:
         self.strike = strike
 
     def get_fair_forward_rate(self, curve: Curve, current_time: float = 0) -> float:
-        return curve.get_forward_rate(
-            start_tenor=self.forward_rate_start_tenor - current_time,
-            end_tenor=self.forward_rate_end_tenor - current_time,
+        return curve.get_forward_rates(
+            start_tenors=self.forward_rate_start_tenor - current_time,
+            end_tenors=self.forward_rate_end_tenor - current_time,
             compounding_convention=CompoundingConvention.Simple)
 
     def get_value(self, curve: Curve, current_time: float = 0) -> float:
@@ -80,7 +80,7 @@ class Fra:
         fra_values[:, 0] = initial_fra_value
 
         step_wise_stochastic_discount_factors: np.ndarray = np.zeros((number_of_paths, number_of_time_steps))
-        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factor(np.array([time_steps[1]]))[0]
+        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factors(np.array([time_steps[1]]))[0]
         step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
 
         for i in range(0, number_of_paths):
@@ -93,7 +93,7 @@ class Fra:
                 fra_values[i][j] = current_value
                 if j < number_of_time_steps:
                     step_wise_stochastic_discount_factors[i][j] = \
-                        current_discount_curve.get_discount_factor(time_steps[j + 1])
+                        current_discount_curve.get_discount_factors(time_steps[j + 1])
                 # plot_fra_values(current_time_step, current_values)
 
         stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)

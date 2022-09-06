@@ -24,8 +24,8 @@ def swap_rate(
     # df_interpolator = interp1d(curve_tenors, curve_discount_factors, kind='linear', fill_value='extrapolate')
     # check if the discount curve goes far enough for given swaption
     if (swaption_tenor + swap_tenor) < Curve.tenors[-1]:
-        numerator: float = Curve.get_discount_factor(swaption_tenor) - \
-                           Curve.get_discount_factor(swaption_tenor + swap_tenor)
+        numerator: float = Curve.get_discount_factors(swaption_tenor) - \
+                           Curve.get_discount_factors(swaption_tenor + swap_tenor)
         number_of_payments: int = np.round(swap_tenor * m, 0)
 
         denominator = 0
@@ -87,7 +87,7 @@ def caplet(
     d1 = np.log(volatility * math.sqrt(time_to_maturity) / 2)
     d2 = -d1
 
-    discount_factor: float = Curve.get_discount_factor(time_to_maturity)
+    discount_factor: float = Curve.get_discount_factors(time_to_maturity)
 
     return notional * delta * discount_factor * (
             forward_interest_rate * norm.cdf(d1) - forward_interest_rate * norm.cdf(d2))
