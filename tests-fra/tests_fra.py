@@ -26,6 +26,6 @@ class TestsFra:
         initial_fra_value = fra.get_value(curve=initial_curve, current_time=0)
         print()
         print(f'Initial FRA value: {initial_fra_value}')
-        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=2, number_of_paths=10_000)
+        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=2, number_of_paths=100)
         print(f'Monte Carlo FRA Value: {fra_value}')
         # plt.show()

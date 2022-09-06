@@ -4,8 +4,9 @@ from enum import Enum
 
 
 class CompoundingConvention(Enum):
-    NACC = 1
-    Simple = 2
+    Simple = 1
+    NACC = 2
+    NACQ = 3
 
 
 class Curve:
@@ -22,7 +23,7 @@ class Curve:
         """
         self.tenors = tenors
         self.discount_factors = discount_factors
-        self.discount_factor_interpolator = interp1d(tenors, discount_factors, 'cubic')
+        self.discount_factor_interpolator = interp1d(tenors, np.log(discount_factors), 'linear')
 
     def get_discount_factors(self, tenors: np.ndarray) -> np.ndarray:
         """
@@ -31,7 +32,7 @@ class Curve:
         :param tenors: Tenors.
         :return: An array of discount factors.
         """
-        return self.discount_factor_interpolator(np.array(tenors))
+        return np.exp(self.discount_factor_interpolator(tenors))
 
     def get_forward_discount_factor(self, start_tenors: np.ndarray, end_tenors: np.ndarray) -> np.ndarray:
         """
@@ -61,6 +62,8 @@ class Curve:
         end_discount_factors: np.ndarray = self.get_discount_factors(end_tenors)
         if compounding_convention == compounding_convention.NACC:
             return -1 / (end_tenors - start_tenors) * np.log(end_discount_factors / start_discount_factors)
+        if compounding_convention == compounding_convention.NACQ:
+            return 4 * ((start_discount_factors / end_discount_factors)**(4 * (end_tenors - start_tenors)) - 1)
         elif compounding_convention == compounding_convention.Simple:
             return 1 / (end_tenors - start_tenors) * (start_discount_factors / end_discount_factors - 1)
 
@@ -75,9 +78,11 @@ class Curve:
         :param compounding_convention: Compounding convention (NACC by default).
         :return: An array of zero rates.
         """
-        if compounding_convention == CompoundingConvention.Simple:
-            return 1 / tenors * (1 / self.get_discount_factors(tenors) - 1)
-        elif compounding_convention == CompoundingConvention.NACC:
+        if compounding_convention == CompoundingConvention.NACC:
             return -1 / tenors * np.log(self.get_discount_factors(tenors))
+        if compounding_convention == CompoundingConvention.NACQ:
+            return 4 * (self.get_discount_factors(tenors)**(-1/(4 * tenors)) - 1)
+        elif compounding_convention == CompoundingConvention.Simple:
+            return 1 / tenors * (1 / self.get_discount_factors(tenors) - 1)
         else:
             raise ValueError(f'Invalid compounding convention: {compounding_convention}')
