@@ -12,7 +12,7 @@ class TestsGbmPricers:
         volatility: float = 0.4
         time_to_maturity: float = 5 / 12
         number_of_paths: int = 10_000
-        number_of_time_steps: int = 100
+        number_of_time_steps: int = 1000
         actual: MonteCarloResult = \
             fast_equity_european_option_monte_carlo_pricer(
                 notional,

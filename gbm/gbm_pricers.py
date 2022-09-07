@@ -9,6 +9,9 @@ from scipy.stats import shapiro
 from scipy.stats import jarque_bera
 from collections import namedtuple
 
+import gbm.excel_functions
+from gbm.excel_functions import *
+
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 
 
@@ -118,10 +121,16 @@ def fast_equity_european_option_monte_carlo_pricer(
     :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Fast Monte Carlo price for an equity european option.
     """
-
+    volatility: list[float] = gbm.excel_functions.get_vol(moneyness, tenor, vol_surface)
     paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility,
-                           time_to_maturity)
+        generate_gbm_paths(
+            number_of_paths,
+            number_of_time_steps,
+            notional,
+            initial_spot,
+            interest_rate,
+            volatility,
+            time_to_maturity)
 
     if plot_paths:
         create_gbm_plots(paths, interest_rate, volatility, time_to_maturity)
