@@ -13,7 +13,7 @@ def curve_tenors():
 
 @pytest.fixture
 def flat_curve(curve_tenors):
-    rate: float = 0.1
+    rate = 0.1
     discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)
 
@@ -30,7 +30,7 @@ def test_theta_with_constant_zero_rates_and_zero_vol(flat_curve):
 def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
     alpha = 2
     sigma = 0.1
-    hw = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
     test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
     actual: list[float] = [hw.theta(t) for t in test_tenors]
     expected: list[float] = [alpha * 0.1 + (sigma**2)/(2 * alpha) * (1 - np.exp(-2 * alpha * t)) for t in test_tenors]
@@ -38,13 +38,41 @@ def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
 
 
 def test_b_function_large_alpha(flat_curve):
-    alpha = 10_000
-    sigma = 0
-    hw = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    alpha: float = 10_000
+    sigma: float = 0
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
     actual = hw.b_function(np.array([0.25]), 0.00)[0]
     assert actual == pytest.approx(0.0, abs=0.0001)
 
 
+def test_a_function_with_large_alpha_and_flat_curve(flat_curve):
+    alpha = 1_000
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(simulation_tenors) / \
+        flat_curve.get_discount_factors(np.array(current_tenor))
+    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+    assert actual == pytest.approx(expected, abs=0.0001)
+
+
+def test_a_function_with_flat_curve(flat_curve):
+    alpha = 0.25
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(simulation_tenors) / \
+        flat_curve.get_discount_factors(np.array(current_tenor)) * \
+        np.exp(-1 * sigma**2 *
+               (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor))**2 *
+               (np.exp(2 * alpha * current_tenor) - 1) /
+               (4 * alpha**3))
+    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+    assert actual == pytest.approx(expected, abs=0.0001)
 
 
 def test_simulate():
@@ -79,31 +107,32 @@ def test_simulate():
             30.0191781])
 
     # TODO: Where did these discount factors come from?
-    curve_discount_factors = np.array(
-        [1.000000,
-         0.999907,
-         0.997261,
-         0.991717,
-         0.983809,
-         0.975718,
-         0.967524,
-         0.959083,
-         0.950459,
-         0.941230,
-         0.931649,
-         0.887226,
-         0.834895,
-         0.776718,
-         0.713405,
-         0.649354,
-         0.585177,
-         0.524324,
-         0.469244,
-         0.372527,
-         0.268633,
-         0.162742,
-         0.104571,
-         0.071701])
+    curve_discount_factors = \
+        np.array(
+            [1.000000,
+             0.999907,
+             0.997261,
+             0.991717,
+             0.983809,
+             0.975718,
+             0.967524,
+             0.959083,
+             0.950459,
+             0.941230,
+             0.931649,
+             0.887226,
+             0.834895,
+             0.776718,
+             0.713405,
+             0.649354,
+             0.585177,
+             0.524324,
+             0.469244,
+             0.372527,
+             0.268633,
+             0.162742,
+             0.104571,
+             0.071701])
 
     initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
     hw = HullWhite(alpha, sigma, initial_curve, short_rate_tenor=0.25)
@@ -172,7 +201,6 @@ def test_discount_curve():
     dt = maturity/number_of_time_steps
     alpha = 0.05
     sigma = 0.1
-    theta_times: np.ndarray = np.arange(0, 30.25, 0.25)
     initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
     hw = HullWhiteCurve(alpha, sigma, initial_curve, 0.25)
     hw.get_discount_curve(curve_tenors, dt)
