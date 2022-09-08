@@ -22,7 +22,10 @@ class TestsFra:
         short_rate_tenor = 0.25
         hw = HullWhite(0.1, 0.1, initial_curve, theta_times, short_rate_tenor)
 
-        fra = Fra(1_000_000, 1.00, 1.25, 0.1)
-        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=2, number_of_paths=10000)
-        print(fra_value)
+        fra = Fra(notional=1_000_000, forward_rate_start_tenor=1.00, forward_rate_end_tenor=1.25, strike=0.1)
+        initial_fra_value = fra.get_value(curve=initial_curve, current_time=0)
+        print()
+        print(f'Initial FRA value: {initial_fra_value}')
+        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=2, number_of_paths=100)
+        print(f'Monte Carlo FRA Value: {fra_value}')
         # plt.show()

@@ -121,7 +121,7 @@ def fast_equity_european_option_monte_carlo_pricer(
     :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Fast Monte Carlo price for an equity european option.
     """
-    volatility: list[float] = gbm.excel_functions.get_vol(moneyness, tenor, vol_surface)
+
     paths: np.ndarray = \
         generate_gbm_paths(
             number_of_paths,
@@ -281,14 +281,20 @@ def generate_gbm_paths(
     Returns the monte carlo simulated Geometric Brownian Motion Paths.
 
     """
+    # volatility: float = gbm.excel_functions.get_vol(moneyness, tenor, vol_surface)[0]
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
     paths[:, 0] = initial_spot * notional
     dt: float = time_to_maturity / number_of_time_steps
 
+    time_dependent_volatility: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
+    time_dependent_volatility[:, 0] = volatility
+
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+        time_dependent_volatility[:, j] = time_dependent_volatility[:, j + 1] + dt
         paths[:, j] = \
-            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility * math.sqrt(dt) * z)
+            paths[:, j - 1] * np.exp((drift - 0.5 * time_dependent_volatility ** 2) * dt + time_dependent_volatility *
+                                     math.sqrt(dt) * z)
 
     return paths
 

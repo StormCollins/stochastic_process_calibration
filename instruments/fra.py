@@ -22,7 +22,7 @@ def plot_fra_values(current_value: float, maturity: float):
 
 class Fra:
     """
-    Used to encapsulate a FRA (forward rate agreement) with all it's parameters and functions.
+    Used to encapsulate a FRA (forward rate agreement) with all it's fields and methods.
 
     """
     notional: float
@@ -36,16 +36,38 @@ class Fra:
             forward_rate_start_tenor: float,
             forward_rate_end_tenor: float,
             strike: float):
+        """
+        FRA constructor.
+
+        :param notional: The notional amount of the FRA.
+        :param forward_rate_start_tenor: The start tenor of the FRA e.g., for a 3x6 FRA this would be 3m.
+        :param forward_rate_end_tenor: The end tenor of the FRA e.g., for a 3x6 FRA this would be 6m.
+        :param strike: The strike of the FRA.
+        """
         self.notional = notional
         self.forward_rate_start_tenor = forward_rate_start_tenor
         self.forward_rate_end_tenor = forward_rate_end_tenor
         self.strike = strike
 
-    def get_fair_forward_rate(self, curve: Curve, current_time: float = 0) -> float:
-        return curve.get_forward_rate(
-            start_tenor=self.forward_rate_start_tenor - current_time,
-            end_tenor=self.forward_rate_end_tenor - current_time,
-            compounding_convention=CompoundingConvention.Simple)
+    def get_fair_forward_rate(
+            self,
+            curve: Curve,
+            current_tenor: float = 0,
+            compounding_convention: CompoundingConvention = CompoundingConvention.NACQ) -> float:
+        """
+        Gets the fair forward rate for the FRA i.e., the strike that would cause the FRA to be valued to zero at the
+        current tenor. Note a simple rate is used.
+
+        :param curve: The curve for the current tenor.
+        :param current_tenor: The current tenor (default value = 0).
+        :param compounding_convention: Compounding convention (default value = NACQ since this is the most common for
+            FRAs in South Africa),
+        :return: The fair forward rate that would set the FRA value to zero.
+        """
+        return curve.get_forward_rates(
+            start_tenors=np.array([self.forward_rate_start_tenor - current_tenor]),
+            end_tenors=np.array([self.forward_rate_end_tenor - current_tenor]),
+            compounding_convention=compounding_convention)
 
     def get_value(self, curve: Curve, current_time: float = 0) -> float:
         """
@@ -80,7 +102,7 @@ class Fra:
         fra_values[:, 0] = initial_fra_value
 
         step_wise_stochastic_discount_factors: np.ndarray = np.zeros((number_of_paths, number_of_time_steps))
-        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factor(np.array([time_steps[1]]))[0]
+        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factors(np.array([time_steps[1]]))[0]
         step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
 
         for i in range(0, number_of_paths):
@@ -93,7 +115,7 @@ class Fra:
                 fra_values[i][j] = current_value
                 if j < number_of_time_steps:
                     step_wise_stochastic_discount_factors[i][j] = \
-                        current_discount_curve.get_discount_factor(time_steps[j + 1])
+                        current_discount_curve.get_discount_factors(time_steps[j + 1])
                 # plot_fra_values(current_time_step, current_values)
 
         stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
