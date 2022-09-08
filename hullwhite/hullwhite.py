@@ -30,25 +30,58 @@ class HullWhite:
     initial_curve: Curve
     short_rate_tenor: float
 
-    # TODO: Make theta_times the same as initial_curve tenors.
     def __init__(
             self,
             alpha: float,
             sigma: float,
             initial_curve: Curve,
-            theta_times: np.ndarray,
             short_rate_tenor: float):
+        """
+        HullWhite class constructor.
+
+        :param alpha: The mean reversion speed.
+        :param sigma: The volatility.
+        :param initial_curve: The initial discount curve.
+        :param short_rate_tenor: The short rate tenor (typically 0.25 i.e., 3m).
+        """
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
-        self.theta_times = theta_times
-        self.theta = self.setup_theta(theta_times)
+        self.theta_interpolator = self.setup_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate =\
+        self.initial_short_rate = \
             initial_curve.get_forward_rates(
                 np.array([0]),
                 np.array([self.short_rate_tenor]),
                 CompoundingConvention.NACQ)
+
+    def setup_theta(self, theta_times: np.ndarray) -> interp1d:
+        """
+        Used to generate the theta function, used in the Hull-White model to represent the
+        long term discount curve.
+
+        :param theta_times: The tenors at which we calculate theta explicitly - the rest will be interpolated.
+        :return: An interpolator for calculating theta for a given tenor.
+        """
+        theta_times = theta_times[theta_times > 0]
+        discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times)
+        zero_rates = -1 * np.log(discount_factors) / theta_times
+        thetas: np.ndarray = \
+            (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
+            self.alpha * zero_rates[0:-1] + \
+            self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
+        # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
+        theta_interpolator: interp1d = interp1d(theta_times[:-1], np.log(thetas), kind='linear')
+        return theta_interpolator
+
+    def theta(self, tenor: float):
+        """
+        Uses the theta_interpolator to return the log-linear interpolated value of theta.
+
+        :param tenor: The tenor for which to calculate theta.
+        :return: Theta for the given tenor.
+        """
+        return np.exp(self.theta_interpolator(tenor))
 
     def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
         """
@@ -72,49 +105,52 @@ class HullWhite:
         plot_paths(short_rates, maturity)
         return time_steps, short_rates
 
-    def setup_theta(self, theta_times: np.ndarray) -> interp1d:
+    def b_function(self, tenors, current_tenor):
         """
-        Used to generate the setup_theta function, used in the Hull-White model to represent the
-        long term discount curve.
+        Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
+        factors in the Hull-White simulation.
 
-        :param theta_times: The time points at which we'd like to calculate setup_theta.
-        :return: An interpolator which allows one to calculate setup_theta for a given time.
-
+        :param tenors: The tenors at which we'd like to calculate the 'B'-function.
+        :param current_tenor: The current tenor in the simulation.
+        :return: The 'B'-function value at the given tenors.
         """
-        discount_factors = self.initial_curve.get_discount_factors(theta_times)
+        return (1 - np.exp(-self.alpha * (tenors - current_tenor))) / self.alpha
 
-        forward_rates = \
-            1 / (theta_times[1:] - theta_times[0:-1]) * \
-            np.log(discount_factors[0:-1] / discount_factors[1:])
+    def a_function(self, tenors: np.ndarray, current_tenor: float) -> np.ndarray:
+        forward_discount_factors: np.ndarray(np.type(float)) = \
+            self.initial_curve.get_discount_factors(tenors) /\
+            self.initial_curve.get_discount_factors(np.array([current_tenor]))
 
-        # We assume the initial, short rate is the same as the 3m rate hence the below.
-        forward_rates = np.concatenate(([forward_rates[0]], forward_rates))
+        discount_factor_derivative: float = \
+            -1 * self.b_function(tenors, current_tenor) * \
+            (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
+             np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.short_rate_tenor])))) / \
+            self.short_rate_tenor
 
-        thetas: np.ndarray = \
-            (forward_rates[1:] - forward_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
-            self.alpha * forward_rates[0:-1] + \
-            self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
-        theta_interpolator: interp1d = interp1d(theta_times[:-1], thetas, kind='cubic')
-        return theta_interpolator
+        complex_factor: float = \
+            self.sigma**2 * \
+            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * current_tenor))**2 * \
+            (np.exp(2 * self.alpha * current_tenor) - 1) / \
+            (4 * self.alpha**3)
 
-    # Hull-White calibration parameters from Josh's code
-    # print(setup_theta(0.05, 0.01))
+        return forward_discount_factors * np.exp(discount_factor_derivative - complex_factor)
 
     def get_discount_curve(
             self,
             maturity: float,
             number_of_time_steps: int,
-            r: float,
-            s: float) -> Curve:
+            short_rate: float,
+            current_tenor: float) -> Curve:
         tenors = self.initial_curve.tenors
-        b = (1 - np.exp(- self.alpha * (tenors - s))) / self.alpha
-        current_time_step: np.ndarray = np.array(s)
-
+        b = self.b_function(tenors, current_tenor)
+        current_time_step: np.ndarray = np.array(current_tenor)
         dt: float = maturity / number_of_time_steps
         curve: Curve = self.initial_curve
 
         forward_discount_factor: np.ndarray = \
             curve.get_discount_factors(tenors) / curve.get_discount_factors(current_time_step)
+
+        # TODO: Should this not just be '-b * zero rate'?
         discount_differential: np.ndarray = \
             -b * (np.log(curve.get_discount_factors(current_time_step)) -
                   np.log(curve.get_discount_factors(current_time_step - dt))) / dt
@@ -124,8 +160,9 @@ class HullWhite:
                    (self.sigma ** 2 *
                     (np.exp(-self.alpha * tenors) - (np.exp(-self.alpha * current_time_step))) ** 2 *
                     (np.exp(2 * self.alpha * current_time_step) - 1)) / 4 * self.alpha ** 3)
-        discount_factors: np.ndarray = a * np.exp(-b * r)
-        current_tenors = tenors[tenors >= s] - s
+
+        discount_factors: np.ndarray = a * np.exp(-b * short_rate)
+        current_tenors = tenors[tenors >= current_tenor] - current_tenor
         current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
 
@@ -147,7 +184,8 @@ class HullWhiteCurve:
         self.sigma = sigma
         self.initial_curve = initial_curve
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate = initial_curve.get_forward_rates(0, self.short_rate_tenor, CompoundingConvention.Simple)
+        self.initial_short_rate = initial_curve.get_forward_rates(0, self.short_rate_tenor,
+                                                                  CompoundingConvention.Simple)
 
     def get_discount_curve(self, tenors: np.ndarray, dt: float, r: float, s: float) -> Curve:
         b = (1 - math.exp(- self.alpha * (tenors - s))) / self.alpha
