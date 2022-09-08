@@ -105,10 +105,7 @@ class HullWhite:
         plot_paths(short_rates, maturity)
         return time_steps, short_rates
 
-    def b_function(
-            self,
-            tenors: np.array,
-            current_tenor: float):
+    def b_function(self, tenors: np.array(np.type(float)), current_tenor: float):
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation.
@@ -118,6 +115,26 @@ class HullWhite:
         :return: The 'B'-function value at the given tenors.
         """
         return (1 - np.exp(-self.alpha * (tenors - current_tenor))) / self.alpha
+
+    def a_function(self, tenors: np.ndarray(np.type(float)), current_tenor: float):
+        forward_discount_factors: np.ndarray(np.type(float)) = \
+            self.initial_curve.get_discount_factors(tenors) /\
+            self.initial_curve.get_discount_factors(np.array([current_tenor]))
+
+        discount_factor_derivative: float = \
+            -1 * self.b_function(tenors, current_tenor) * \
+            (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
+             np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.short_rate_tenor])))) / \
+            self.short_rate_tenor
+
+        complex_factor: float = \
+            self.sigma**2 * \
+            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * current_tenor))**2 * \
+            (np.exp(2 * self.alpha * current_tenor) - 1) / \
+            (4 * self.alpha**3)
+
+        return forward_discount_factors * (discount_factor_derivative - complex_factor)
+
 
     def get_discount_curve(
             self,

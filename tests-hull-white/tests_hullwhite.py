@@ -1,3 +1,5 @@
+# TODO: Setup more tests for theta with 'real' interest rate curves.
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -25,14 +27,6 @@ def test_theta_with_constant_zero_rates_and_zero_vol(flat_curve):
     assert all([a == pytest.approx(b, 0.00001) for a, b in zip(actual, expected)])
 
 
-def test_b_function_large_alpha(flat_curve):
-    alpha = 10_000
-    sigma = 0
-    hw = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
-    actual = hw.b_function(np.array([0.25]), 0.00)[0]
-    assert actual == pytest.approx(0.0, abs=0.0001)
-
-
 def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
     alpha = 2
     sigma = 0.1
@@ -42,7 +36,14 @@ def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
     expected: list[float] = [alpha * 0.1 + (sigma**2)/(2 * alpha) * (1 - np.exp(-2 * alpha * t)) for t in test_tenors]
     assert all([a == pytest.approx(b, 0.001) for a, b in zip(actual, expected)])
 
-#TODO: Setup more tests with 'real' interest rate curves.
+
+def test_b_function_large_alpha(flat_curve):
+    alpha = 10_000
+    sigma = 0
+    hw = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    actual = hw.b_function(np.array([0.25]), 0.00)[0]
+    assert actual == pytest.approx(0.0, abs=0.0001)
+
 
 
 
