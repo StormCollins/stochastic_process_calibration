@@ -121,6 +121,7 @@ class HullWhite:
             self.initial_curve.get_discount_factors(tenors) /\
             self.initial_curve.get_discount_factors(np.array([current_tenor]))
 
+        # TODO: Should this not just be '-b * zero rate'?
         discount_factor_derivative: float = \
             -1 * self.b_function(tenors, current_tenor) * \
             (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
@@ -137,30 +138,18 @@ class HullWhite:
 
     def get_discount_curve(
             self,
-            maturity: float,
-            number_of_time_steps: int,
             short_rate: float,
             current_tenor: float) -> Curve:
+        """
+        Gets the discount curve at the given time-step in the Hull-White simulation.
+
+        :param short_rate: The short rate at the current point in the Hull-White simulation.
+        :param current_tenor: The current time point in the Hull-White simulation.
+        :return: A discount curve at the current time point in the Hull-White simulation.
+        """
         tenors = self.initial_curve.tenors
         b = self.b_function(tenors, current_tenor)
-        current_time_step: np.ndarray = np.array(current_tenor)
-        dt: float = maturity / number_of_time_steps
-        curve: Curve = self.initial_curve
-
-        forward_discount_factor: np.ndarray = \
-            curve.get_discount_factors(tenors) / curve.get_discount_factors(current_time_step)
-
-        # TODO: Should this not just be '-b * zero rate'?
-        discount_differential: np.ndarray = \
-            -b * (np.log(curve.get_discount_factors(current_time_step)) -
-                  np.log(curve.get_discount_factors(current_time_step - dt))) / dt
-
-        a = forward_discount_factor * \
-            np.exp(discount_differential -
-                   (self.sigma ** 2 *
-                    (np.exp(-self.alpha * tenors) - (np.exp(-self.alpha * current_time_step))) ** 2 *
-                    (np.exp(2 * self.alpha * current_time_step) - 1)) / 4 * self.alpha ** 3)
-
+        a = self.a_function(tenors, current_tenor)
         discount_factors: np.ndarray = a * np.exp(-b * short_rate)
         current_tenors = tenors[tenors >= current_tenor] - current_tenor
         current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]

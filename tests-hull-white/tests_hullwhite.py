@@ -75,6 +75,36 @@ def test_a_function_with_flat_curve(flat_curve):
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
+def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_curve):
+    alpha = 1_000
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    short_rate = 0.1
+    curve = hw.get_discount_curve(short_rate, current_tenor=0.25)
+    tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
+    actual = curve.get_discount_factors(tenors)
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(tenors + current_tenor) / \
+        flat_curve.get_discount_factors(np.array([current_tenor]))
+    assert actual == pytest.approx(expected, abs=0.0001)
+
+
+def test_get_discount_factors_with_zero_vol(flat_curve):
+    alpha = 0.1
+    sigma = 0.0
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    short_rate = 0.1
+    curve = hw.get_discount_curve(short_rate, current_tenor=0.25)
+    tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
+    actual = curve.get_discount_factors(tenors)
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(tenors + current_tenor) / \
+        flat_curve.get_discount_factors(np.array([current_tenor]))
+    assert actual == pytest.approx(expected, abs=0.0001)
+
+
 def test_simulate():
     maturity = 5
     alpha = 0.1
