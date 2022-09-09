@@ -23,7 +23,7 @@ class Curve:
         """
         self.tenors = tenors
         self.discount_factors = discount_factors
-        self.discount_factor_interpolator = interp1d(tenors, np.log(discount_factors), 'linear')
+        self.discount_factor_interpolator = interp1d(tenors, np.log(discount_factors), 'linear', fill_value='extrapolate')
 
     def get_discount_factors(self, tenors: np.ndarray) -> np.ndarray:
         """

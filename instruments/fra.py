@@ -110,7 +110,7 @@ class Fra:
                 current_time_step: float = time_steps[j]
                 current_short_rate: float = short_rates[i][j]
                 current_discount_curve: Curve = \
-                    hw.get_discount_curve(maturity, number_of_time_steps, current_short_rate, current_time_step)
+                    hw.get_discount_curve(current_short_rate, current_time_step)
                 current_value: float = self.get_value(current_discount_curve, current_time_step)
                 fra_values[i][j] = current_value
                 if j < number_of_time_steps:
