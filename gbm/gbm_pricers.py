@@ -9,8 +9,11 @@ from scipy.stats import shapiro
 from scipy.stats import jarque_bera
 from collections import namedtuple
 
+import excel_file.excel_vol_surface_function
+from excel_file.excel_vol_surface_function import *
 import gbm.excel_functions
 from gbm.excel_functions import *
+
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 
@@ -285,15 +288,15 @@ def generate_gbm_paths(
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
     paths[:, 0] = initial_spot * notional
     dt: float = time_to_maturity / number_of_time_steps
-
-    time_dependent_volatility: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-    time_dependent_volatility[:, 0] = volatility
+    # volatility = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)
+    # time_dependent_volatility: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
+    # time_dependent_volatility[:, 0] = volatility
 
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        time_dependent_volatility[:, j] = time_dependent_volatility[:, j + 1] + dt
+        # time_dependent_volatility[:, j] = time_dependent_volatility[:, j - 1] + dt
         paths[:, j] = \
-            paths[:, j - 1] * np.exp((drift - 0.5 * time_dependent_volatility ** 2) * dt + time_dependent_volatility *
+            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
                                      math.sqrt(dt) * z)
 
     return paths

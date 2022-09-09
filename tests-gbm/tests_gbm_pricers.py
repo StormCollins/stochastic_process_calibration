@@ -9,8 +9,8 @@ class TestsGbmPricers:
         initial_spot: float = 50
         strike: float = 52
         interest_rate: float = 0.1
-        volatility: float = 0.4
-        time_to_maturity: float = 5 / 12
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)
+        time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 1000
         actual: MonteCarloResult = \
@@ -35,7 +35,7 @@ class TestsGbmPricers:
         strike: float = 52
         interest_rate: float = 0.1
         volatility: float = 0.4
-        time_to_maturity: float = 5 / 12
+        time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 2
         actual: MonteCarloResult = \
