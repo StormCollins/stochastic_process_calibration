@@ -110,18 +110,38 @@ class HullWhite:
 
         if approximate_method:
             for j in range(number_of_time_steps):
-                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+                z: np.ndarray = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
                     self.sigma * z * math.sqrt(dt)
         else:
             for j in range(number_of_time_steps):
-                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * j * dt) * short_rates[:, 0] + \
-                    scipy.integrate.quad(lambda t: np.exp(self.alpha * (t - j * dt)) * self.theta(t), 0, j * dt)
+                    scipy.integrate.quad(lambda t: np.exp(self.alpha * (t - j * dt)) * self.theta(t), 0, j * dt) + \
+                    self.sigma * np.exp(-1 * self.alpha * j * dt) * \
+                    self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
         plot_paths(short_rates, maturity)
         return time_steps, short_rates
+
+    def exponential_stochastic_integral(self, maturity: float, time_step_size: float, number_of_paths: int):
+        """
+        Calculates the stochastic integral of the exponential term in the Hull-White analytical formula.
+
+        :param maturity: The maturity/upper bound of the integral.
+        :param time_step_size: The discretized step size for the integral.
+        :param number_of_paths: The number of paths in the simulation.
+        :return: An array of integral values for each path.
+        """
+        time_steps: np.ndarray = np.arange(0, maturity, time_step_size) + time_step_size
+        output: np.ndarry = np.zeros(number_of_paths)
+        for i in range(0, number_of_paths):
+            random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, len(time_steps)))
+            output[i] = \
+                sum(
+                    [np.exp(self.alpha * t) * z * np.sqrt(time_step_size)
+                     for t, z in zip(time_steps, random_variables)])
+        return output
 
     def b_function(self, tenors, current_tenor):
         """
