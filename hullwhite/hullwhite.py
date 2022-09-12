@@ -42,7 +42,7 @@ class HullWhite:
         :param alpha: The mean reversion speed.
         :param sigma: The volatility.
         :param initial_curve: The initial discount curve.
-        :param short_rate_tenor: The short rate tenor (typically 0.25 i.e., 3m).
+        :param short_rate_tenor: The short rate volatility_tenor (typically 0.25 i.e., 3m).
         """
         self.alpha = alpha
         self.sigma = sigma
@@ -61,7 +61,7 @@ class HullWhite:
         long term discount curve.
 
         :param theta_times: The tenors at which we calculate theta explicitly - the rest will be interpolated.
-        :return: An interpolator for calculating theta for a given tenor.
+        :return: An interpolator for calculating theta for a given volatility_tenor.
         """
         theta_times = theta_times[theta_times > 0]
         discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times)
@@ -78,8 +78,8 @@ class HullWhite:
         """
         Uses the theta_interpolator to return the log-linear interpolated value of theta.
 
-        :param tenor: The tenor for which to calculate theta.
-        :return: Theta for the given tenor.
+        :param tenor: The volatility_tenor for which to calculate theta.
+        :return: Theta for the given volatility_tenor.
         """
         return np.exp(self.theta_interpolator(tenor))
 
@@ -111,7 +111,7 @@ class HullWhite:
         factors in the Hull-White simulation.
 
         :param tenors: The tenors at which we'd like to calculate the 'B'-function.
-        :param current_tenor: The current tenor in the simulation.
+        :param current_tenor: The current volatility_tenor in the simulation.
         :return: The 'B'-function value at the given tenors.
         """
         return (1 - np.exp(-self.alpha * (tenors - current_tenor))) / self.alpha

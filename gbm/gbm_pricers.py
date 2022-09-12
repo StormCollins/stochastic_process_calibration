@@ -2,17 +2,11 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-import pylab
 from scipy.stats import norm
 from scipy.stats import lognorm
-from scipy.stats import shapiro
 from scipy.stats import jarque_bera
-from collections import namedtuple
-
 import excel_file.excel_vol_surface_function
 from excel_file.excel_vol_surface_function import *
-import gbm.excel_functions
-from gbm.excel_functions import *
 
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
@@ -284,7 +278,6 @@ def generate_gbm_paths(
     Returns the monte carlo simulated Geometric Brownian Motion Paths.
 
     """
-    # volatility: float = gbm.excel_functions.get_vol(moneyness, tenor, vol_surface)[0]
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
     paths[:, 0] = initial_spot * notional
     dt: float = time_to_maturity / number_of_time_steps

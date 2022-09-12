@@ -9,7 +9,9 @@ class TestsGbmPricers:
         initial_spot: float = 50
         strike: float = 52
         interest_rate: float = 0.1
-        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)
+        tenor: float = 0.25
+        vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)/100
         time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 1000
@@ -34,7 +36,9 @@ class TestsGbmPricers:
         initial_spot: float = 50
         strike: float = 52
         interest_rate: float = 0.1
-        volatility: float = 0.4
+        tenor: float = 0.25
+        vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)/100
         time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 2
@@ -59,7 +63,9 @@ class TestsGbmPricers:
         strike: float = 52
         domestic_interest_rate: float = 0.2
         foreign_interest_rate: float = 0.1
-        volatility: float = 0.1
+        tenor: float = 0.25
+        vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface) / 100
         time_to_maturity: float = 5 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 100
@@ -106,7 +112,9 @@ class TestsGbmPricers:
         strike: float = 17
         domestic_interest_rate: float = 0.061339421
         foreign_interest_rate: float = 0.020564138
-        volatility: float = 0.154
+        tenor: float = 0.25
+        vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface) / 100
         time_to_maturity: float = 1
         number_of_paths: int = 10_000
         number_of_time_steps: int = 10

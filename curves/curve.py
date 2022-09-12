@@ -38,8 +38,8 @@ class Curve:
         """
         Calculates the discount factor between times start_tenor and end_tenor.
 
-        :param start_tenors: The tenor(s) we want to discount back to.
-        :param end_tenors: The tenor(s) we want to discount back from.
+        :param start_tenors: The volatility_tenor(s) we want to discount back to.
+        :param end_tenors: The volatility_tenor(s) we want to discount back from.
         :return: An array of forward discount factor(s).
         """
         return self.discount_factor_interpolator(np.array(end_tenors)) / \

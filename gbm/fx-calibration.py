@@ -5,9 +5,11 @@ initial_spot: float = 14.6
 strike: float = 17
 domestic_interest_rate: float = 0.05737
 foreign_interest_rate: float = 0.01227
-volatility: float = 0.154
+tenor: float = 0.5
+vol_surface: VolData = read_vol_surface('../excel_file/FX_option_atm_vol_surface.xlsx')
+volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface) / 100
 time_to_maturity: float = 0.5
-number_of_paths: int = 100_000
+number_of_paths: int = 10_000
 number_of_time_steps: int = 50
 result = fx_option_monte_carlo_pricer(
     notional,
