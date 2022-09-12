@@ -1,5 +1,6 @@
 from curves.curve import *
 import numpy as np
+import scipy.integrate
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import math
@@ -26,9 +27,10 @@ def plot_paths(paths, maturity: float):
 class HullWhite:
     alpha: float
     sigma: float
-    theta: interp1d
+    theta_interpolator: interp1d
     initial_curve: Curve
     short_rate_tenor: float
+    initial_short_rate: float
 
     def __init__(
             self,
@@ -85,13 +87,20 @@ class HullWhite:
         """
         return np.exp(self.theta_interpolator(tenor))
 
-    def simulate(self, maturity: float, number_of_paths: int, number_of_time_steps: int):
+    def simulate(
+            self,
+            maturity: float,
+            number_of_paths: int,
+            number_of_time_steps: int,
+            approximate_method: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
         :param maturity: The maturity of the simulation.
         :param number_of_paths: The number of paths.
         :param number_of_time_steps: The number of time steps.
+        :param approximate_method: Use the approximate, discretized Hull-White simulation method rather than the more
+            accurate semi-analytical method. Default = False
         :return:
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
@@ -99,12 +108,18 @@ class HullWhite:
         dt: float = maturity / number_of_time_steps
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
-        for j in range(number_of_time_steps):
-            z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-            short_rates[:, j + 1] = \
-                short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
-                self.sigma * z * math.sqrt(dt)
-
+        if approximate_method:
+            for j in range(number_of_time_steps):
+                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+                short_rates[:, j + 1] = \
+                    short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
+                    self.sigma * z * math.sqrt(dt)
+        else:
+            for j in range(number_of_time_steps):
+                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+                short_rates[:, j + 1] = \
+                    np.exp(-1 * self.alpha * j * dt) * short_rates[:, 0] + \
+                    scipy.integrate.quad(lambda t: np.exp(self.alpha * (t - j * dt)) * self.theta(t), 0, j * dt)
         plot_paths(short_rates, maturity)
         return time_steps, short_rates
 
@@ -121,11 +136,10 @@ class HullWhite:
 
     def a_function(self, tenors: np.ndarray, current_tenor: float) -> np.ndarray:
         forward_discount_factors: np.ndarray(np.type(float)) = \
-            self.initial_curve.get_discount_factors(tenors) /\
+            self.initial_curve.get_discount_factors(tenors) / \
             self.initial_curve.get_discount_factors(np.array([current_tenor]))
 
         # TODO: Should this not just be '-b * zero rate'?
-
         discount_factor_derivative: float = \
             -1 * self.b_function(tenors, current_tenor) * \
             (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
@@ -133,10 +147,10 @@ class HullWhite:
             self.short_rate_tenor
 
         complex_factor: float = \
-            self.sigma**2 * \
-            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * current_tenor))**2 * \
+            self.sigma ** 2 * \
+            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * current_tenor)) ** 2 * \
             (np.exp(2 * self.alpha * current_tenor) - 1) / \
-            (4 * self.alpha**3)
+            (4 * self.alpha ** 3)
 
         return forward_discount_factors * np.exp(discount_factor_derivative - complex_factor)
 
