@@ -78,7 +78,7 @@ class HullWhite:
             interp1d(theta_times[:-1], np.log(thetas), kind='linear', fill_value='extrapolate')
         return theta_interpolator
 
-    def theta(self, tenor: float):
+    def theta(self, tenor: float) -> float:
         """
         Uses the theta_interpolator to return the log-linear interpolated value of theta.
 
@@ -117,8 +117,8 @@ class HullWhite:
         else:
             for j in range(number_of_time_steps):
                 short_rates[:, j + 1] = \
-                    np.exp(-1 * self.alpha * j * dt) * short_rates[:, 0] + \
-                    scipy.integrate.quad(lambda t: np.exp(self.alpha * (t - j * dt)) * self.theta(t), 0, j * dt) + \
+                    np.exp(-1 * self.alpha * j * dt) * self.initial_short_rate + \
+                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, j * dt)[0] + \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
                     self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
         plot_paths(short_rates, maturity)
