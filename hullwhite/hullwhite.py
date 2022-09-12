@@ -133,15 +133,9 @@ class HullWhite:
         :param number_of_paths: The number of paths in the simulation.
         :return: An array of integral values for each path.
         """
-        time_steps: np.ndarray = np.arange(0, maturity, time_step_size) + time_step_size
-        output: np.ndarry = np.zeros(number_of_paths)
-        for i in range(0, number_of_paths):
-            random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, len(time_steps)))
-            output[i] = \
-                sum(
-                    [np.exp(self.alpha * t) * z * np.sqrt(time_step_size)
-                     for t, z in zip(time_steps, random_variables)])
-        return output
+        time_steps: np.ndarray = np.tile(np.arange(0, maturity, time_step_size) + time_step_size, (number_of_paths, 1))
+        random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, time_steps.shape[1])))
+        return np.sum(np.exp(self.alpha * time_steps) * random_variables * np.sqrt(time_step_size), 1)
 
     def b_function(self, tenors, current_tenor):
         """
