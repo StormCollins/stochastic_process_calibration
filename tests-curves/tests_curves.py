@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import QuantLib as ql
 from curves.curve import *
@@ -41,3 +42,20 @@ def test_get_single_forward_rate(curve, ql_curve):
 def test_get_single_zero_rate(curve, ql_curve):
     expected = ql_curve.zeroRate(ql.Date(14, 8, 2022), ql.Actual360(), ql.Continuous).rate()
     assert curve.get_zero_rates(np.array([0.625]))[0] == pytest.approx(expected, 0.0000001)
+
+
+def test_multiple_discount_curves_get_discount_factors():
+    tenors = np.array([0.00, 0.50, 1.00])
+    discount_factors: np.ndarray = \
+        np.array([[1.00, 0.99, 0.98],
+                  [1.00, 0.97, 0.96],
+                  [1.00, 0.95, 0.90]])
+
+    curves = Curve(tenors, discount_factors)
+    expected: np.ndarray = \
+        np.exp(
+            ((np.log(discount_factors[:, 1:]) - np.log(discount_factors[:, 0:-1]))/(tenors[1:] - tenors[0:-1])) *
+            (np.array([0.25, 0.75]) - tenors[:-1]) +
+            np.log(discount_factors[:, 0:-1]))
+    actual: np.ndarray = curves.get_discount_factors(np.array([0.25, 0.75]))
+    assert np.allclose(expected, actual)

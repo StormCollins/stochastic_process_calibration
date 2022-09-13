@@ -31,6 +31,7 @@ class HullWhite:
     initial_curve: Curve
     short_rate_tenor: float
     initial_short_rate: float
+    current_discount_factor_interpolator: interp1d
 
     def __init__(
             self,
@@ -92,36 +93,53 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            approximate_method: bool = False) -> [np.ndarray, np.ndarray]:
+            method: str = 'fast_analytical') -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
         :param maturity: The maturity of the simulation.
         :param number_of_paths: The number of paths.
         :param number_of_time_steps: The number of time steps.
-        :param approximate_method: Use the approximate, discretized Hull-White simulation method rather than the more
+        :param method: Use the approximate, discretized Hull-White simulation method rather than the more
             accurate semi-analytical method. Default = False
         :return:
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
         short_rates[:, 0] = self.initial_short_rate
         dt: float = maturity / number_of_time_steps
+        # time_steps: np.ndarray = np.tile(np.linspace(0, maturity, short_rates.shape[1]), (number_of_paths, 1))
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
-        if approximate_method:
+        if method == 'slow_approximate':
             for j in range(number_of_time_steps):
                 z: np.ndarray = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
                     self.sigma * z * math.sqrt(dt)
-        else:
-            for j in range(number_of_time_steps):
+        elif method == 'slow_analytical':
+            for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * j * dt) * self.initial_short_rate + \
                     scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, j * dt)[0] + \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
                     self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
-        plot_paths(short_rates, maturity)
+        else:
+            deterministic_part = \
+                np.exp(-1 * self.alpha * time_steps) * self.initial_short_rate
+
+            stochastic_part = np.zeros((number_of_paths, len(time_steps)))
+
+            for j in range(0, number_of_time_steps):
+                deterministic_part[j + 1] += \
+                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, j * dt)[0]
+
+                stochastic_part[:, j + 1] += \
+                    self.sigma * np.exp(-1 * self.alpha * j * dt) * \
+                    self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
+
+            short_rates = deterministic_part + stochastic_part
+
+        # plot_paths(short_rates, maturity)
         return time_steps, short_rates
 
     def exponential_stochastic_integral(self, maturity: float, time_step_size: float, number_of_paths: int):
@@ -186,3 +204,28 @@ class HullWhite:
         current_tenors = tenors[tenors >= current_tenor] - current_tenor
         current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
+
+    def get_discount_curves(
+            self,
+            short_rates: np.ndarray,
+            current_tenor: float) -> interp1d:
+        """
+        Gets the discount curve at the given time-step in the Hull-White simulation.
+
+        :param short_rates: The short rate at the current point in the Hull-White simulation.
+        :param current_tenor: The current time point in the Hull-White simulation.
+        :return: A discount curve at the current time point in the Hull-White simulation.
+        """
+        tenors = self.initial_curve.tenors
+        b = self.b_function(tenors, current_tenor)
+        a = self.a_function(tenors, current_tenor)
+        discount_factors: np.ndarray = a * np.transpose(np.exp(-np.outer(b, short_rates)))
+        current_tenors = tenors[tenors >= current_tenor] - current_tenor
+        # Rows are paths, columns are time steps
+        current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]
+        self.current_discount_factor_interpolator = \
+            interp1d(tenors, np.log(current_discount_factors), 'linear', fill_value='extrapolate')
+        return self.current_discount_factor_interpolator
+
+    def get_discount_factors(self, tenors: np.ndarray):
+        return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)

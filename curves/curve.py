@@ -23,7 +23,14 @@ class Curve:
         """
         self.tenors = tenors
         self.discount_factors = discount_factors
-        self.discount_factor_interpolator = interp1d(tenors, np.log(discount_factors), 'linear', fill_value='extrapolate')
+        if discount_factors.ndim == 1:
+            self.discount_factor_interpolator = \
+                interp1d(tenors, np.log(discount_factors), 'linear', fill_value='extrapolate')
+        elif discount_factors.ndim == 2:
+            self.discount_factor_interpolator = \
+                interp1d(tenors, np.log(discount_factors), 'linear', fill_value='extrapolate', axis=1)
+        else:
+            raise ValueError(f'Discount factor dimensions should be 1 or 2 but received {discount_factors.ndim}.')
 
     def get_discount_factors(self, tenors: np.ndarray) -> np.ndarray:
         """

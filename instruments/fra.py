@@ -85,7 +85,8 @@ class Fra:
             self,
             hw: HullWhite,
             number_of_paths: int,
-            number_of_time_steps: int) -> float:
+            number_of_time_steps: int,
+            method:str = 'fast_analytical') -> float:
         """
         1. Simulate the short rate
         2. Get the discount curve at each time step of the simulation
@@ -105,19 +106,31 @@ class Fra:
         initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factors(np.array([time_steps[1]]))[0]
         step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
 
-        for i in range(0, number_of_paths):
-            for j in range(1, number_of_time_steps + 1):
-                current_time_step: float = time_steps[j]
-                current_short_rate: float = short_rates[i][j]
-                current_discount_curve: Curve = \
-                    hw.get_discount_curve(current_short_rate, current_time_step)
-                current_value: float = self.get_value(current_discount_curve, current_time_step)
-                fra_values[i][j] = current_value
-                if j < number_of_time_steps:
-                    step_wise_stochastic_discount_factors[i][j] = \
-                        current_discount_curve.get_discount_factors(time_steps[j + 1])
+        # for i in range(0, number_of_paths):
+        #     for j in range(1, number_of_time_steps + 1):
+        #         current_time_step: float = time_steps[j]
+        #         current_short_rate: float = short_rates[i][j]
+        #         current_discount_curve: Curve = \
+        #             hw.get_discount_curve(current_short_rate, current_time_step)
+        #         current_value: float = self.get_value(current_discount_curve, current_time_step)
+        #         fra_values[i][j] = current_value
+        #         if j < number_of_time_steps:
+        #             step_wise_stochastic_discount_factors[i][j] = \
+        #                 current_discount_curve.get_discount_factors(time_steps[j + 1])
                 # plot_fra_values(current_time_step, current_values)
+
+        for j in range(1, number_of_time_steps + 1):
+            current_time_step: float = time_steps[j]
+            current_discount_curves: interp1d = \
+                hw.get_discount_curves(short_rates[:, j], current_time_step)
+            current_value: float = self.get_value(current_discount_curves, current_time_step)
+            fra_values[i][j] = current_value
+            if j < number_of_time_steps:
+                step_wise_stochastic_discount_factors[:, j] = \
+                    current_discount_curves.get_discount_factors(time_steps[j + 1])
 
         stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
         fra_value: float = np.average(fra_values[:, -1] * stochastic_discount_factors)
         return fra_value
+
+        interp1d(tenors, np.log(discount_factors), 'linear', fill_value='extrapolate')

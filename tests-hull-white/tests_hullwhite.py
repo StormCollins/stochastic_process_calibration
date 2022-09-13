@@ -113,6 +113,12 @@ def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
     assert x.var() == pytest.approx(1.0, abs=0.02)
 
 
+def test_get_discount_factors(flat_curve):
+    hw = HullWhite(0.0001, 0.1, flat_curve, 0.25)
+    discount_curves = hw.get_discount_curves(np.array([0.1, 0.11]), 0.25)
+    dfs = discount_curves(np.array([0.4, 0.45]))
+
+
 def test_simulate(flat_curve):
     maturity = 5
     alpha = 0.1
