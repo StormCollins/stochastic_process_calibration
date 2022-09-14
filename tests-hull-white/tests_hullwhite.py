@@ -38,6 +38,16 @@ def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
     assert all([a == pytest.approx(b, 0.001) for a, b in zip(actual, expected)])
 
 
+def test_theta_with_constant_zero_rates_and_small_alpha(flat_curve, curve_tenors):
+    alpha = 0.001
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
+    actual: list[float] = [hw.theta(t) for t in test_tenors]
+    expected: list[float] = list(np.zeros(len(actual)))
+    assert all([a == pytest.approx(b, abs=0.01) for a, b in zip(actual, expected)])
+
+
 def test_b_function_large_alpha(flat_curve):
     alpha: float = 10_000
     sigma: float = 0

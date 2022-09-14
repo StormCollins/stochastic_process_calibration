@@ -1,6 +1,5 @@
-from curves.curve import Curve
 import time
-from instruments.fra import Fra
+from instruments.fra import *
 from hullwhite.hullwhite import *
 import pytest
 
@@ -28,7 +27,12 @@ class TestsFra:
         initial_fra_value = fra.get_values(curve=initial_curve, current_time=0)
         print()
         print(f'Initial FRA value: {initial_fra_value}')
-        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=100, number_of_paths=10_000) #, method='slow_analytical')
-        print(f'Monte Carlo FRA Value (fast analytical): {fra_value}')
-        print(time.time() - start_time)
+        fra_value = \
+            fra.get_monte_carlo_value(
+                hw,
+                number_of_time_steps=10,
+                number_of_paths=10_000,
+                valuation_type=ValuationType.FUTUREVALUE) #, method='slow_analytical')
+        print(f'Monte Carlo FRA Value: {fra_value}')
+        print(f'Time taken: {time.time() - start_time}s')
         # plt.show()

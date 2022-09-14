@@ -1,11 +1,18 @@
 from curves.curve import *
 import numpy as np
+from enum import Enum
 import scipy.integrate
 from scipy.interpolate import interp1d
 from scipy.stats import norm
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+
+class SimulationMethod(Enum):
+    SLOWANALYTICAL = 1
+    FASTANALYTICAL = 2
+    SLOWAPPROXIMATE = 3
 
 
 def plot_paths(paths, maturity: float):
@@ -100,7 +107,7 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: str = 'fast_analytical') -> [np.ndarray, np.ndarray]:
+            method: SimulationMethod = SimulationMethod.FASTANALYTICAL) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
@@ -117,13 +124,13 @@ class HullWhite:
         # time_steps: np.ndarray = np.tile(np.linspace(0, maturity, short_rates.shape[1]), (number_of_paths, 1))
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
-        if method == 'slow_approximate':
+        if method == SimulationMethod.SLOWAPPROXIMATE:
             for j in range(number_of_time_steps):
                 z: np.ndarray = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
                     self.sigma * z * math.sqrt(dt)
-        elif method == 'slow_analytical':
+        elif method == SimulationMethod.SLOWANALYTICAL:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * j * dt) * self.initial_short_rate + \
@@ -142,7 +149,7 @@ class HullWhite:
 
                 stochastic_part[:, j + 1] += \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
-                    self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
+                    self.exponential_stochastic_integral(j * dt, dt/3, number_of_paths)
 
             short_rates = deterministic_part + stochastic_part
 

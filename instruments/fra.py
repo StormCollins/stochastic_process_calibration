@@ -71,17 +71,27 @@ class Fra:
             end_tenors=np.array([self.forward_rate_end_tenor - current_tenor]),
             compounding_convention=compounding_convention)
 
-    def get_values(self, curve: Curve, current_time: float = 0) -> np.ndarray:
+    def get_values(
+            self,
+            curve: Curve,
+            current_time: float = 0,
+            valuation_type: ValuationType = ValuationType.FUTUREVALUE) -> np.ndarray:
         """
         Calculates the value of the FRA at the current time using the given interest rate curve.
 
         :param curve: Interest rate curve at the current time.
         :param current_time: The current time - this may be some time step in a Monte Carlo simulation.
+        :param valuation_type: Future or present value. Default = Future Value.
         :return: The value of the FRA.
         """
-        return self.notional * \
-            (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
-            (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
+        future_values = \
+            self.notional * \
+                (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
+                (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
+        if valuation_type == ValuationType.FUTUREVALUE:
+            return future_values
+        else:
+            return future_values * curve.get_discount_factors(np.array([self.forward_rate_start_tenor]))
 
     def get_monte_carlo_value(
             self,
@@ -123,16 +133,26 @@ class Fra:
         #                 current_discount_curve.get_discount_factors(time_steps[j + 1])
                 # plot_fra_values(current_time_step, current_values)
 
-        for j in range(1, number_of_time_steps + 1):
-            current_time_step: float = time_steps[j]
-            current_discount_curves: Curve = \
-                hw.get_discount_curve(short_rates[:, j], current_time_step)
-            current_value = self.get_values(current_discount_curves, current_time_step)
-            fra_values[:, j] = np.ndarray.flatten(current_value)
-            if j < number_of_time_steps:
-                step_wise_stochastic_discount_factors[:, j] = \
-                    current_discount_curves.get_discount_factors(time_steps[j + 1])
+        if valuation_type == ValuationType.PRESENTVALUE:
+            for j in range(1, number_of_time_steps + 1):
+                current_time_step: float = time_steps[j]
+                current_discount_curves: Curve = \
+                    hw.get_discount_curve(short_rates[:, j], current_time_step)
+                current_value = self.get_values(current_discount_curves, current_time_step)
+                fra_values[:, j] = np.ndarray.flatten(current_value)
+                if j < number_of_time_steps:
+                    step_wise_stochastic_discount_factors[:, j] = \
+                        current_discount_curves.get_discount_factors(time_steps[j + 1])
 
-        stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
-        fra_value: float = np.average(fra_values[:, -1] * stochastic_discount_factors)
-        return fra_value
+            stochastic_discount_factors = np.prod(step_wise_stochastic_discount_factors, 1)
+            fra_value: float = np.average(fra_values[:, -1] * stochastic_discount_factors)
+            return fra_value
+        else:
+            for j in range(1, number_of_time_steps + 1):
+                current_time_step: float = time_steps[j]
+                current_discount_curves: Curve = \
+                    hw.get_discount_curve(short_rates[:, j], current_time_step)
+                current_value = self.get_values(current_discount_curves, current_time_step)
+                fra_values[:, j] = np.ndarray.flatten(current_value)
+            fra_value: float = np.average(fra_values[:, -1])
+            return fra_value
