@@ -89,4 +89,9 @@ def test_multiple_discount_curves_get_discount_factors(
 
 def test_get_discount_factor_derivatives(flat_curve):
     actual = flat_curve.get_discount_factor_derivatives(0.25)
-    assert -0.1 == pytest.approx(actual, 0.05)
+    assert -0.1 * np.exp(-0.1 * 0.25) == pytest.approx(actual, 0.0001)
+
+
+def test_get_log_discount_factor_derivatives(flat_curve):
+    actual = flat_curve.get_log_discount_factor_derivatives(0.25)
+    assert -0.1 == pytest.approx(actual, 0.0001)

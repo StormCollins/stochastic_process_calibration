@@ -99,9 +99,20 @@ class Curve:
         """
         Gets the numerical derivative of the discount factors at a given tenor.
 
-        :param tenor:
-        :return:
+        :param tenor: The tenor at which to calculate the derivative.
+        :return: The derivative value.
         """
         return (self.get_discount_factors(np.array(tenor + self.numerical_derivative_step_size)) -
                 self.get_discount_factors(np.array(tenor - self.numerical_derivative_step_size))) / \
+               (2 * self.numerical_derivative_step_size)
+
+    def get_log_discount_factor_derivatives(self, tenor):
+        """
+        Gets the derivative of the log of the discount factors.
+        
+        :param tenor: The tenor at which to calculate the derivative.
+        :return: The derivative value.
+        """
+        return (np.log(self.get_discount_factors(np.array(tenor + self.numerical_derivative_step_size))) -
+                np.log(self.get_discount_factors(np.array(tenor - self.numerical_derivative_step_size)))) / \
                (2 * self.numerical_derivative_step_size)
