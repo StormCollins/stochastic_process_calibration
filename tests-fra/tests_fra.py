@@ -20,14 +20,15 @@ class TestsFra:
         # We assume a constant rate of 10%
         discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708, 0.839457])
         initial_curve = Curve(tenors, discount_factors)
-        short_rate_tenor = 0.01
+        short_rate_tenor = 0.25
         hw = HullWhite(0.1, 0.2, initial_curve, short_rate_tenor)
-
-        fra = Fra(notional=1_0, forward_rate_start_tenor=1.25, forward_rate_end_tenor=1.50, strike=0.2)#0126)
-        initial_fra_value = fra.get_value(curve=initial_curve, current_time=0)
+        forward_rate_start_tenor = 1.25  # 1.25
+        forward_rate_end_tenor = 1.5  # 1.50
+        fra = Fra(1_000_000, forward_rate_start_tenor, forward_rate_end_tenor, strike=0.2)#0126)
+        initial_fra_value = fra.get_values(curve=initial_curve, current_time=0)
         print()
         print(f'Initial FRA value: {initial_fra_value}')
-        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=30, number_of_paths=1000)
+        fra_value = fra.get_monte_carlo_value(hw, number_of_time_steps=100, number_of_paths=10_000) #, method='slow_analytical')
         print(f'Monte Carlo FRA Value (fast analytical): {fra_value}')
         print(time.time() - start_time)
         # plt.show()

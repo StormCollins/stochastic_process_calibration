@@ -25,6 +25,7 @@ def plot_paths(paths, maturity: float):
 
 
 class HullWhite:
+    h: float = 0.001  # Small step used in numerical derivatives.
     alpha: float
     sigma: float
     theta_interpolator: interp1d
@@ -69,14 +70,20 @@ class HullWhite:
         theta_times = theta_times[theta_times > 0]
         discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times)
         zero_rates = -1 * np.log(discount_factors) / theta_times
+        offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times - self.h)
+        offset_zero_rates = -1 * np.log(offset_discount_factors) / (theta_times - self.h)
+        # thetas: np.ndarray = \
+        #     (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
+        #     self.alpha * zero_rates[0:-1] + \
+        #     self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
         thetas: np.ndarray = \
-            (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
-            self.alpha * zero_rates[0:-1] + \
-            self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
+            (zero_rates - offset_zero_rates) / self.h + \
+            self.alpha * zero_rates + \
+            self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times))
         # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
         # TODO: Check extrapolation.
         theta_interpolator: interp1d = \
-            interp1d(theta_times[:-1], np.log(thetas), kind='linear', fill_value='extrapolate')
+            interp1d(theta_times, np.log(thetas), kind='linear', fill_value='extrapolate')
         return theta_interpolator
 
     def theta(self, tenor: float) -> float:
@@ -175,7 +182,7 @@ class HullWhite:
         discount_factor_derivative: float = \
             -1 * self.b_function(tenors, current_tenor) * \
             (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
-             np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.short_rate_tenor])))) / \
+             np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.h])))) / \
             self.short_rate_tenor
 
         complex_factor: float = \
@@ -200,9 +207,9 @@ class HullWhite:
         tenors = self.initial_curve.tenors
         b = self.b_function(tenors, current_tenor)
         a = self.a_function(tenors, current_tenor)
-        discount_factors: np.ndarray = a * np.exp(-b * short_rate)
+        discount_factors: np.ndarray = a * np.transpose(np.exp(-np.outer(b, short_rate)))
         current_tenors = tenors[tenors >= current_tenor] - current_tenor
-        current_discount_factors = discount_factors[(len(discount_factors) - len(current_tenors)):]
+        current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
 
     def get_discount_curves(

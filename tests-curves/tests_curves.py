@@ -40,6 +40,18 @@ def multiple_curves(multiple_curve_tenors, multiple_curve_discount_factors):
     return Curve(multiple_curve_tenors, multiple_curve_discount_factors)
 
 
+@pytest.fixture
+def curve_tenors():
+    return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
+
+
+@pytest.fixture
+def flat_curve(curve_tenors):
+    rate = 0.1
+    discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
+    return Curve(curve_tenors, discount_factors)
+
+
 def test_get_single_discount_factor(single_curve, ql_curve):
     assert single_curve.get_discount_factors(np.array([0.625]))[0] == ql_curve.discount(ql.Date(14, 8, 2022))
 
@@ -73,3 +85,8 @@ def test_multiple_discount_curves_get_discount_factors(
             np.log(dfs[:, 0:-1]))
     actual: np.ndarray = multiple_curves.get_discount_factors(np.array([0.25, 0.75]))
     assert np.allclose(expected, actual)
+
+
+def test_get_discount_factor_derivatives(flat_curve):
+    actual = flat_curve.get_discount_factor_derivatives(0.25)
+    assert -0.1 == pytest.approx(actual, 0.05)
