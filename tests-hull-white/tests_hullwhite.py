@@ -88,7 +88,7 @@ def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_curve):
     expected = \
         flat_curve.get_discount_factors(tenors + current_tenor) / \
         flat_curve.get_discount_factors(np.array([current_tenor]))
-    assert actual == pytest.approx(expected, abs=0.0001)
+    assert actual[0] == pytest.approx(expected, abs=0.00001)
 
 
 def test_get_discount_factors_with_zero_vol(flat_curve):
@@ -102,7 +102,7 @@ def test_get_discount_factors_with_zero_vol(flat_curve):
     expected = \
         flat_curve.get_discount_factors(tenors + current_tenor) / \
         flat_curve.get_discount_factors(np.array([current_tenor]))
-    assert actual == pytest.approx(expected, abs=0.0001)
+    assert actual[0] == pytest.approx(expected, abs=0.0001)
 
 
 def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
@@ -111,12 +111,6 @@ def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
     x = hw.exponential_stochastic_integral(1.0, 0.1, 10_000)
     assert x.mean() == pytest.approx(0.0, abs=0.02)
     assert x.var() == pytest.approx(1.0, abs=0.02)
-
-
-def test_get_discount_factors(flat_curve):
-    hw = HullWhite(0.0001, 0.1, flat_curve, 0.25)
-    discount_curves = hw.get_discount_curves(np.array([0.1, 0.11]), 0.25)
-    dfs = discount_curves(np.array([0.4, 0.45]))
 
 
 def test_simulate(flat_curve):

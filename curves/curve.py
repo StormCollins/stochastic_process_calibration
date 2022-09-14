@@ -95,24 +95,24 @@ class Curve:
         else:
             raise ValueError(f'Invalid compounding convention: {compounding_convention}')
 
-    def get_discount_factor_derivatives(self, tenor):
+    def get_discount_factor_derivatives(self, tenors: np.ndarray):
         """
-        Gets the numerical derivative of the discount factors at a given tenor.
+        Gets the derivative values of the discount factors at the given tenors.
 
-        :param tenor: The tenor at which to calculate the derivative.
-        :return: The derivative value.
+        :param tenors: The tenors at which to calculate the derivative.
+        :return: The derivative values.
         """
-        return (self.get_discount_factors(np.array(tenor + self.numerical_derivative_step_size)) -
-                self.get_discount_factors(np.array(tenor - self.numerical_derivative_step_size))) / \
+        return (self.get_discount_factors(tenors + self.numerical_derivative_step_size) -
+                self.get_discount_factors(tenors - self.numerical_derivative_step_size)) / \
                (2 * self.numerical_derivative_step_size)
 
-    def get_log_discount_factor_derivatives(self, tenor):
+    def get_log_discount_factor_derivatives(self, tenors: np.ndarray):
         """
-        Gets the derivative of the log of the discount factors.
+        Gets the derivative values of the log of the discount factors at the given tenors.
         
-        :param tenor: The tenor at which to calculate the derivative.
-        :return: The derivative value.
+        :param tenors: The tenors at which to calculate the derivative.
+        :return: The derivative values.
         """
-        return (np.log(self.get_discount_factors(np.array(tenor + self.numerical_derivative_step_size))) -
-                np.log(self.get_discount_factors(np.array(tenor - self.numerical_derivative_step_size)))) / \
+        return (np.log(self.get_discount_factors(tenors + self.numerical_derivative_step_size)) -
+                np.log(self.get_discount_factors(tenors - self.numerical_derivative_step_size))) / \
                (2 * self.numerical_derivative_step_size)

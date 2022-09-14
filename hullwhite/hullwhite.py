@@ -25,7 +25,7 @@ def plot_paths(paths, maturity: float):
 
 
 class HullWhite:
-    h: float = 0.001  # Small step used in numerical derivatives.
+    numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
     alpha: float
     sigma: float
     theta_interpolator: interp1d
@@ -70,14 +70,14 @@ class HullWhite:
         theta_times = theta_times[theta_times > 0]
         discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times)
         zero_rates = -1 * np.log(discount_factors) / theta_times
-        offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times - self.h)
-        offset_zero_rates = -1 * np.log(offset_discount_factors) / (theta_times - self.h)
+        offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times - self.numerical_derivative_step_size)
+        offset_zero_rates = -1 * np.log(offset_discount_factors) / (theta_times - self.numerical_derivative_step_size)
         # thetas: np.ndarray = \
         #     (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
         #     self.alpha * zero_rates[0:-1] + \
         #     self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
         thetas: np.ndarray = \
-            (zero_rates - offset_zero_rates) / self.h + \
+            (zero_rates - offset_zero_rates) / self.numerical_derivative_step_size + \
             self.alpha * zero_rates + \
             self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times))
         # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
@@ -181,9 +181,10 @@ class HullWhite:
         # TODO: Should this not just be '-b * zero rate'?
         discount_factor_derivative: float = \
             -1 * self.b_function(tenors, current_tenor) * \
-            (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
-             np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.h])))) / \
-            self.short_rate_tenor
+            self.initial_curve.get_log_discount_factor_derivatives(np.array([current_tenor]))
+            # (np.log(self.initial_curve.get_discount_factors(np.array([current_tenor]))) -
+            #  np.log(self.initial_curve.get_discount_factors(np.array([current_tenor - self.numerical_derivative_step_size])))) / \
+            # self.short_rate_tenor
 
         complex_factor: float = \
             self.sigma ** 2 * \
