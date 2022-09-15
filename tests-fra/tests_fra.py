@@ -19,20 +19,23 @@ class TestsFra:
         # We assume a constant rate of 10%
         discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708, 0.839457])
         initial_curve = Curve(tenors, discount_factors)
-        short_rate_tenor = 0.25
+        number_time_steps = 100
+        short_rate_tenor = 1.25 / (number_time_steps + 1)
         hw = HullWhite(0.1, 0.2, initial_curve, short_rate_tenor)
         forward_rate_start_tenor = 1.25  # 1.25
         forward_rate_end_tenor = 1.5  # 1.50
-        fra = Fra(1_000_000, forward_rate_start_tenor, forward_rate_end_tenor, strike=0.2)#0126)
-        initial_fra_value = fra.get_values(curve=initial_curve, current_time=0)
+        fra = Fra(1_000_000, forward_rate_start_tenor, forward_rate_end_tenor, strike=0.2)
+        fra_future_value = \
+            fra.get_values(curve=initial_curve, current_time=0, valuation_type=ValuationType.FUTUREVALUE)
         print()
-        print(f'Initial FRA value: {initial_fra_value}')
+        print(f'Analytical FRA future value: {fra_future_value}')
         fra_value = \
             fra.get_monte_carlo_value(
                 hw,
-                number_of_time_steps=30,
-                number_of_paths=1000,
-                valuation_type=ValuationType.FUTUREVALUE) #, method='slow_analytical')
-        print(f'Monte Carlo FRA Value: {fra_value}')
+                number_of_time_steps=number_time_steps,
+                number_of_paths=10_000,
+                valuation_type=ValuationType.FUTUREVALUE,
+                method=SimulationMethod.SLOWANALYTICAL)
+        print(f'Monte Carlo FRA future value: {fra_value}')
         print(f'Time taken: {time.time() - start_time}s')
         # plt.show()

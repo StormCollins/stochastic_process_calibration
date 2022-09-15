@@ -86,8 +86,8 @@ class Fra:
         """
         future_values = \
             self.notional * \
-                (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
-                (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
+            (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
+            (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
         if valuation_type == ValuationType.FUTUREVALUE:
             return future_values
         else:
@@ -98,7 +98,7 @@ class Fra:
             hw: HullWhite,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: str = 'fast_analytical',
+            method: SimulationMethod,
             valuation_type: ValuationType = ValuationType.FUTUREVALUE) -> float:
         """
         1. Simulate the short rate
@@ -131,15 +131,14 @@ class Fra:
         #         if j < number_of_time_steps:
         #             step_wise_stochastic_discount_factors[i][j] = \
         #                 current_discount_curve.get_discount_factors(time_steps[j + 1])
-                # plot_fra_values(current_time_step, current_values)
+        # plot_fra_values(current_time_step, current_values)
 
         if valuation_type == ValuationType.PRESENTVALUE:
             for j in range(1, number_of_time_steps + 1):
                 current_time_step: float = time_steps[j]
                 current_discount_curves: Curve = \
                     hw.get_discount_curve(short_rates[:, j], current_time_step)
-                current_value = self.get_values(current_discount_curves, current_time_step)
-                fra_values[:, j] = np.ndarray.flatten(current_value)
+                fra_values[:, j] = np.ndarray.flatten(self.get_values(current_discount_curves, current_time_step))
                 if j < number_of_time_steps:
                     step_wise_stochastic_discount_factors[:, j] = \
                         current_discount_curves.get_discount_factors(time_steps[j + 1])
@@ -152,7 +151,7 @@ class Fra:
                 current_time_step: float = time_steps[j]
                 current_discount_curves: Curve = \
                     hw.get_discount_curve(short_rates[:, j], current_time_step)
-                current_value = self.get_values(current_discount_curves, current_time_step)
-                fra_values[:, j] = np.ndarray.flatten(current_value)
+                current_values = self.get_values(current_discount_curves, current_time_step)
+                fra_values[:, j] = np.ndarray.flatten(current_values)
             fra_value: float = np.average(fra_values[:, -1])
             return fra_value

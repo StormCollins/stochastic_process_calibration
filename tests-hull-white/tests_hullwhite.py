@@ -138,16 +138,27 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
 
 def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
     maturity = 5
-    alpha = 0.25
+    alpha = 0.1
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.01)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.25)
     tenors, paths = \
         hw.simulate(
             maturity=maturity,
-            number_of_paths=1,
-            number_of_time_steps=1000,
-            method=SimulationMethod.SLOWAPPROXIMATE,
+            number_of_paths=1_000,
+            number_of_time_steps=10,
+            method=SimulationMethod.SLOWANALYTICAL,
             plot_results=True)
+    print(paths)
+
+
+def test_initial_short_rate_for_flat_curve(flat_curve):
+    maturity = 5
+    alpha = 0.1
+    sigma = 0.1
+    hw_short_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.0001)
+    hw_long_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.25)
+    assert hw_short_short_rate_tenor.initial_short_rate == \
+           pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
 @pytest.mark.skip(reason="Incomplete")

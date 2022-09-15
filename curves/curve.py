@@ -69,7 +69,7 @@ class Curve:
         start_discount_factors: np.ndarray = self.get_discount_factors(start_tenors)
         end_discount_factors: np.ndarray = self.get_discount_factors(end_tenors)
         if compounding_convention == compounding_convention.NACC:
-            return -1 / (end_tenors - start_tenors) * np.log(end_discount_factors / start_discount_factors)
+            return (-1 / (end_tenors - start_tenors)) * np.log(end_discount_factors / start_discount_factors)
         if compounding_convention == compounding_convention.NACQ:
             return 4 * ((start_discount_factors / end_discount_factors) ** (4 * (end_tenors - start_tenors)) - 1)
         elif compounding_convention == compounding_convention.Simple:

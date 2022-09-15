@@ -48,7 +48,7 @@ class HullWhite:
             initial_curve.get_forward_rates(
                 np.array([0]),
                 np.array([self.short_rate_tenor]),
-                CompoundingConvention.NACQ)
+                CompoundingConvention.NACC)
 
     def setup_theta(self, theta_times: np.ndarray) -> interp1d:
         """
@@ -102,6 +102,7 @@ class HullWhite:
         :param number_of_time_steps: The number of time steps.
         :param method: Use the approximate, discretized Hull-White simulation method rather than the more
             accurate semi-analytical method. Default = False
+        :param plot_results: Plot short rate paths vs. time steps.
         :return:
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
@@ -119,11 +120,11 @@ class HullWhite:
         elif method == SimulationMethod.SLOWANALYTICAL:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
-                    np.exp(-1 * self.alpha * j * dt) * self.initial_short_rate + \
-                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, (j + 1) * dt)[
-                        0] + \
-                    self.sigma * np.exp(-1 * self.alpha * j * dt) * \
-                    self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
+                    np.exp(-1 * self.alpha * dt) * short_rates[:, j] + \
+                    scipy.integrate.quad(
+                        lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
+                    self.sigma * np.exp(-1 * self.alpha * dt) * \
+                    np.ndarray.flatten(self.exponential_stochastic_integral(j * dt, dt, number_of_paths))
         else:
             deterministic_part = \
                 np.exp(-1 * self.alpha * time_steps) * self.initial_short_rate
@@ -137,7 +138,7 @@ class HullWhite:
 
                 stochastic_part[:, j + 1] += \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
-                    self.exponential_stochastic_integral(j * dt, dt / 3, number_of_paths)
+                    self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
 
             short_rates = deterministic_part + stochastic_part
 
@@ -155,9 +156,13 @@ class HullWhite:
         :param number_of_paths: The number of paths in the simulation.
         :return: An array of integral values for each path.
         """
-        time_steps: np.ndarray = np.tile(np.arange(0, maturity, time_step_size) + time_step_size, (number_of_paths, 1))
-        random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, time_steps.shape[1])))
-        return np.sum(np.exp(self.alpha * time_steps) * random_variables * np.sqrt(time_step_size), 1)
+        # time_steps: np.ndarray = np.tile(np.arange(0, maturity, time_step_size) + time_step_size, (number_of_paths, 1))
+        # random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, time_steps.shape[1])))
+        # return np.sum(np.exp(self.alpha * time_steps) * random_variables * np.sqrt(time_step_size), 1)
+        dt = time_step_size
+        random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
+        # return np.exp(self.alpha * maturity) * random_variables * np.sqrt(time_step_size)
+        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
 
     def b_function(self, tenors, current_tenor):
         """
