@@ -15,22 +15,6 @@ class SimulationMethod(Enum):
     SLOWAPPROXIMATE = 3
 
 
-def plot_paths(paths, maturity: float):
-    time = np.linspace(0, maturity, paths.shape[1])
-
-    # Path plot
-    indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
-    sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-    sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
-    fig1, ax1 = plt.subplots()
-    ax1.plot(time, sorted_paths)
-    ax1.grid(True)
-    ax1.set_facecolor('#AAAAAA')
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('Value')
-    ax1.set_xlim([0, maturity])
-
-
 class HullWhite:
     numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
     alpha: float
@@ -77,7 +61,8 @@ class HullWhite:
         theta_times = theta_times[theta_times > 0]
         discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times)
         zero_rates = -1 * np.log(discount_factors) / theta_times
-        offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(theta_times - self.numerical_derivative_step_size)
+        offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(
+            theta_times - self.numerical_derivative_step_size)
         offset_zero_rates = -1 * np.log(offset_discount_factors) / (theta_times - self.numerical_derivative_step_size)
         # thetas: np.ndarray = \
         #     (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
@@ -107,7 +92,8 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: SimulationMethod = SimulationMethod.FASTANALYTICAL) -> [np.ndarray, np.ndarray]:
+            method: SimulationMethod = SimulationMethod.FASTANALYTICAL,
+            plot_results: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
@@ -134,7 +120,8 @@ class HullWhite:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * j * dt) * self.initial_short_rate + \
-                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, j * dt)[0] + \
+                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, (j + 1) * dt)[
+                        0] + \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
                     self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
         else:
@@ -145,15 +132,18 @@ class HullWhite:
 
             for j in range(0, number_of_time_steps):
                 deterministic_part[j + 1] += \
-                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, j * dt)[0]
+                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, (j + 1) * dt)[
+                        0]
 
                 stochastic_part[:, j + 1] += \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
-                    self.exponential_stochastic_integral(j * dt, dt/3, number_of_paths)
+                    self.exponential_stochastic_integral(j * dt, dt / 3, number_of_paths)
 
             short_rates = deterministic_part + stochastic_part
 
-        # plot_paths(short_rates, maturity)
+        if plot_results:
+            self.plot_paths(time_steps, short_rates)
+
         return time_steps, short_rates
 
     def exponential_stochastic_integral(self, maturity: float, time_step_size: float, number_of_paths: int):
@@ -233,3 +223,24 @@ class HullWhite:
         :return:
         """
         return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)
+
+    @staticmethod
+    def plot_paths(time_steps, paths):
+        """
+        Plots the paths from Monte Carlo simulation vs. the time steps.
+
+        :param time_steps: The time steps.
+        :param paths: The output paths from the simulation.
+        :return:
+        """
+        indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
+        sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
+        sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
+        fig, ax = plt.subplots()
+        ax.plot(time_steps, sorted_paths)
+        ax.grid(True)
+        ax.set_facecolor('#AAAAAA')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('r(t)')
+        ax.set_xlim([0, time_steps[-1]])
+        plt.show()

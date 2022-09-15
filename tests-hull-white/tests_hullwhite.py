@@ -123,69 +123,31 @@ def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
     assert x.var() == pytest.approx(1.0, abs=0.02)
 
 
-def test_simulate(flat_curve):
+def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
+    """
+    Under these conditions the simulated short rate doesn't deviate from the initial short rate.
+    """
     maturity = 5
-    alpha = 0.1
+    alpha = 0.00001
+    sigma = 0.0
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.1)
+    tenors, paths = hw.simulate(maturity, number_of_paths=1, number_of_time_steps=5)
+    for value in paths[0]:
+        assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
+
+
+def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
+    maturity = 5
+    alpha = 0.25
     sigma = 0.1
-    curve_tenors = \
-        np.array([
-            0.0000000,
-            0.0027397,
-            0.0821918,
-            0.2493151,
-            0.4958904,
-            0.7479452,
-            1.0000000,
-            1.2493151,
-            1.4958904,
-            1.7479452,
-            2.0000000,
-            2.9972603,
-            4.0027397,
-            5.0027397,
-            6.0027397,
-            7.0027397,
-            8.0027397,
-            9.0000000,
-            10.0054795,
-            12.0082192,
-            15.0027397,
-            20.0082192,
-            25.0136986,
-            30.0191781])
-
-    # TODO: Where did these discount factors come from?
-    curve_discount_factors = \
-        np.array(
-            [1.000000,
-             0.999907,
-             0.997261,
-             0.991717,
-             0.983809,
-             0.975718,
-             0.967524,
-             0.959083,
-             0.950459,
-             0.941230,
-             0.931649,
-             0.887226,
-             0.834895,
-             0.776718,
-             0.713405,
-             0.649354,
-             0.585177,
-             0.524324,
-             0.469244,
-             0.372527,
-             0.268633,
-             0.162742,
-             0.104571,
-             0.071701])
-
-    initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
-    hw = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.25)
-    paths = hw.simulate(maturity, number_of_paths=1_000, number_of_time_steps=50)
-    plt.show()
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.01)
+    tenors, paths = \
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=1,
+            number_of_time_steps=1000,
+            method=SimulationMethod.SLOWAPPROXIMATE,
+            plot_results=True)
 
 
 @pytest.mark.skip(reason="Incomplete")

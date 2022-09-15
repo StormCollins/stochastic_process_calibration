@@ -30,8 +30,8 @@ class TestsFra:
         fra_value = \
             fra.get_monte_carlo_value(
                 hw,
-                number_of_time_steps=10,
-                number_of_paths=10_000,
+                number_of_time_steps=30,
+                number_of_paths=1000,
                 valuation_type=ValuationType.FUTUREVALUE) #, method='slow_analytical')
         print(f'Monte Carlo FRA Value: {fra_value}')
         print(f'Time taken: {time.time() - start_time}s')
