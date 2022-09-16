@@ -50,7 +50,7 @@ def test_get_monte_carlo_value():
         fra.get_monte_carlo_value(
             hw,
             number_of_time_steps=number_time_steps,
-            number_of_paths=100_000,
+            number_of_paths=1_000,
             valuation_type=ValuationType.FUTUREVALUE,
             method=SimulationMethod.SLOWANALYTICAL,
             plot_results=True)

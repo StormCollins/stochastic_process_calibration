@@ -1,6 +1,8 @@
 # TODO: Setup more tests for theta with 'real' interest rate curves.
 
 import pytest
+import scipy.stats
+
 from hullwhite.hullwhite import *
 
 
@@ -154,8 +156,8 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
     fig, ax = plt.subplots(ncols=1, nrows=1)
     ax.set_facecolor('#AAAAAA')
     ax.grid(False)
-    returns: np.ndarray = short_rates[:, -1]
-    (values, bins, _) = ax.hist(returns, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    rates: np.ndarray = short_rates[:, -1]
+    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
     bin_centers = 0.5 * (bins[1:] + bins[:-1])
     normal_distribution_mean = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
@@ -170,8 +172,10 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
         xytext=(-2, 0.2))
     ax.legend()
     plt.show()
-    assert returns.mean() == pytest.approx(normal_distribution_mean, abs=0.01)
-    assert np.sqrt(returns.var()) == pytest.approx(normal_distribution_std, abs=0.01)
+    statistic, pvalue = scipy.stats.normaltest(rates)
+    assert pvalue > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
+    assert rates.mean() == pytest.approx(normal_distribution_mean, abs=0.01)
+    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.01)
 
 
 def test_simulated_distribution_with_flat_curve(flat_curve):
@@ -187,12 +191,13 @@ def test_simulated_distribution_with_flat_curve(flat_curve):
             number_of_time_steps=1,
             method=SimulationMethod.SLOWANALYTICAL,
             plot_results=False)
+
+    rates: np.ndarray = short_rates[:, -1]
     plt.style.use('ggplot')
     fig, ax = plt.subplots(ncols=1, nrows=1)
     ax.set_facecolor('#AAAAAA')
     ax.grid(False)
-    returns: np.ndarray = short_rates[:, -1]
-    (values, bins, _) = ax.hist(returns, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
     bin_centers = 0.5 * (bins[1:] + bins[:-1])
     normal_distribution_mean = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
@@ -207,8 +212,10 @@ def test_simulated_distribution_with_flat_curve(flat_curve):
         xytext=(-2, 0.2))
     ax.legend()
     plt.show()
-    assert returns.mean() == pytest.approx(normal_distribution_mean[0], abs=0.05)
-    assert np.sqrt(returns.var()) == pytest.approx(normal_distribution_std, abs=0.05)
+    statistic, pvalue = scipy.stats.normaltest(rates)
+    assert pvalue > 1e-3
+    assert rates.mean() == pytest.approx(normal_distribution_mean[0], abs=0.05)
+    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.05)
 
 
 def test_initial_short_rate_for_flat_curve(flat_curve):
