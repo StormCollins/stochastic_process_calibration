@@ -1,7 +1,5 @@
 # TODO: Setup more tests for theta with 'real' interest rate curves.
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pytest
 from hullwhite.hullwhite import *
 
@@ -116,11 +114,14 @@ def test_get_discount_factors_with_zero_vol(flat_curve):
 
 
 def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
-    hw = HullWhite(0.0001, 0.1, flat_curve, 0.25)
+    alpha = 0.0001
+    sigma = 0.1
+    hw = HullWhite(alpha, sigma, flat_curve, 0.25)
     np.random.seed(999)
-    x = hw.exponential_stochastic_integral(1.0, 0.1, 10_000)
-    assert x.mean() == pytest.approx(0.0, abs=0.02)
-    assert x.var() == pytest.approx(1.0, abs=0.02)
+    time_step_size = 0.01
+    x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
+    assert x.mean() == pytest.approx(0.0, abs=0.05)
+    assert x.var() == pytest.approx(1 * time_step_size, abs=0.02)
 
 
 def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
@@ -131,28 +132,86 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
     alpha = 0.00001
     sigma = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.1)
-    tenors, paths = hw.simulate(maturity, number_of_paths=1, number_of_time_steps=5)
+    tenors, paths = hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5)
     for value in paths[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
 
 
 def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
-    maturity = 5
-    alpha = 0.1
-    sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.25)
-    tenors, paths = \
+    maturity = 1
+    alpha = 0.00001
+    sigma = 0.5
+    np.random.seed(999)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.001)
+    tenors, short_rates = \
         hw.simulate(
             maturity=maturity,
-            number_of_paths=1_000,
-            number_of_time_steps=10,
+            number_of_paths=100_000,
+            number_of_time_steps=1,
             method=SimulationMethod.SLOWANALYTICAL,
-            plot_results=True)
-    print(paths)
+            plot_results=False)
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    ax.set_facecolor('#AAAAAA')
+    ax.grid(False)
+    returns: np.ndarray = short_rates[:, -1]
+    (values, bins, _) = ax.hist(returns, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    normal_distribution_mean = \
+        np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
+        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
+    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
+    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
+    ax.annotate(
+        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
+        xy=(0, 0.4),
+        xytext=(-2, 0.2))
+    ax.legend()
+    plt.show()
+    assert returns.mean() == pytest.approx(normal_distribution_mean, abs=0.01)
+    assert np.sqrt(returns.var()) == pytest.approx(normal_distribution_std, abs=0.01)
+
+
+def test_simulated_distribution_with_flat_curve(flat_curve):
+    maturity = 1
+    alpha = 0.1
+    sigma = 0.5
+    np.random.seed(999)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.001)
+    tenors, short_rates = \
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=100_000,
+            number_of_time_steps=1,
+            method=SimulationMethod.SLOWANALYTICAL,
+            plot_results=False)
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    ax.set_facecolor('#AAAAAA')
+    ax.grid(False)
+    returns: np.ndarray = short_rates[:, -1]
+    (values, bins, _) = ax.hist(returns, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    normal_distribution_mean = \
+        np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
+        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
+    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
+    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
+    ax.annotate(
+        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
+        xy=(0, 0.4),
+        xytext=(-2, 0.2))
+    ax.legend()
+    plt.show()
+    assert returns.mean() == pytest.approx(normal_distribution_mean[0], abs=0.05)
+    assert np.sqrt(returns.var()) == pytest.approx(normal_distribution_std, abs=0.05)
 
 
 def test_initial_short_rate_for_flat_curve(flat_curve):
-    maturity = 5
     alpha = 0.1
     sigma = 0.1
     hw_short_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.0001)
@@ -161,66 +220,5 @@ def test_initial_short_rate_for_flat_curve(flat_curve):
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
-@pytest.mark.skip(reason="Incomplete")
-def test_discount_curve():
-    curve_tenors = \
-        np.array([
-            0.000000,
-            0.002740,
-            0.082192,
-            0.249315,
-            0.495890,
-            0.747945,
-            1.000000,
-            1.249315,
-            1.495890,
-            1.747945,
-            2.000000,
-            2.997260,
-            4.002740,
-            5.002740,
-            6.002740,
-            7.002740,
-            8.002740,
-            9.000000,
-            10.005490,
-            12.008220,
-            15.002740,
-            20.008220,
-            25.013699,
-            30.019178])
-
-    curve_discount_factors = \
-        np.array([
-            1.000000,
-            0.999907,
-            0.997261,
-            0.991717,
-            0.983809,
-            0.975718,
-            0.967524,
-            0.959083,
-            0.950459,
-            0.941230,
-            0.931649,
-            0.887226,
-            0.834895,
-            0.776718,
-            0.713405,
-            0.649354,
-            0.585177,
-            0.524324,
-            0.469244,
-            0.372527,
-            0.268633,
-            0.162742,
-            0.104571,
-            0.071701])
-    number_of_time_steps = 50
-    maturity = 5 / 12
-    dt = maturity / number_of_time_steps
-    alpha = 0.05
-    sigma = 0.1
-    initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
-    hw = HullWhiteCurve(alpha, sigma, initial_curve, 0.25)
-    hw.get_discount_curve(curve_tenors, dt)
+def test_get_discount_curves(flat_curve):
+    return 0

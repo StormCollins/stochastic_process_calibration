@@ -6,22 +6,6 @@ class ValuationType(Enum):
     PRESENTVALUE = 2
 
 
-# def plot_fra_values(current_value: float, maturity: float):
-#     time = np.linspace(0, maturity, current_value)
-#
-#     # Path plot
-#     # indices_sorted_by_path_averages = np.argsort(np.average(current_value, 1))
-#     # sorted_fra_values = np.transpose(current_value[indices_sorted_by_path_averages])
-#     # sns.set_palette(sns.color_palette('dark:purple', current_value))
-#     fig1, ax1 = plt.subplots()
-#     ax1.plot(time, current_value)
-#     ax1.grid(True)
-#     ax1.set_facecolor('#AAAAAA')
-#     ax1.set_xlabel('Time')
-#     ax1.set_ylabel('Value of FRA')
-#     ax1.set_xlim([0, maturity])
-
-
 class Fra:
     """
     Used to encapsulate a FRA (forward rate agreement) with all it's fields and methods.
@@ -88,6 +72,7 @@ class Fra:
             self.notional * \
             (self.get_fair_forward_rate(curve, current_time) - self.strike) * \
             (self.forward_rate_end_tenor - self.forward_rate_start_tenor)
+
         if valuation_type == ValuationType.FUTUREVALUE:
             return future_values
         else:
@@ -99,7 +84,8 @@ class Fra:
             number_of_paths: int,
             number_of_time_steps: int,
             method: SimulationMethod,
-            valuation_type: ValuationType = ValuationType.FUTUREVALUE) -> float:
+            valuation_type: ValuationType = ValuationType.FUTUREVALUE,
+            plot_results: bool = False) -> float:
         """
         1. Simulate the short rate
         2. Get the discount curve at each time step of the simulation
@@ -116,24 +102,11 @@ class Fra:
         initial_fra_value = self.get_values(hw.initial_curve, 0)
         fra_values[:, 0] = initial_fra_value
 
-        step_wise_stochastic_discount_factors: np.ndarray = np.zeros((number_of_paths, number_of_time_steps))
-        initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factors(np.array([time_steps[1]]))[0]
-        step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
-
-        # for i in range(0, number_of_paths):
-        #     for j in range(1, number_of_time_steps + 1):
-        #         current_time_step: float = time_steps[j]
-        #         current_short_rate: float = short_rates[i][j]
-        #         current_discount_curve: Curve = \
-        #             hw.get_discount_curve(current_short_rate, current_time_step)
-        #         current_value = self.get_values(current_discount_curve, current_time_step)
-        #         fra_values[i][j] = current_value
-        #         if j < number_of_time_steps:
-        #             step_wise_stochastic_discount_factors[i][j] = \
-        #                 current_discount_curve.get_discount_factors(time_steps[j + 1])
-        # plot_fra_values(current_time_step, current_values)
-
         if valuation_type == ValuationType.PRESENTVALUE:
+            step_wise_stochastic_discount_factors: np.ndarray = np.zeros((number_of_paths, number_of_time_steps))
+            initial_stochastic_discount_factor: float = hw.initial_curve.get_discount_factors(np.array([time_steps[1]]))[0]
+            step_wise_stochastic_discount_factors[:, 0] = initial_stochastic_discount_factor
+
             for j in range(1, number_of_time_steps + 1):
                 current_time_step: float = time_steps[j]
                 current_discount_curves: Curve = \
@@ -154,4 +127,29 @@ class Fra:
                 current_values = self.get_values(current_discount_curves, current_time_step)
                 fra_values[:, j] = np.ndarray.flatten(current_values)
             fra_value: float = np.average(fra_values[:, -1])
+
+            if plot_results:
+                self.plot_paths(time_steps, fra_values)
+
             return fra_value
+
+    def plot_paths(self, time_steps, paths):
+        """
+        Plots the paths from Monte Carlo simulation vs. the time steps.
+
+        :param time_steps: The time steps.
+        :param paths: The output paths from the simulation.
+        :return:
+        """
+        indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
+        sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
+        # sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
+        sns.set_palette(sns.color_palette('gnuplot', paths.shape[0]))
+        fig, ax = plt.subplots()
+        ax.plot(time_steps, sorted_paths)
+        ax.grid(True)
+        ax.set_facecolor('#AAAAAA')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('$r(t)$')
+        ax.set_xlim([0, time_steps[-1]])
+        plt.show()

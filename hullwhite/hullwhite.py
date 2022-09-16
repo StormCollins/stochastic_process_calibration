@@ -156,13 +156,10 @@ class HullWhite:
         :param number_of_paths: The number of paths in the simulation.
         :return: An array of integral values for each path.
         """
-        # time_steps: np.ndarray = np.tile(np.arange(0, maturity, time_step_size) + time_step_size, (number_of_paths, 1))
-        # random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, time_steps.shape[1])))
-        # return np.sum(np.exp(self.alpha * time_steps) * random_variables * np.sqrt(time_step_size), 1)
         dt = time_step_size
         random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
-        # return np.exp(self.alpha * maturity) * random_variables * np.sqrt(time_step_size)
-        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
+        # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
+        return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
     def b_function(self, tenors, current_tenor):
         """
@@ -246,6 +243,6 @@ class HullWhite:
         ax.grid(True)
         ax.set_facecolor('#AAAAAA')
         ax.set_xlabel('Time')
-        ax.set_ylabel('r(t)')
+        ax.set_ylabel('$r(t)$')
         ax.set_xlim([0, time_steps[-1]])
         plt.show()
