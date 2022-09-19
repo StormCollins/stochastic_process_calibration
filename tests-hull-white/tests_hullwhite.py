@@ -227,5 +227,35 @@ def test_initial_short_rate_for_flat_curve(flat_curve):
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
-def test_get_discount_curves(flat_curve):
-    return 0
+def test_initial_curve_fit(flat_curve):
+    alpha: float = 0.1
+    sigma: float = 0.1
+    maturity: float = 5
+    number_of_time_steps: int = 100
+    number_of_paths: int = 100_000
+    short_rate_tenor: float = maturity / (number_of_time_steps + 1)
+    hw = HullWhite(alpha, sigma, flat_curve, short_rate_tenor)
+    tenors, rates = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
+    stochastic_discount_factors: np.ndarray = \
+        np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
+    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
+
+    time_steps: np.ndarray = \
+        np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
+    initial_curve_discount_factors: np.ndarray = flat_curve.get_discount_factors(time_steps)
+
+    fig, ax = plt.subplots()
+    ax.set_title('Comparison of Stochastic and Initial Curve Discount Factors')
+    ax.plot(time_steps, initial_curve_discount_factors, color='#0D8390', label='Initial Curve')
+    ax.plot(time_steps, stochastic_discount_factors, color='#86BC25', label='Stochastic Discount Factors')
+    ax.grid(True)
+    ax.set_facecolor('#AAAAAA')
+    ax.set_xlabel('$t$ (years)')
+    ax.set_ylabel('$P(0, t)$')
+    ax.set_xlim([0, time_steps[-1]])
+    ax.set_ylim([0, 1])
+    ax.legend()
+    plt.show()
+
+    assert all([a == pytest.approx(b, 0.05)
+                for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
