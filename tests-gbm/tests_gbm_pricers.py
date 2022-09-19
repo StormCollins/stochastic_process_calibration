@@ -1,3 +1,5 @@
+import numpy as np
+
 from gbm.analytical_pricers import *
 from gbm.gbm_pricers import *
 import pytest
@@ -11,7 +13,7 @@ class TestsGbmPricers:
         interest_rate: float = 0.1
         tenor: float = 0.25
         vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
-        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)/100
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface) / 100
         time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 1000
@@ -28,7 +30,8 @@ class TestsGbmPricers:
                 number_of_time_steps,
                 True,
                 True)
-        expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
+        expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility,
+                                              time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
     def test_slow_equity_european_option_monte_carlo_pricer(self):
@@ -38,7 +41,7 @@ class TestsGbmPricers:
         interest_rate: float = 0.1
         tenor: float = 0.25
         vol_surface: VolData = read_vol_surface('../excel_file/FEC_atm_vol_surface.xlsx')
-        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)/100
+        volatility: float = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface) / 100
         time_to_maturity: float = 6 / 12
         number_of_paths: int = 10_000
         number_of_time_steps: int = 2
@@ -54,7 +57,8 @@ class TestsGbmPricers:
                 number_of_paths,
                 number_of_time_steps,
                 True)
-        expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
+        expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility,
+                                              time_to_maturity, "put")
         assert expected_price == pytest.approx(actual.price, actual.error)
 
     def test_fx_option_monte_carlo_pricer(self):
@@ -141,3 +145,10 @@ class TestsGbmPricers:
                 time_to_maturity)
         assert expected_price == pytest.approx(actual.price, actual.error)
 
+# TODO: SU-LISE - HIERDIE IS DIE UNIT TEST
+    def test_generate_time_dependent_volatilities(self):
+        number_of_time_steps: int = 52
+        time_to_maturity = 5 / 12
+
+        print(generate_time_dependent_volatilities(number_of_time_steps,
+                                                   time_to_maturity))

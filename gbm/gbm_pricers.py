@@ -8,7 +8,6 @@ from scipy.stats import jarque_bera
 import excel_file.excel_vol_surface_function
 from excel_file.excel_vol_surface_function import *
 
-
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 
 
@@ -221,15 +220,17 @@ def fx_forward_monte_carlo_pricer(
         strike: float,
         domestic_interest_rate: float,
         foreign_interest_rate: float,
-        volatility: float,
         time_to_maturity: float,
         number_of_paths: int,
         number_of_time_steps: int,
+        volatility,
         plot_paths: bool = True,
         show_stats: bool = True) -> [MonteCarloResult | str]:
     """
-    Returns the price for an FX forward using monte carlo simulations.
+    Returns the price for an FX forward (FEC) using monte carlo simulations.
 
+    :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+    :param volatility: Time-dependent FEC volatility
     :param notional: The notional of the FX forward denominated in the foreign currency
         i.e. we exchange the notional amount in the foreign currency for
         strike * notional amount in the domestic currency
@@ -239,15 +240,13 @@ def fx_forward_monte_carlo_pricer(
     :param strike: Strike price for the FX forward.
     :param domestic_interest_rate: Domestic interest rate.
     :param foreign_interest_rate: Foreign interest rate.
-    :param volatility: Volatility of the FX rate.
     :param time_to_maturity: Time to maturity (in years) of the FX forward.
     :param number_of_paths: Number of current_value for the FX forward.
     :param number_of_time_steps: Number of time steps for the FX forward.
     :param plot_paths: If set to True plots the current_value.
-    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
-
+    # volatility = generate_time_dependent_volatilities(number_of_paths, number_of_time_steps, time_to_maturity)
     drift: float = domestic_interest_rate - foreign_interest_rate
     paths: np.ndarray = \
         generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
@@ -265,6 +264,39 @@ def fx_forward_monte_carlo_pricer(
     return MonteCarloResult(price, error)
 
 
+# TODO SU-LISE - MY CODE. HY LOOP NIE VAN J=1 TOT 50 NIE.
+def generate_time_dependent_volatilities(
+        number_of_time_steps: int,
+        time_to_maturity: float):
+    """
+    Returns the time dependent volatilities.
+
+    :param number_of_time_steps:
+    :param time_to_maturity:
+    :return: The time dependent volatilities.
+    """
+    dt: float = time_to_maturity / number_of_time_steps
+    # time_dependent_volatility_surface: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
+    # time_dependent_volatility_surface[:, 0] = excel_records_df.Quotes[0]
+    # time_steps: np.ndarray = np.linspace(0, time_to_maturity, time_dependent_volatility.shape[1])
+    # count = 0
+    for j in range(1, number_of_time_steps + 1):
+        # USING THE DICTIONARY FROM excel_vol_surface_function
+        time_steps: np.ndarray = np.arange(0, j, dt)
+        x = list(map(float, excel_records_df.Tenors))
+        y = list(map(float, excel_records_df.Quotes))
+        interpolated_volatility: interp1d = interp1d(x, y, kind='previous')
+        time_dependent_volatility_surface = interpolated_volatility(time_steps) / 100
+        time_dependent_volatility: interp1d = interp1d(time_steps, time_dependent_volatility_surface, kind='previous')
+        time_dependent_volatility: float = time_dependent_volatility(time_to_maturity)
+        # return time_steps, time_dependent_volatility_surface, time_dependent_volatility
+        # count = count + 1
+        return j, time_steps, time_dependent_volatility
+
+
+# TODO: CODE EINDIG HIER
+
+
 def generate_gbm_paths(
         number_of_paths: int,
         number_of_time_steps: int,
@@ -274,20 +306,23 @@ def generate_gbm_paths(
         volatility: float,
         time_to_maturity) -> np.ndarray:
     """
-
     Returns the monte carlo simulated Geometric Brownian Motion Paths.
 
+    :param number_of_paths:
+    :param number_of_time_steps:
+    :param notional:
+    :param initial_spot:
+    :param drift:
+    :param volatility:
+    :param time_to_maturity:
+    :return: The monte carlo simulated Geometric Brownian Motion Paths.
     """
     paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
     paths[:, 0] = initial_spot * notional
     dt: float = time_to_maturity / number_of_time_steps
-    # volatility = excel_file.excel_vol_surface_function.get_vol(tenor, vol_surface)
-    # time_dependent_volatility: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-    # time_dependent_volatility[:, 0] = volatility
 
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        # time_dependent_volatility[:, j] = time_dependent_volatility[:, j - 1] + dt
         paths[:, j] = \
             paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
                                      math.sqrt(dt) * z)
