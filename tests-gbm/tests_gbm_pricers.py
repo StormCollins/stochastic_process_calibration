@@ -145,7 +145,7 @@ class TestsGbmPricers:
                 time_to_maturity)
         assert expected_price == pytest.approx(actual.price, actual.error)
 
-# TODO: SU-LISE - HIERDIE IS DIE UNIT TEST
+
     def test_generate_time_dependent_volatilities(self):
         number_of_time_steps: int = 52
         time_to_maturity = 5 / 12

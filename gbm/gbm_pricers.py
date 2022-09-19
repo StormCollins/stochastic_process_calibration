@@ -246,7 +246,6 @@ def fx_forward_monte_carlo_pricer(
     :param plot_paths: If set to True plots the current_value.
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
-    # volatility = generate_time_dependent_volatilities(number_of_paths, number_of_time_steps, time_to_maturity)
     drift: float = domestic_interest_rate - foreign_interest_rate
     paths: np.ndarray = \
         generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
@@ -264,7 +263,6 @@ def fx_forward_monte_carlo_pricer(
     return MonteCarloResult(price, error)
 
 
-# TODO SU-LISE - MY CODE. HY LOOP NIE VAN J=1 TOT 50 NIE.
 def generate_time_dependent_volatilities(
         number_of_time_steps: int,
         time_to_maturity: float):
@@ -280,21 +278,19 @@ def generate_time_dependent_volatilities(
     # time_dependent_volatility_surface[:, 0] = excel_records_df.Quotes[0]
     # time_steps: np.ndarray = np.linspace(0, time_to_maturity, time_dependent_volatility.shape[1])
     # count = 0
+    x = list(map(float, excel_records_df.Tenors))
+    y = list(map(float, excel_records_df.Quotes))
+    interpolated_volatility: interp1d = interp1d(x, y, kind='previous', fill_value='extrapolate')
     for j in range(1, number_of_time_steps + 1):
         # USING THE DICTIONARY FROM excel_vol_surface_function
         time_steps: np.ndarray = np.arange(0, j, dt)
-        x = list(map(float, excel_records_df.Tenors))
-        y = list(map(float, excel_records_df.Quotes))
-        interpolated_volatility: interp1d = interp1d(x, y, kind='previous')
         time_dependent_volatility_surface = interpolated_volatility(time_steps) / 100
-        time_dependent_volatility: interp1d = interp1d(time_steps, time_dependent_volatility_surface, kind='previous')
+        time_dependent_volatility: interp1d = interp1d(time_steps, time_dependent_volatility_surface, kind='previous', fill_value='extrapolate')
         time_dependent_volatility: float = time_dependent_volatility(time_to_maturity)
-        # return time_steps, time_dependent_volatility_surface, time_dependent_volatility
-        # count = count + 1
-        return j, time_steps, time_dependent_volatility
+    return j, time_steps, time_dependent_volatility
 
 
-# TODO: CODE EINDIG HIER
+
 
 
 def generate_gbm_paths(
