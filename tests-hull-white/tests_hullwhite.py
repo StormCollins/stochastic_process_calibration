@@ -134,7 +134,8 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
     alpha = 0.00001
     sigma = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.1)
-    tenors, paths = hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5)
+    tenors, paths = \
+        hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5, method=SimulationMethod.SLOWANALYTICAL)
     for value in paths[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
 
