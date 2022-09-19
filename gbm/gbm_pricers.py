@@ -263,6 +263,8 @@ def fx_forward_monte_carlo_pricer(
     return MonteCarloResult(price, error)
 
 
+# TODO: get_time_dependent_volatility -> interp1d
+# TODO: Move the file reading process to the function as well.
 def generate_time_dependent_volatilities(
         number_of_time_steps: int,
         time_to_maturity: float):
@@ -288,6 +290,40 @@ def generate_time_dependent_volatilities(
         time_dependent_volatility: interp1d = interp1d(time_steps, time_dependent_volatility_surface, kind='previous', fill_value='extrapolate')
         time_dependent_volatility: float = time_dependent_volatility(time_to_maturity)
     return j, time_steps, time_dependent_volatility
+
+
+def generate_gbm_paths_with_time_dependent_vols(
+        number_of_paths: int,
+        number_of_time_steps: int,
+        notional: float,
+        initial_spot: float,
+        drift: float,
+        volatility_interpolator: interp1d,
+        time_to_maturity) -> np.ndarray:
+    """
+    Returns the monte carlo simulated Geometric Brownian Motion Paths.
+
+    :param number_of_paths:
+    :param number_of_time_steps:
+    :param notional:
+    :param initial_spot:
+    :param drift:
+    :param volatility_interpolator:
+    :param time_to_maturity:
+    :return: The monte carlo simulated Geometric Brownian Motion Paths.
+    """
+    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
+    paths[:, 0] = initial_spot * notional
+    dt: float = time_to_maturity / number_of_time_steps
+
+    for j in range(1, number_of_time_steps + 1):
+        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+        volatility: float = volatility_interpolator(j * dt)
+        paths[:, j] = \
+            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
+                                     math.sqrt(dt) * z)
+
+    return paths
 
 
 
