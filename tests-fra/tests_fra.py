@@ -25,8 +25,13 @@ def test_fair_forward_rate():
     assert 0.10126 == pytest.approx(fra.get_fair_forward_rate(curve), abs=0.0001)
 
 
-def test_get_value(flat_curve):
+def test_get_value_short_dated_fra(flat_curve):
     fra = Fra(1, 0.5, 0.75, 0.1026)
+    assert 0.0 == pytest.approx(fra.get_values(flat_curve, 0)[0], abs=0.001)
+
+
+def test_get_value_long_dated_fra(flat_curve):
+    fra = Fra(1, 1.5, 1.75, 0.1026)
     assert 0.0 == pytest.approx(fra.get_values(flat_curve, 0)[0], abs=0.001)
 
 
@@ -36,9 +41,12 @@ def test_get_monte_carlo_value():
     # We assume a constant rate of 10%
     discount_factors = np.array([1.000000, 0.975310, 0.951229, 0.927743, 0.904837, 0.882497, 0.860708, 0.839457])
     initial_curve = Curve(tenors, discount_factors)
+    number_of_paths = 10_000
     number_time_steps = 10
     short_rate_tenor = 1.25 / (number_time_steps + 1)
-    hw = HullWhite(0.1, 0.1, initial_curve, short_rate_tenor)
+    alpha = 0.25
+    sigma = 0.1
+    hw = HullWhite(0.25, 0.1, initial_curve, short_rate_tenor)
     forward_rate_start_tenor = 1.25  # 1.25
     forward_rate_end_tenor = 1.5  # 1.50
     fra = Fra(1_000_000, forward_rate_start_tenor, forward_rate_end_tenor, strike=0.1026)
@@ -50,7 +58,7 @@ def test_get_monte_carlo_value():
         fra.get_monte_carlo_value(
             hw,
             number_of_time_steps=number_time_steps,
-            number_of_paths=1_000,
+            number_of_paths=number_of_paths,
             valuation_type=ValuationType.FUTUREVALUE,
             method=SimulationMethod.SLOWANALYTICAL,
             plot_results=True)

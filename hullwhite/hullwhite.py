@@ -16,7 +16,6 @@ class SimulationMethod(Enum):
 
 
 class HullWhite:
-    numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
     alpha: float
     sigma: float
     theta_interpolator: interp1d
@@ -42,6 +41,7 @@ class HullWhite:
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
+        self.numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
         self.theta_interpolator = self.setup_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
         self.initial_short_rate = \
@@ -126,6 +126,7 @@ class HullWhite:
                     self.sigma * np.exp(-1 * self.alpha * dt) * \
                     np.ndarray.flatten(self.exponential_stochastic_integral(j * dt, dt, number_of_paths))
         else:
+            # TODO: Fix this.
             deterministic_part = \
                 np.exp(-1 * self.alpha * time_steps) * self.initial_short_rate
 
