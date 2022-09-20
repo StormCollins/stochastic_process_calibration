@@ -146,7 +146,8 @@ class HullWhite:
         if plot_results:
             self.plot_paths(time_steps, short_rates)
 
-        return time_steps, short_rates
+        stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
+        return time_steps, short_rates, stochastic_discount_factors
 
     def exponential_stochastic_integral(self, maturity: float, time_step_size: float, number_of_paths: int):
         """
@@ -182,7 +183,7 @@ class HullWhite:
         :param current_tenor: The current tenor in the simulation.
         :return: The 'A'-function value at the given tenors.
         """
-        forward_discount_factors: np.ndarray(np.type(float)) = \
+        forward_discount_factors: np.ndarray = \
             self.initial_curve.get_discount_factors(tenors) / \
             self.initial_curve.get_discount_factors(np.array([current_tenor]))
 
