@@ -52,7 +52,7 @@ def test_b_function_large_alpha(flat_curve):
     alpha: float = 10_000
     sigma: float = 0
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
-    actual = hw.b_function(np.array([0.25]), 0.00)[0]
+    actual = hw.b_function(0.00, np.array([0.25]))[0]
     assert actual == pytest.approx(0.0, abs=0.0001)
 
 
@@ -65,7 +65,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_curve):
     expected = \
         flat_curve.get_discount_factors(simulation_tenors) / \
         flat_curve.get_discount_factors(np.array(current_tenor))
-    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
@@ -78,12 +78,12 @@ def test_a_function_with_flat_curve(flat_curve):
     expected = \
         flat_curve.get_discount_factors(simulation_tenors) / \
         flat_curve.get_discount_factors(np.array(current_tenor)) * \
-        np.exp(hw.b_function(simulation_tenors, current_tenor) * flat_curve.get_zero_rates(np.array([current_tenor])) -
+        np.exp(hw.b_function(current_tenor, simulation_tenors) * flat_curve.get_zero_rates(np.array([current_tenor])) -
                sigma ** 2 *
                (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor)) ** 2 *
                (np.exp(2 * alpha * current_tenor) - 1) /
                (4 * alpha ** 3))
-    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 

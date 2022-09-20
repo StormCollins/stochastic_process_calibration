@@ -162,7 +162,7 @@ class HullWhite:
         # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
         return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
-    def b_function(self, tenors, current_tenor):
+    def b_function(self, current_tenor, tenors):
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation.
@@ -173,7 +173,7 @@ class HullWhite:
         """
         return (1 - np.exp(-self.alpha * (tenors - current_tenor))) / self.alpha
 
-    def a_function(self, tenors: np.ndarray, current_tenor: float) -> np.ndarray:
+    def a_function(self, current_tenor: float, tenors: np.ndarray) -> np.ndarray:
         """
         Used to calculate the 'A'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation.
@@ -189,7 +189,7 @@ class HullWhite:
         # If sigma is time-independent then we can replace the log discount factor derivatives
         # with the zero rate at that point.
         discount_factor_derivative: float = \
-            -1 * self.b_function(tenors, current_tenor) * \
+            -1 * self.b_function(current_tenor, tenors) * \
             self.initial_curve.get_log_discount_factor_derivatives(np.array([current_tenor]))
 
         complex_factor: float = \
@@ -212,8 +212,8 @@ class HullWhite:
         :return: A discount curve at the current time point in the Hull-White simulation.
         """
         tenors = self.initial_curve.tenors
-        b = self.b_function(tenors, current_tenor)
-        a = self.a_function(tenors, current_tenor)
+        b = self.b_function(current_tenor, tenors)
+        a = self.a_function(current_tenor, tenors)
         discount_factors: np.ndarray = a * np.transpose(np.exp(-np.outer(b, short_rate)))
         current_tenors = tenors[tenors >= current_tenor] - current_tenor
         current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]

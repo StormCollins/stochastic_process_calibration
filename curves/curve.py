@@ -33,7 +33,7 @@ class Curve:
         else:
             raise ValueError(f'Discount factor dimensions should be 1 or 2 but received {discount_factors.ndim}.')
 
-    def get_discount_factors(self, tenors: np.ndarray) -> np.ndarray:
+    def get_discount_factors(self, tenors: float | np.ndarray) -> float | np.ndarray:
         """
         Gets discount factors for a given set of tenors.
 
@@ -73,7 +73,7 @@ class Curve:
         if compounding_convention == compounding_convention.NACQ:
             return 4 * ((start_discount_factors / end_discount_factors) ** (4 * (end_tenors - start_tenors)) - 1)
         elif compounding_convention == compounding_convention.Simple:
-            return 1 / (end_tenors - start_tenors) * (start_discount_factors / end_discount_factors - 1)
+            return (1 / (end_tenors - start_tenors)) * (start_discount_factors / end_discount_factors - 1)
 
     def get_zero_rates(
             self,
