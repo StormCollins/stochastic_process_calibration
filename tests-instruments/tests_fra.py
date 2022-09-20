@@ -42,7 +42,7 @@ def test_get_monte_carlo_values(flat_curve, atm_fra):
     short_rate_tenor: float = 0.01
     hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor)
     np.random.seed(999)
-    tenors, short_rates = \
+    tenors, short_rates, stochastic_dfs = \
         hw.simulate(atm_fra.start_tenor, number_of_paths, number_of_time_steps, SimulationMethod.SLOWANALYTICAL)
 
     dt = atm_fra.start_tenor / number_of_time_steps
