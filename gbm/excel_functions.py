@@ -11,9 +11,9 @@
 #
 # def read_vol_surface(
 #         file_path: str,
-#         sheet_name: str,
+#         excel_sheet_name: str,
 #         data_date: datetime.date) -> VolData:
-#     data: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name)
+#     data: pd.DataFrame = pd.read_excel(file_path, excel_sheet_name=excel_sheet_name)
 #
 #     moneyness_indices: list[float] =\
 #         [i for i in range(len(data.columns.values))
@@ -46,8 +46,8 @@
 #
 #
 # file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\vol-surface-data-2022-06-30.xlsx'
-# sheet_name: str = 'S&P500 Clean Vol Surface'
-# vol_surface: VolData = read_vol_surface(file_path, sheet_name, datetime.date(2022, 6, 30))
+# excel_sheet_name: str = 'S&P500 Clean Vol Surface'
+# vol_surface: VolData = read_vol_surface(file_path, excel_sheet_name, datetime.date(2022, 6, 30))
 # tenor: list[float] = [0.8, 0.9]
 # moneyness: list[float] = [1.1, 1.2]
 #

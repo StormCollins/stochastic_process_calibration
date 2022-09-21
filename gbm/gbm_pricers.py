@@ -5,10 +5,12 @@ import seaborn as sns
 from scipy.stats import norm
 from scipy.stats import lognorm
 from scipy.stats import jarque_bera
-import excel_file.excel_vol_surface_function
-from excel_file.excel_vol_surface_function import *
+from scipy.interpolate import interp1d
+from collections import namedtuple
+import pandas as pd
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
+VolData = namedtuple('VolData', ['Tenors', 'VolSurface'])
 
 
 def slow_equity_european_option_monte_carlo_pricer(
@@ -92,6 +94,8 @@ def fast_equity_european_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
+        volatility_interpolator,
+        time_dependent_or_independent_paths,
         plot_paths: bool = False,
         show_stats: bool = False) -> [MonteCarloResult | str]:
     """
@@ -100,6 +104,9 @@ def fast_equity_european_option_monte_carlo_pricer(
     This function uses 'vectorisation' unlike the slow_equity_european_option_monte_carlo_pricer function thus
     speeding up performance.
 
+    :param show_stats:
+    :param time_dependent_or_independent_paths:
+    :param volatility_interpolator:
     :param notional: The notional of the FX forward denominated in the foreign currency
         i.e. we exchange the notional amount in the foreign currency for
         strike * notional amount in the domestic currency
@@ -118,38 +125,67 @@ def fast_equity_european_option_monte_carlo_pricer(
     :return: Fast Monte Carlo price for an equity european option.
     """
 
-    paths: np.ndarray = \
-        generate_gbm_paths(
-            number_of_paths,
-            number_of_time_steps,
-            notional,
-            initial_spot,
-            interest_rate,
-            volatility,
-            time_to_maturity)
+    if str.upper(time_dependent_or_independent_paths) == 'DEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths_with_time_dependent_vols(
+                number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility_interpolator,
+                time_to_maturity)
 
-    if plot_paths:
-        create_gbm_plots(paths, interest_rate, volatility, time_to_maturity)
+        if plot_paths:
+            create_gbm_plots(paths, interest_rate,
+                             volatility, time_to_maturity)
 
-    if show_stats:
-        statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
+        if show_stats:
+            statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
 
-    if str.upper(call_or_put) == 'CALL':
-        payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        if str.upper(call_or_put) == 'CALL':
+            payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
+                      * np.exp(-interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
 
-    elif str.upper(call_or_put) == 'PUT':
-        payoffs = np.maximum(notional * strike - paths[:, -1], 0) * np.exp(-interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        elif str.upper(call_or_put) == 'PUT':
+            payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
+                      * np.exp(-interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
 
+        else:
+            return f'Unknown option type: {call_or_put}'
+
+    elif str.upper(time_dependent_or_independent_paths) == 'INDEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths(
+                number_of_paths, number_of_time_steps, notional, initial_spot, interest_rate, volatility,
+                time_to_maturity)
+
+        if plot_paths:
+            create_gbm_plots(paths, interest_rate,
+                             volatility, time_to_maturity)
+
+        if show_stats:
+            statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
+
+        if str.upper(call_or_put) == 'CALL':
+            payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
+                      * np.exp(-interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
+
+        elif str.upper(call_or_put) == 'PUT':
+            payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
+                      * np.exp(-interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
+
+        else:
+            return f'Unknown option type: {call_or_put}'
     else:
-        return f'Unknown option type: {call_or_put}'
+        print('Specify if volatility is "dependant" or "independent"')
 
 
 def fx_option_monte_carlo_pricer(
@@ -163,12 +199,18 @@ def fx_option_monte_carlo_pricer(
         call_or_put: str,
         number_of_paths: int,
         number_of_time_steps: int,
+        volatility_interpolator,
+        time_dependent_or_independent_paths: str,
         plot_paths: bool = True,
         show_stats: bool = False) -> [MonteCarloResult | str]:
     """
     Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations (does not take into account whether
     you are 'long' or 'short' the option).
 
+    :param volatility_interpolator:
+    :param time_dependent_or_independent_paths: Specifies whether the paths use the
+        time-dependent volatility (dependent) or the time-independent volatility (independent).
+    :param show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
     :param notional: The notional of the FX forward denominated in the foreign currency
         i.e. we exchange the notional amount in the foreign currency for
         strike * notional amount in the domestic currency
@@ -184,34 +226,71 @@ def fx_option_monte_carlo_pricer(
     :param number_of_paths: Number of current_value for the FX option.
     :param number_of_time_steps: Number of time steps for the FX option.
     :param plot_paths: If set to True plots the current_value.
-    :show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
     :return: Monte Carlo price for an FX Option.
     """
     drift: float = domestic_interest_rate - foreign_interest_rate
-    paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
-                           time_to_maturity)
 
-    if plot_paths:
-        create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
+    if str.upper(time_dependent_or_independent_paths) == 'DEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths_with_time_dependent_vols(
+                number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility_interpolator,
+                time_to_maturity)
 
-    if show_stats:
-        statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+        if plot_paths:
+            create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
+                             volatility, time_to_maturity)
 
-    if str.upper(call_or_put) == 'CALL':
-        payoffs = np.maximum(paths[:, -1] - notional * strike, 0) * np.exp(-domestic_interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        if show_stats:
+            statistics(paths, initial_spot, drift, volatility, time_to_maturity)
 
-    elif str.upper(call_or_put) == 'PUT':
-        payoffs = np.maximum(notional * strike - paths[:, -1], 0) * np.exp(-domestic_interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        if str.upper(call_or_put) == 'CALL':
+            payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
+                      * np.exp(-domestic_interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
 
+        elif str.upper(call_or_put) == 'PUT':
+            payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
+                      * np.exp(-domestic_interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
+
+        else:
+            return f'Unknown option type: {call_or_put}'
+
+    elif str.upper(time_dependent_or_independent_paths) == 'INDEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths(
+                number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
+                time_to_maturity)
+
+        if plot_paths:
+            create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
+                             volatility, time_to_maturity)
+
+        if show_stats:
+            statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+
+        if str.upper(call_or_put) == 'CALL':
+            payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
+                      * np.exp(-domestic_interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
+
+        elif str.upper(call_or_put) == 'PUT':
+            payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
+                      * np.exp(-domestic_interest_rate * time_to_maturity)
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResult(price, error)
+
+        else:
+            return f'Unknown option type: {call_or_put}'
     else:
-        return f'Unknown option type: {call_or_put}'
+        print('Specify if volatility is "dependant" or "independent"')
 
 
 def fx_forward_monte_carlo_pricer(
@@ -224,11 +303,15 @@ def fx_forward_monte_carlo_pricer(
         number_of_paths: int,
         number_of_time_steps: int,
         volatility,
+        volatility_interpolator,
+        time_dependent_or_independent_paths,
         plot_paths: bool = True,
         show_stats: bool = True) -> [MonteCarloResult | str]:
     """
     Returns the price for an FX forward (FEC) using monte carlo simulations.
 
+    :param volatility_interpolator:
+    :param time_dependent_or_independent_paths:
     :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :param volatility: Time-dependent FEC volatility
     :param notional: The notional of the FX forward denominated in the foreign currency
@@ -247,49 +330,62 @@ def fx_forward_monte_carlo_pricer(
     :return: Monte Carlo price for an FX forward in the domestic currency.
     """
     drift: float = domestic_interest_rate - foreign_interest_rate
-    paths: np.ndarray = \
-        generate_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
-                           time_to_maturity)
 
-    if plot_paths:
-        create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate, volatility, time_to_maturity)
+    if str.upper(time_dependent_or_independent_paths) == 'DEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths_with_time_dependent_vols(
+                number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility_interpolator,
+                time_to_maturity)
 
-    if show_stats:
-        statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+        if plot_paths:
+            create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
+                             volatility, time_to_maturity)
 
-    payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
-    price: float = np.average(payoffs)
-    error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-    return MonteCarloResult(price, error)
+        if show_stats:
+            statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+
+        payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
+        price: float = np.average(payoffs)
+        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        return MonteCarloResult(price, error)
+
+    elif str.upper(time_dependent_or_independent_paths) == 'INDEPENDENT':
+        paths: np.ndarray = \
+            generate_gbm_paths(
+                number_of_paths, number_of_time_steps, notional, initial_spot, drift, volatility,
+                time_to_maturity)
+
+        if plot_paths:
+            create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
+                             volatility, time_to_maturity)
+
+        if show_stats:
+            statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+
+        payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
+        price: float = np.average(payoffs)
+        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        return MonteCarloResult(price, error)
+
+    else:
+        print('Specify if volatility is "dependant" or "independent"')
 
 
-# TODO: get_time_dependent_volatility -> interp1d
-# TODO: Move the file reading process to the function as well.
-def generate_time_dependent_volatilities(
-        number_of_time_steps: int,
-        time_to_maturity: float):
+def get_time_dependent_volatility(
+        excel_file_path: str) -> interp1d:
     """
     Returns the time dependent volatilities.
 
-    :param number_of_time_steps:
-    :param time_to_maturity:
+    :param excel_file_path: The path of the file. In other words, the file path where the Excel file is.
     :return: The time dependent volatilities.
     """
-    dt: float = time_to_maturity / number_of_time_steps
-    # time_dependent_volatility_surface: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
-    # time_dependent_volatility_surface[:, 0] = excel_records_df.Quotes[0]
-    # time_steps: np.ndarray = np.linspace(0, time_to_maturity, time_dependent_volatility.shape[1])
-    # count = 0
-    x = list(map(float, excel_records_df.Tenors))
-    y = list(map(float, excel_records_df.Quotes))
-    interpolated_volatility: interp1d = interp1d(x, y, kind='previous', fill_value='extrapolate')
-    for j in range(1, number_of_time_steps + 1):
-        # USING THE DICTIONARY FROM excel_vol_surface_function
-        time_steps: np.ndarray = np.arange(0, j, dt)
-        time_dependent_volatility_surface = interpolated_volatility(time_steps) / 100
-        time_dependent_volatility: interp1d = interp1d(time_steps, time_dependent_volatility_surface, kind='previous', fill_value='extrapolate')
-        time_dependent_volatility: float = time_dependent_volatility(time_to_maturity)
-    return j, time_steps, time_dependent_volatility
+
+    excel_records = pd.read_excel(excel_file_path)
+    excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
+    x: list[float] = list(map(float, excel_records_df.Tenors))
+    y: list[float] = list(map(float, excel_records_df.Quotes))
+    interpolated_volatility: interp1d = interp1d(x, y, kind='next', fill_value='extrapolate')
+    return interpolated_volatility
 
 
 def generate_gbm_paths_with_time_dependent_vols(
@@ -318,15 +414,12 @@ def generate_gbm_paths_with_time_dependent_vols(
 
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        volatility: float = volatility_interpolator(j * dt)
+        volatility: float = volatility_interpolator(j * dt) / 100
         paths[:, j] = \
             paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
                                      math.sqrt(dt) * z)
 
     return paths
-
-
-
 
 
 def generate_gbm_paths(
@@ -421,6 +514,7 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
 def statistics(paths, initial_spot, drift, volatility, time_to_maturity) -> float:
     log_returns = np.log(paths[:, -1] / paths[:, 0])
     jarque_bera_test = jarque_bera(log_returns)
+    print(jarque_bera_test)
     print(f'p-value: {jarque_bera_test.pvalue}')
     if jarque_bera_test.pvalue > 0.05:
         print('GBM current_value are normally distributed.')
