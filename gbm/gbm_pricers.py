@@ -237,7 +237,7 @@ def fx_option_monte_carlo_pricer(
                 time_to_maturity)
 
         if plot_paths:
-            create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
+            create_gbm_plots(paths, drift,
                              volatility, time_to_maturity)
 
         if show_stats:
@@ -290,7 +290,7 @@ def fx_option_monte_carlo_pricer(
         else:
             return f'Unknown option type: {call_or_put}'
     else:
-        print('Specify if volatility is "dependant" or "independent"')
+        print('Specify if volatility is "dependent" or "independent"')
 
 
 def fx_forward_monte_carlo_pricer(
@@ -414,7 +414,7 @@ def generate_gbm_paths_with_time_dependent_vols(
 
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        volatility: float = volatility_interpolator(j * dt) / 100
+        volatility: float = self.volatility_interpolator(j * dt) / 100
         paths[:, j] = \
             paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
                                      math.sqrt(dt) * z)
