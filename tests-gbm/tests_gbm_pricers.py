@@ -184,4 +184,17 @@ class TestsGbmPricers:
             volatility_interpolator,
             time_to_maturity))
 
+    def test_get_gbm_paths(self):
+        drift: float = 0.1
+        volatility: float = 0.06
+        excel_file_path = '../gbm/atm-volatility-surface.xlsx'
+        number_of_paths: int = 10
+        number_of_time_steps: int = 2
+        notional: float = 1
+        initial_spot: float = 50
+        time_to_maturity = 1
+        gbm: GBM = GBM(drift, volatility, excel_file_path)
+        actual = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity,
+                                   "dependent")
+        print(actual)
 

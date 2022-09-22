@@ -1,12 +1,7 @@
 import math
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from scipy.stats import norm
-from scipy.stats import lognorm
-from scipy.stats import jarque_bera
 from scipy.interpolate import interp1d
-from collections import namedtuple
 import pandas as pd
 
 
@@ -40,27 +35,51 @@ class GBM:
     excel_file_path: str
     volatility_interpolator: interp1d
 
-    def __init__(self, drift: float, excel_file_path: str):
+    def __init__(self, drift: float, volatility, excel_file_path: str):
         self.drift = drift
+        self.volatility = volatility
         self.volatility_interpolator = get_time_dependent_volatility(excel_file_path)
 
-    def generate_gbm_paths_with_time_dependent_vols(
+    def get_gbm_paths(
             self,
             number_of_paths: int,
             number_of_time_steps: int,
             notional: float,
             initial_spot: float,
-            time_to_maturity) -> np.ndarray:
+            time_to_maturity: float,
+            time_dependent_or_independent_paths: str) -> np.ndarray:
+        """
+
+        Generates the GBM paths used to price various instruments. The volatility used can be time dependent or
+        time-independent.
+
+        :param number_of_paths: Number of the current value.
+        :param number_of_time_steps: Number of time steps.
+        :param notional: The notional amount.
+        :param initial_spot: Initial spot price.
+        :param time_to_maturity: Time to maturity (in years).
+        :param time_dependent_or_independent_paths: Indicates whether a time-dependent or time-independent volatility
+                is being used.
+        :return: The simulated GBM paths.
+
+        """
         paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
         paths[:, 0] = initial_spot * notional
         dt: float = time_to_maturity / number_of_time_steps
 
-        for j in range(1, number_of_time_steps + 1):
-            z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-            volatility: float = self.volatility_interpolator(j * dt) / 100
-            paths[:, j] = \
-                paths[:, j - 1] * np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility *
-                                         math.sqrt(dt) * z)
+        if str.upper(time_dependent_or_independent_paths) == 'DEPENDENT':
+            for j in range(1, number_of_time_steps + 1):
+                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+                volatility: float = self.volatility_interpolator(j * dt) / 100
+                paths[:, j] = \
+                    paths[:, j - 1] * np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility *
+                                             math.sqrt(dt) * z)
+            return paths
 
-        return paths
-
+        elif str.upper(time_dependent_or_independent_paths) == 'INDEPENDENT':
+            for j in range(1, number_of_time_steps + 1):
+                z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+                paths[:, j] = \
+                    paths[:, j - 1] * np.exp((self.drift - 0.5 * self.volatility ** 2) * dt + self.volatility *
+                                             math.sqrt(dt) * z)
+            return paths
