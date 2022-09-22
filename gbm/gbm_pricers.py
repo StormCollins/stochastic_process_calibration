@@ -414,7 +414,7 @@ def generate_gbm_paths_with_time_dependent_vols(
 
     for j in range(1, number_of_time_steps + 1):
         z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        volatility: float = self.volatility_interpolator(j * dt) / 100
+        volatility: float = self.variance_interpolator(j * dt) / 100
         paths[:, j] = \
             paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
                                      math.sqrt(dt) * z)
