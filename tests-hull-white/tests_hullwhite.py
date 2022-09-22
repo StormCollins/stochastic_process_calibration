@@ -1,8 +1,8 @@
 # TODO: Setup more tests for theta with 'real' interest rate curves.
 
-import matplotlib.pyplot as plt
-import numpy as np
 import pytest
+import scipy.stats
+
 from hullwhite.hullwhite import *
 
 
@@ -33,15 +33,26 @@ def test_theta_with_constant_zero_rates(flat_curve, curve_tenors):
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
     test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
     actual: list[float] = [hw.theta(t) for t in test_tenors]
-    expected: list[float] = [alpha * 0.1 + (sigma**2)/(2 * alpha) * (1 - np.exp(-2 * alpha * t)) for t in test_tenors]
+    expected: list[float] = [alpha * 0.1 + (sigma ** 2) / (2 * alpha) * (1 - np.exp(-2 * alpha * t)) for t in
+                             test_tenors]
     assert all([a == pytest.approx(b, 0.001) for a, b in zip(actual, expected)])
+
+
+def test_theta_with_constant_zero_rates_and_small_alpha(flat_curve, curve_tenors):
+    alpha = 0.001
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
+    actual: list[float] = [hw.theta(t) for t in test_tenors]
+    expected: list[float] = list(np.zeros(len(actual)))
+    assert all([a == pytest.approx(b, abs=0.01) for a, b in zip(actual, expected)])
 
 
 def test_b_function_large_alpha(flat_curve):
     alpha: float = 10_000
     sigma: float = 0
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
-    actual = hw.b_function(np.array([0.25]), 0.00)[0]
+    actual = hw.b_function(0.00, np.array([0.25]))[0]
     assert actual == pytest.approx(0.0, abs=0.0001)
 
 
@@ -54,7 +65,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_curve):
     expected = \
         flat_curve.get_discount_factors(simulation_tenors) / \
         flat_curve.get_discount_factors(np.array(current_tenor))
-    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
@@ -67,142 +78,185 @@ def test_a_function_with_flat_curve(flat_curve):
     expected = \
         flat_curve.get_discount_factors(simulation_tenors) / \
         flat_curve.get_discount_factors(np.array(current_tenor)) * \
-        np.exp(-1 * sigma**2 *
-               (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor))**2 *
+        np.exp(hw.b_function(current_tenor, simulation_tenors) * flat_curve.get_zero_rates(np.array([current_tenor])) -
+               sigma ** 2 *
+               (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor)) ** 2 *
                (np.exp(2 * alpha * current_tenor) - 1) /
-               (4 * alpha**3))
-    actual: np.ndarray = hw.a_function(simulation_tenors, current_tenor=0.25)
+               (4 * alpha ** 3))
+    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
-def test_simulate():
+def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_curve):
+    alpha = 1_000
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    curve = hw.get_discount_curve(short_rate=0.1, current_tenor=0.25)
+    tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
+    actual = curve.get_discount_factors(tenors)
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(tenors + current_tenor) / \
+        flat_curve.get_discount_factors(np.array([current_tenor]))
+    assert actual[0] == pytest.approx(expected, abs=0.00001)
+
+
+def test_get_discount_factors_with_zero_vol(flat_curve):
+    alpha = 0.1
+    sigma = 0.0
+    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_curve, short_rate_tenor=0.25)
+    curve = hw.get_discount_curve(short_rate=0.1, current_tenor=0.25)
+    tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
+    actual = curve.get_discount_factors(tenors)
+    current_tenor = 0.25
+    expected = \
+        flat_curve.get_discount_factors(tenors + current_tenor) / \
+        flat_curve.get_discount_factors(np.array([current_tenor]))
+    assert actual[0] == pytest.approx(expected, abs=0.0001)
+
+
+def test_exponential_stochastic_integral_for_small_alpha(flat_curve):
+    alpha = 0.0001
+    sigma = 0.1
+    hw = HullWhite(alpha, sigma, flat_curve, 0.25)
+    np.random.seed(999)
+    time_step_size = 0.01
+    x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
+    assert x.mean() == pytest.approx(0.0, abs=0.05)
+    assert x.var() == pytest.approx(1 * time_step_size, abs=0.02)
+
+
+def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
+    """
+    Under these conditions the simulated short rate doesn't deviate from the initial short rate.
+    """
     maturity = 5
+    alpha = 0.00001
+    sigma = 0.0
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.1)
+    tenors, paths = \
+        hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5, method=SimulationMethod.SLOWANALYTICAL)
+    for value in paths[0]:
+        assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
+
+
+def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
+    maturity = 1
+    alpha = 0.1
+    sigma = 0.5
+    np.random.seed(999)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.001)
+    tenors, short_rates, stochastic_dfs = \
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=100_000,
+            number_of_time_steps=1,
+            method=SimulationMethod.SLOWANALYTICAL,
+            plot_results=False)
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    ax.set_facecolor('#AAAAAA')
+    ax.grid(False)
+    rates: np.ndarray = short_rates[:, -1]
+    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    normal_distribution_mean = \
+        np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
+        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
+    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
+    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
+    ax.annotate(
+        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
+        xy=(0, 0.4),
+        xytext=(-2, 0.2))
+    ax.legend()
+    plt.show()
+    statistic, pvalue = scipy.stats.normaltest(rates)
+    assert pvalue > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
+    assert rates.mean() == pytest.approx(normal_distribution_mean, abs=0.01)
+    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.01)
+
+
+def test_simulated_distribution_with_flat_curve(flat_curve):
+    maturity = 1
+    alpha = 0.1
+    sigma = 0.5
+    np.random.seed(999)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.001)
+    tenors, short_rates = \
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=100_000,
+            number_of_time_steps=1,
+            method=SimulationMethod.SLOWANALYTICAL,
+            plot_results=False)
+
+    rates: np.ndarray = short_rates[:, -1]
+    plt.style.use('ggplot')
+    fig, ax = plt.subplots(ncols=1, nrows=1)
+    ax.set_facecolor('#AAAAAA')
+    ax.grid(False)
+    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
+    bin_centers = 0.5 * (bins[1:] + bins[:-1])
+    normal_distribution_mean = \
+        np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
+        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
+    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
+    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
+    ax.annotate(
+        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
+        xy=(0, 0.4),
+        xytext=(-2, 0.2))
+    ax.legend()
+    plt.show()
+    statistic, pvalue = scipy.stats.normaltest(rates)
+    assert pvalue > 1e-3
+    assert rates.mean() == pytest.approx(normal_distribution_mean[0], abs=0.05)
+    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.05)
+
+
+def test_initial_short_rate_for_flat_curve(flat_curve):
     alpha = 0.1
     sigma = 0.1
-    curve_tenors = \
-        np.array([
-            0.0000000,
-            0.0027397,
-            0.0821918,
-            0.2493151,
-            0.4958904,
-            0.7479452,
-            1.0000000,
-            1.2493151,
-            1.4958904,
-            1.7479452,
-            2.0000000,
-            2.9972603,
-            4.0027397,
-            5.0027397,
-            6.0027397,
-            7.0027397,
-            8.0027397,
-            9.0000000,
-            10.0054795,
-            12.0082192,
-            15.0027397,
-            20.0082192,
-            25.0136986,
-            30.0191781])
+    hw_short_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.0001)
+    hw_long_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.25)
+    assert hw_short_short_rate_tenor.initial_short_rate == \
+           pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
-    # TODO: Where did these discount factors come from?
-    curve_discount_factors = \
-        np.array(
-            [1.000000,
-             0.999907,
-             0.997261,
-             0.991717,
-             0.983809,
-             0.975718,
-             0.967524,
-             0.959083,
-             0.950459,
-             0.941230,
-             0.931649,
-             0.887226,
-             0.834895,
-             0.776718,
-             0.713405,
-             0.649354,
-             0.585177,
-             0.524324,
-             0.469244,
-             0.372527,
-             0.268633,
-             0.162742,
-             0.104571,
-             0.071701])
 
-    initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
-    hw = HullWhite(alpha, sigma, initial_curve, short_rate_tenor=0.25)
-    paths = hw.simulate(maturity, number_of_paths=1_000, number_of_time_steps=50)
+def test_initial_curve_fit(flat_curve):
+    alpha: float = 0.1
+    sigma: float = 0.1
+    maturity: float = 5
+    number_of_time_steps: int = 100
+    number_of_paths: int = 100_000
+    short_rate_tenor: float = maturity / (number_of_time_steps + 1)
+    hw = HullWhite(alpha, sigma, flat_curve, short_rate_tenor)
+    tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
+    stochastic_discount_factors: np.ndarray = \
+        np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
+    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
+
+    time_steps: np.ndarray = \
+        np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
+    initial_curve_discount_factors: np.ndarray = flat_curve.get_discount_factors(time_steps)
+
+    fig, ax = plt.subplots()
+    ax.set_title('Comparison of Stochastic and Initial Curve Discount Factors')
+    ax.plot(time_steps, initial_curve_discount_factors, color='#0D8390', label='Initial Curve')
+    ax.plot(time_steps, stochastic_discount_factors, color='#86BC25', label='Stochastic Discount Factors')
+    ax.grid(True)
+    ax.set_facecolor('#AAAAAA')
+    ax.set_xlabel('$t$ (years)')
+    ax.set_ylabel('$P(0, t)$')
+    ax.set_xlim([0, time_steps[-1]])
+    ax.set_ylim([0, 1])
+    ax.legend()
     plt.show()
-    print(paths)
 
-
-@pytest.mark.skip(reason="Incomplete")
-def test_discount_curve():
-    curve_tenors = \
-        np.array([
-            0.000000,
-            0.002740,
-            0.082192,
-            0.249315,
-            0.495890,
-            0.747945,
-            1.000000,
-            1.249315,
-            1.495890,
-            1.747945,
-            2.000000,
-            2.997260,
-            4.002740,
-            5.002740,
-            6.002740,
-            7.002740,
-            8.002740,
-            9.000000,
-            10.005490,
-            12.008220,
-            15.002740,
-            20.008220,
-            25.013699,
-            30.019178])
-
-    curve_discount_factors = \
-        np.array([
-            1.000000,
-            0.999907,
-            0.997261,
-            0.991717,
-            0.983809,
-            0.975718,
-            0.967524,
-            0.959083,
-            0.950459,
-            0.941230,
-            0.931649,
-            0.887226,
-            0.834895,
-            0.776718,
-            0.713405,
-            0.649354,
-            0.585177,
-            0.524324,
-            0.469244,
-            0.372527,
-            0.268633,
-            0.162742,
-            0.104571,
-            0.071701])
-    number_of_time_steps = 50
-    maturity = 5/12
-    dt = maturity/number_of_time_steps
-    alpha = 0.05
-    sigma = 0.1
-    initial_curve: Curve = Curve(curve_tenors, curve_discount_factors)
-    hw = HullWhiteCurve(alpha, sigma, initial_curve, 0.25)
-    hw.get_discount_curve(curve_tenors, dt)
-
-
+    assert all([a == pytest.approx(b, 0.05)
+                for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
