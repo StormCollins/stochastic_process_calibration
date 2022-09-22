@@ -42,7 +42,7 @@ class HullWhite:
         self.sigma = sigma
         self.initial_curve = initial_curve
         self.numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
-        self.theta_interpolator = self.setup_theta(initial_curve.tenors)
+        self.theta_interpolator = self.calibrate_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
         self.initial_short_rate = \
             initial_curve.get_forward_rates(
@@ -50,7 +50,7 @@ class HullWhite:
                 np.array([self.short_rate_tenor]),
                 CompoundingConvention.NACC)
 
-    def setup_theta(self, theta_times: np.ndarray) -> interp1d:
+    def calibrate_theta(self, theta_times: np.ndarray) -> interp1d:
         """
         Used to generate the theta function, used in the Hull-White model to represent the
         long term discount curve.

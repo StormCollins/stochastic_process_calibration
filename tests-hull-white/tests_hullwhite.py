@@ -142,11 +142,11 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_curve):
 
 def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_curve):
     maturity = 1
-    alpha = 0.00001
+    alpha = 0.1
     sigma = 0.5
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.001)
-    tenors, short_rates = \
+    tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
             number_of_paths=100_000,
@@ -236,7 +236,7 @@ def test_initial_curve_fit(flat_curve):
     number_of_paths: int = 100_000
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
     hw = HullWhite(alpha, sigma, flat_curve, short_rate_tenor)
-    tenors, rates = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
+    tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
     stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
