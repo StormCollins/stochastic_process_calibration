@@ -1,6 +1,4 @@
-import numpy as np
-
-from instruments.fra import *
+from src.instruments.fra import *
 import pytest
 
 
@@ -10,7 +8,7 @@ def curve_tenors():
 
 
 @pytest.fixture
-def flat_curve(curve_tenors):
+def flat_zero_rate_curve(curve_tenors):
     rate = 0.1
     discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)
@@ -51,7 +49,7 @@ def test_get_value(flat_zero_rate_curve, atm_fra):
 
 def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hw):
     strike: float = 0.10126
-    alpha: float = 0.01
+    alpha: float = 0.1
     sigma: float = 0.1
     number_of_paths: int = 10_000
     number_of_time_steps: int = 100

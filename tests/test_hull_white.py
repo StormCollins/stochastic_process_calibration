@@ -1,9 +1,8 @@
 # TODO: Setup more tests for theta with 'real' interest rate curves.
-import numpy as np
 import pytest
 import scipy.stats
 
-from hullwhite.hullwhite import *
+from src.hullwhite.hullwhite import *
 
 
 @pytest.fixture
@@ -211,16 +210,16 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     alpha = 0.00001
     sigma = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.1)
-    tenors, paths = \
+    tenors, short_rates, stochastic_dfs = \
         hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5, method=SimulationMethod.SLOWANALYTICAL)
-    for value in paths[0]:
+    for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
 
 
 def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_curve):
     maturity = 1
     alpha = 0.1
-    sigma = 0.5
+    sigma = 0.1
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.001)
     tenors, short_rates, stochastic_dfs = \
@@ -250,9 +249,9 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
         xytext=(-2, 0.2))
     ax.legend()
     plt.show()
-    statistic, pvalue = scipy.stats.normaltest(rates)
-    assert pvalue > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
-    assert rates.mean() == pytest.approx(normal_distribution_mean, abs=0.01)
+    statistic, p_value = scipy.stats.normaltest(rates)
+    assert p_value > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
+    assert rates.mean() == pytest.approx(normal_distribution_mean[0], abs=0.01)
     assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.01)
 
 
@@ -262,7 +261,7 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     sigma = 0.5
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.001)
-    tenors, short_rates = \
+    tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
             number_of_paths=100_000,

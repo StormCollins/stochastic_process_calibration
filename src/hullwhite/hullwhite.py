@@ -1,4 +1,4 @@
-from curves.curve import *
+from src.curves.curve import *
 import numpy as np
 from enum import Enum
 import scipy.integrate

@@ -1,6 +1,6 @@
 import pytest
 import QuantLib as ql
-from curves.curve import *
+from src.curves.curve import *
 
 
 @pytest.fixture

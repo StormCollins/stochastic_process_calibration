@@ -1,4 +1,4 @@
-from hullwhite.hullwhite import *
+from src.hullwhite.hullwhite import *
 
 
 class Fra:

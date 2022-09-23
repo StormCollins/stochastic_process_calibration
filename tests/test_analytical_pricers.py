@@ -1,4 +1,4 @@
-from gbm.analytical_pricers import *
+from src.gbm.analytical_pricers import *
 import pytest
 
 
