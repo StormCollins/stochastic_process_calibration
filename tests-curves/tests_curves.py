@@ -67,10 +67,10 @@ def test_get_single_forward_rate(single_curve, ql_curve):
            pytest.approx(0.22314355131421, 0.0000001)
 
 
-def test_get_flat_curve_forward_rate(flat_curve):
-    assert flat_curve.get_forward_rates(np.array([0.00]), np.array([1.00]), CompoundingConvention.NACC) == \
+def test_get_flat_curve_forward_rate(flat_zero_rate_curve):
+    assert flat_zero_rate_curve.get_forward_rates(np.array([0.00]), np.array([1.00]), CompoundingConvention.NACC) == \
            pytest.approx(0.10, abs=0.01)
-    assert flat_curve.get_forward_rates(np.array([0.00]), np.array([0.01]), CompoundingConvention.NACC) == \
+    assert flat_zero_rate_curve.get_forward_rates(np.array([0.00]), np.array([0.01]), CompoundingConvention.NACC) == \
            pytest.approx(0.10, abs=0.01)
 
 
@@ -94,11 +94,11 @@ def test_multiple_discount_curves_get_discount_factors(
     assert np.allclose(expected, actual)
 
 
-def test_get_discount_factor_derivatives(flat_curve):
-    actual = flat_curve.get_discount_factor_derivatives(0.25)
+def test_get_discount_factor_derivatives(flat_zero_rate_curve):
+    actual = flat_zero_rate_curve.get_discount_factor_derivatives(0.25)
     assert -0.1 * np.exp(-0.1 * 0.25) == pytest.approx(actual, 0.0001)
 
 
-def test_get_log_discount_factor_derivatives(flat_curve):
-    actual = flat_curve.get_log_discount_factor_derivatives(0.25)
+def test_get_log_discount_factor_derivatives(flat_zero_rate_curve):
+    actual = flat_zero_rate_curve.get_log_discount_factor_derivatives(0.25)
     assert -0.1 == pytest.approx(actual, 0.0001)

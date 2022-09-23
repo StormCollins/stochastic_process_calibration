@@ -16,12 +16,6 @@ class SimulationMethod(Enum):
 
 
 class HullWhite:
-    alpha: float
-    sigma: float
-    theta_interpolator: interp1d
-    initial_curve: Curve
-    short_rate_tenor: float
-    initial_short_rate: float
     current_discount_factor_interpolator: interp1d
 
     def __init__(
@@ -64,10 +58,6 @@ class HullWhite:
         offset_discount_factors: np.ndarray = self.initial_curve.get_discount_factors(
             theta_times - self.numerical_derivative_step_size)
         offset_zero_rates = -1 * np.log(offset_discount_factors) / (theta_times - self.numerical_derivative_step_size)
-        # thetas: np.ndarray = \
-        #     (zero_rates[1:] - zero_rates[0:-1]) / (theta_times[1:] - theta_times[0:-1]) + \
-        #     self.alpha * zero_rates[0:-1] + \
-        #     self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times[0:-1]))
         thetas: np.ndarray = \
             (zero_rates - offset_zero_rates) / self.numerical_derivative_step_size + \
             self.alpha * zero_rates + \
@@ -92,7 +82,7 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: SimulationMethod = SimulationMethod.FASTANALYTICAL,
+            method: SimulationMethod = SimulationMethod.SLOWANALYTICAL,
             plot_results: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
