@@ -8,7 +8,7 @@ from scipy.stats import jarque_bera
 from scipy.interpolate import interp1d
 from collections import namedtuple
 import pandas as pd
-from gbm.gbm import GBM
+from gbm import GBM
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 VolData = namedtuple('VolData', ['Tenors', 'VolSurface'])
@@ -274,90 +274,6 @@ def fx_forward_monte_carlo_pricer(
     price: float = np.average(payoffs)
     error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
     return MonteCarloResult(price, error)
-
-
-def get_time_dependent_volatility(
-        excel_file_path: str) -> interp1d:
-    """
-    Returns the time dependent volatilities.
-
-    :param excel_file_path: The path of the file. In other words, the file path where the Excel file is.
-    :return: The time dependent volatilities.
-    """
-
-    excel_records = pd.read_excel(excel_file_path)
-    excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
-    x: list[float] = list(map(float, excel_records_df.Tenors))
-    y: list[float] = list(map(float, excel_records_df.Quotes))
-    interpolated_volatility: interp1d = interp1d(x, y, kind='next', fill_value='extrapolate')
-    return interpolated_volatility
-
-
-def generate_gbm_paths_with_time_dependent_vols(
-        number_of_paths: int,
-        number_of_time_steps: int,
-        notional: float,
-        initial_spot: float,
-        drift: float,
-        volatility_interpolator: interp1d,
-        time_to_maturity) -> np.ndarray:
-    """
-    Returns the monte carlo simulated Geometric Brownian Motion Paths.
-
-    :param number_of_paths:
-    :param number_of_time_steps:
-    :param notional:
-    :param initial_spot:
-    :param drift:
-    :param volatility_interpolator:
-    :param time_to_maturity:
-    :return: The monte carlo simulated Geometric Brownian Motion Paths.
-    """
-    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-    paths[:, 0] = initial_spot * notional
-    dt: float = time_to_maturity / number_of_time_steps
-
-    for j in range(1, number_of_time_steps + 1):
-        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        volatility: float = self.variance_interpolator(j * dt) / 100
-        paths[:, j] = \
-            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
-                                     math.sqrt(dt) * z)
-
-    return paths
-
-
-def generate_gbm_paths(
-        number_of_paths: int,
-        number_of_time_steps: int,
-        notional: float,
-        initial_spot: float,
-        drift: float,
-        volatility: float,
-        time_to_maturity) -> np.ndarray:
-    """
-    Returns the monte carlo simulated Geometric Brownian Motion Paths.
-
-    :param number_of_paths:
-    :param number_of_time_steps:
-    :param notional:
-    :param initial_spot:
-    :param drift:
-    :param volatility:
-    :param time_to_maturity:
-    :return: The monte carlo simulated Geometric Brownian Motion Paths.
-    """
-    paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-    paths[:, 0] = initial_spot * notional
-    dt: float = time_to_maturity / number_of_time_steps
-
-    for j in range(1, number_of_time_steps + 1):
-        z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-        paths[:, j] = \
-            paths[:, j - 1] * np.exp((drift - 0.5 * volatility ** 2) * dt + volatility *
-                                     math.sqrt(dt) * z)
-
-    return paths
 
 
 def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
