@@ -8,7 +8,7 @@ from scipy.stats import jarque_bera
 from scipy.interpolate import interp1d
 from collections import namedtuple
 import pandas as pd
-from gbm import GBM
+from gbm.gbm import GBM
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 VolData = namedtuple('VolData', ['Tenors', 'VolSurface'])

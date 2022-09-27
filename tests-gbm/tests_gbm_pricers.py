@@ -17,13 +17,14 @@ def test_fast_equity_european_option_monte_carlo_pricer():
     sheet_name: str = 'constant_vol_surface'
     actual: MonteCarloResult = \
         fast_equity_european_option_monte_carlo_pricer(notional, initial_spot, strike, interest_rate, volatility,
-                                                       time_to_maturity, "put", number_of_paths, number_of_time_steps,
+                                                       time_to_maturity, "call", number_of_paths, number_of_time_steps,
                                                        excel_file_path, sheet_name, True, True)
     expected_price: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility,
-                                          time_to_maturity, "put")
+                                          time_to_maturity, "call")
     assert expected_price == pytest.approx(actual.price, actual.error)
     print(fast_equity_european_option_monte_carlo_pricer(notional, initial_spot, strike, interest_rate, volatility,
-                                                         time_to_maturity, "put", number_of_paths, number_of_time_steps,
+                                                         time_to_maturity, "call", number_of_paths,
+                                                         number_of_time_steps,
                                                          excel_file_path, sheet_name, False, False))
 
 
@@ -34,8 +35,8 @@ def test_slow_equity_european_option_monte_carlo_pricer():
     interest_rate: float = 0.1
     volatility: float = 0.1
     time_to_maturity: float = 6 / 12
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 2
+    number_of_paths: int = 100_000
+    number_of_time_steps: int = 50
     actual: MonteCarloResult = \
         slow_equity_european_option_monte_carlo_pricer(
             notional,
@@ -55,16 +56,17 @@ def test_slow_equity_european_option_monte_carlo_pricer():
 
 def test_fx_option_monte_carlo_pricer():
     notional: float = 1_000_000
-    initial_spot: float = 50
-    strike: float = 52
-    domestic_interest_rate: float = 0.06
-    foreign_interest_rate: float = 0.02
-    volatility: float = 0.149
-    time_to_maturity: float = 6 / 12
+    initial_spot: float = 14.6
+    strike: float = 17.11
+    domestic_interest_rate: float = 0.05737
+    foreign_interest_rate: float = 0.01227
+    time_to_maturity: float = 0.5
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 1000
-    excel_file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\atm-volatility-surface.xlsx'
+    number_of_time_steps: int = 50
+    volatility: float = 0.154
+    excel_file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\FX_option_atm_vol_surface.xlsx'
     sheet_name: str = 'constant_vol_surface'
+    np.random.seed(999)
 
     actual: MonteCarloResult = \
         fx_option_monte_carlo_pricer(
@@ -75,7 +77,7 @@ def test_fx_option_monte_carlo_pricer():
             foreign_interest_rate,
             volatility,
             time_to_maturity,
-            "put",
+            "call",
             number_of_paths,
             number_of_time_steps,
             excel_file_path,
@@ -91,10 +93,10 @@ def test_fx_option_monte_carlo_pricer():
             foreign_interest_rate,
             volatility,
             time_to_maturity,
-            "put")
+            "call")
     assert expected_price == pytest.approx(actual.price, actual.error)
     print(fx_option_monte_carlo_pricer(notional, initial_spot, strike, domestic_interest_rate,
-                                       foreign_interest_rate, volatility, time_to_maturity, "put", number_of_paths,
+                                       foreign_interest_rate, volatility, time_to_maturity, "call", number_of_paths,
                                        number_of_time_steps, excel_file_path, sheet_name, False, False))
 
 
@@ -112,15 +114,16 @@ def test_fx_forward_monte_carlo_pricer():
     """
     notional: float = 1_000_000
     initial_spot: float = 14.6038
-    strike: float = 17
+    strike: float = 17.25
     domestic_interest_rate: float = 0.061339421
     foreign_interest_rate: float = 0.020564138
-    volatility: float = 0.149
+    volatility: float = 0.154
     time_to_maturity: float = 1
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1000
-    excel_file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\atm-volatility-surface.xlsx'
+    excel_file_path: str = r'C:\GitLab\stochastic_process_calibration_2022\gbm\FEC_atm_vol_surface.xlsx'
     sheet_name: str = 'constant_vol_surface'
+    np.random.seed(999)
     actual: MonteCarloResult = \
         fx_forward_monte_carlo_pricer(
             notional,
@@ -147,44 +150,4 @@ def test_fx_forward_monte_carlo_pricer():
     assert expected_price == pytest.approx(actual.price, actual.error)
     print(fx_forward_monte_carlo_pricer(notional, initial_spot, strike, domestic_interest_rate,
                                         foreign_interest_rate, time_to_maturity, number_of_paths,
-                                        number_of_time_steps, volatility, excel_file_path, sheet_name , False, False))
-
-def test_generate_time_dependent_volatilities():
-    excel_file_path = '../gbm/atm-volatility-surface.xlsx'
-
-    print(get_time_dependent_volatility(excel_file_path))
-
-
-def test_generate_gbm_paths_with_time_dependent_vols():
-    number_of_paths: int = 10
-    number_of_time_steps: int = 2
-    notional: float = 1
-    initial_spot: float = 50
-    drift: float = 0.1
-    time_to_maturity = 1
-    excel_file_path = '../gbm/atm-volatility-surface.xlsx'
-    volatility_interpolator: interp1d = get_time_dependent_volatility(excel_file_path)
-
-    print(generate_gbm_paths_with_time_dependent_vols(
-        number_of_paths,
-        number_of_time_steps,
-        notional,
-        initial_spot,
-        drift,
-        volatility_interpolator,
-        time_to_maturity))
-
-
-def test_get_time_dependent_gbm_paths():
-    drift: float = 0.1
-    volatility: float = 0.06
-    excel_file_path = '../gbm/atm-volatility-surface.xlsx'
-    number_of_paths: int = 10
-    number_of_time_steps: int = 2
-    notional: float = 1
-    initial_spot: float = 50
-    time_to_maturity = 1
-    gbm: GBM = GBM(drift, volatility, excel_file_path, 'vol_surface')
-    actual = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity, True)
-    print(actual)
-
+                                        number_of_time_steps, volatility, excel_file_path, sheet_name, False, False))
