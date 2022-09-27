@@ -21,8 +21,6 @@ result = fx_option_monte_carlo_pricer(
     time_to_maturity,
     "call",
     number_of_paths,
-    number_of_time_steps,
-    True,
-    True)
+    number_of_time_steps)
 
 print(f'Monte Carlo FX Option Price: {result.price:,.2f}')

@@ -29,17 +29,8 @@ slow_price: float =\
             number_of_time_steps)
 
 fast_price: float = \
-      fast_equity_european_option_monte_carlo_pricer(
-          notional,
-            initial_spot,
-            strike,
-            interest_rate,
-            volatility,
-            time_to_maturity,
-            "put",
-            number_of_paths,
-            number_of_time_steps,
-            True)
+    fast_equity_european_option_monte_carlo_pricer(notional, initial_spot, strike, interest_rate, volatility,
+                                                   time_to_maturity, "put", number_of_paths, number_of_time_steps,,
 
 
 print()
