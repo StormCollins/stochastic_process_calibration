@@ -1,6 +1,4 @@
-import numpy as np
-
-from instruments.fra import *
+from src.instruments.fra import *
 import pytest
 
 
@@ -10,14 +8,14 @@ def curve_tenors():
 
 
 @pytest.fixture
-def flat_curve(curve_tenors):
+def flat_zero_rate_curve(curve_tenors):
     rate = 0.1
     discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)
 
 
 @pytest.fixture
-def atm_fra(flat_curve):
+def atm_fra(flat_zero_rate_curve):
     notional: float = 1_000_000
     strike: float = 0.10126
     start_tenor = 1
@@ -26,32 +24,32 @@ def atm_fra(flat_curve):
 
 
 @pytest.fixture
-def hw(flat_curve):
+def hw(flat_zero_rate_curve):
     short_rate_tenor: float = 0.01
     alpha: float = 0.1
     sigma: float = 0.1
-    return HullWhite(alpha, sigma, flat_curve, short_rate_tenor)
+    return HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
 
 
-def test_get_fair_forward_rate(flat_curve, atm_fra):
-    actual: float = atm_fra.get_fair_forward_rate(flat_curve)
-    expected: float = flat_curve.get_forward_rates(atm_fra.start_tenor, atm_fra.end_tenor, CompoundingConvention.Simple)
+def test_get_fair_forward_rate(flat_zero_rate_curve, atm_fra):
+    actual: float = atm_fra.get_fair_forward_rate(flat_zero_rate_curve)
+    expected: float = flat_zero_rate_curve.get_forward_rates(atm_fra.start_tenor, atm_fra.end_tenor, CompoundingConvention.Simple)
     assert actual == pytest.approx(expected, 0.0001)
 
 
-def test_get_value(flat_curve, atm_fra):
-    actual: float = atm_fra.get_value(flat_curve)
+def test_get_value(flat_zero_rate_curve, atm_fra):
+    actual: float = atm_fra.get_value(flat_zero_rate_curve)
     expected: float = \
         atm_fra.notional * \
-        (flat_curve.get_forward_rates(atm_fra.start_tenor, atm_fra.end_tenor, CompoundingConvention.Simple) -
+        (flat_zero_rate_curve.get_forward_rates(atm_fra.start_tenor, atm_fra.end_tenor, CompoundingConvention.Simple) -
          atm_fra.strike) * \
         (atm_fra.end_tenor - atm_fra.start_tenor)
     assert actual == pytest.approx(expected, 0.0001)
 
 
-def test_get_monte_carlo_values(flat_curve, atm_fra, hw):
+def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hw):
     strike: float = 0.10126
-    alpha: float = 0.01
+    alpha: float = 0.1
     sigma: float = 0.1
     number_of_paths: int = 10_000
     number_of_time_steps: int = 100
@@ -61,7 +59,7 @@ def test_get_monte_carlo_values(flat_curve, atm_fra, hw):
         atm_fra.get_monte_carlo_values(
             alpha=alpha,
             sigma=sigma,
-            curve=flat_curve,
+            curve=flat_zero_rate_curve,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps)
 
@@ -88,14 +86,14 @@ def test_get_monte_carlo_values(flat_curve, atm_fra, hw):
     assert actual[-1] == pytest.approx(expected, 0.0001)
 
 
-def test_get_monte_carlo_value_compared_to_analytical(flat_curve, atm_fra, hw):
-    expected: float = atm_fra.get_value(flat_curve)
+def test_get_monte_carlo_value_compared_to_analytical(flat_zero_rate_curve, atm_fra, hw):
+    expected: float = atm_fra.get_value(flat_zero_rate_curve)
     np.random.seed(999)
     actual, actual_std = \
         atm_fra.get_monte_carlo_values(
             alpha=hw.alpha,
             sigma=hw.sigma,
-            curve=flat_curve,
+            curve=flat_zero_rate_curve,
             number_of_paths=100_000,
             number_of_time_steps=100,
             short_rate_tenor=hw.short_rate_tenor)
@@ -104,7 +102,7 @@ def test_get_monte_carlo_value_compared_to_analytical(flat_curve, atm_fra, hw):
     assert actual[-1] == pytest.approx(expected, abs=450)
 
 
-def test_fra_value_vs_alpha(flat_curve, atm_fra):
+def test_fra_value_vs_alpha(flat_zero_rate_curve, atm_fra):
     alphas = np.arange(0, 2, 0.1) + 0.1
     sigma = 0.1
     number_of_steps_list = [10, 20, 50, 100, 200]
@@ -114,13 +112,13 @@ def test_fra_value_vs_alpha(flat_curve, atm_fra):
         fra_values = list()
         for alpha in alphas:
             print(f'Current alpha: {alpha}')
-            hw: HullWhite = HullWhite(alpha, sigma, flat_curve, 0.01)
+            hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
             np.random.seed(999)
             actual, actual_std = \
                 atm_fra.get_monte_carlo_values(
                     alpha=hw.alpha,
                     sigma=hw.sigma,
-                    curve=flat_curve,
+                    curve=flat_zero_rate_curve,
                     number_of_paths=number_of_paths,
                     number_of_time_steps=number_of_steps,
                     short_rate_tenor=hw.short_rate_tenor)

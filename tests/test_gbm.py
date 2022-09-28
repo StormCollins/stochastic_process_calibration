@@ -1,5 +1,5 @@
 import pytest
-from gbm.gbm_simulation import GBM
+from src.gbm.gbm_simulation import GBM
 import numpy as np
 
 

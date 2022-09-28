@@ -1,7 +1,8 @@
-from gbm.analytical_pricers import *
-from gbm.gbm_pricers import *
+from src.gbm.analytical_pricers import *
+from src.gbm.gbm_pricers import *
 import pytest
-from gbm.gbm_simulation import *
+
+from src.gbm.gbm_simulation import *
 
 
 def test_fast_equity_european_option_monte_carlo_pricer():

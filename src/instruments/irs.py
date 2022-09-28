@@ -1,6 +1,4 @@
-import numpy as np
-
-from curves.curve import *
+from src.curves.curve import *
 
 
 class Irs:

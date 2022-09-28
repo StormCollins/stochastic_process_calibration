@@ -1,10 +1,7 @@
 import math
 from scipy.stats import norm
 import numpy as np
-from curves.curve import Curve
-
-
-# Time Dependant Hull-White
+from src.curves.curve import Curve
 
 
 def swap_rate(
