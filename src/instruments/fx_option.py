@@ -6,9 +6,9 @@ from src.monte_carlo_results import MonteCarloResults
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
-class EuropeanEquityOption:
+class FxOption:
     """
-    A class representing a European Equity Option.
+    A class representing an FX (Foreign Exchange) option.
     """
 
     def __init__(
@@ -16,27 +16,17 @@ class EuropeanEquityOption:
             notional: float,
             initial_spot: float,
             strike: float,
-            interest_rate: float,
+            domestic_interest_rate: float,
+            foreign_interest_rate: float,
             volatility: float,
             time_to_maturity: float,
             call_or_put: CallOrPut,
             long_or_short: LongOrShort):
-        """
-        Class constructor.
-
-        :param notional: Notional.
-        :param initial_spot: Initial equity spot.
-        :param strike: Equity strike.
-        :param interest_rate: Interest rate.
-        :param volatility: Volatility.
-        :param time_to_maturity: Time to maturity.
-        :param call_or_put: Indicates if the option is a 'CALL' or a 'PUT'.
-        :param long_or_short: Indicates if the option is 'LONG' or 'SHORT'.
-        """
         self.notional: float = notional
         self.initial_spot: float = initial_spot
         self.strike: float = strike
-        self.interest_rate: float = interest_rate
+        self.domestic_interest_rate: float = domestic_interest_rate
+        self.foreign_interest_rate: float = foreign_interest_rate
         self.volatility: float = volatility
         self.time_to_maturity: float = time_to_maturity
 
@@ -50,18 +40,20 @@ class EuropeanEquityOption:
         else:
             self.long_or_short: LongOrShort = long_or_short
 
-    def get_black_scholes_price(self) -> float:
+    def get_garman_kohlhagen_price(self) -> float:
         """
-        Gets the analytical Black-Scholes price for the European equity option.
+        The Garman-Kohlahgen model is an analytical model for valuing European options on foreign exchange.
+        It's a modification to the Black-Scholes model such that the model can deal with two interest rates, the
+        domestic interest rate and the foreign interest rate.
 
-        :return: The analytical Black-Scholes price.
+        :return: Garman_kohlhagen price for an FX option.
         """
         initial_spot: float = self.notional * self.initial_spot
         strike: float = self.notional * self.strike
+        drift: float = self.domestic_interest_rate - self.foreign_interest_rate
 
         d_1: float = \
-            (np.log(initial_spot / strike) +
-             ((self.interest_rate + 0.5 * self.volatility**2) * self.time_to_maturity)) / \
+            (np.log(initial_spot / strike) + ((drift + 0.5 * self.volatility ** 2) * self.time_to_maturity)) / \
             (self.volatility * np.sqrt(self.time_to_maturity))
 
         d_2: float = d_1 - self.volatility * np.sqrt(self.time_to_maturity)
@@ -69,36 +61,36 @@ class EuropeanEquityOption:
 
         if self.call_or_put == CallOrPut.CALL:
             return direction * \
-                   (initial_spot * norm.cdf(d_1) -
-                    strike * np.exp(-1 * self.interest_rate * self.time_to_maturity) * norm.cdf(d_2))
+                   (initial_spot * np.exp(-1 * self.foreign_interest_rate * self.time_to_maturity) * norm.cdf(d_1) -
+                    self.strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(d_2))
 
         elif self.call_or_put == CallOrPut.PUT:
             return direction * \
-                   (-1 * initial_spot * norm.cdf(-1 * d_1) +
-                    strike * np.exp(-1 * self.interest_rate * self.time_to_maturity) * norm.cdf(-1 * d_2))
+                   (-1 * initial_spot * np.exp(-1 * self.foreign_interest_rate * self.time_to_maturity) *
+                    norm.cdf(-1 * d_1) +
+                    self.strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(-1 * d_2))
 
     def get_time_independent_monte_carlo_price(
             self,
             number_of_paths: int,
             number_of_time_steps: int,
-            plot_paths: bool,
-            show_stats: bool) -> MonteCarloResults:
+            plot_paths: bool = True,
+            show_stats: bool = False) -> MonteCarloResults:
         """
-        Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
-        volatility is time-independent.
-        """
-        gbm: TimeIndependentGBM = \
-            TimeIndependentGBM(
-                drift=self.interest_rate,
-                volatility=self.volatility,
-                notional=self.notional,
-                initial_spot=self.initial_spot,
-                time_to_maturity=self.time_to_maturity)
+        Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations.
 
-        paths: np.ndarray = \
-            gbm.get_paths(
-                number_of_paths=number_of_paths,
-                number_of_time_steps=number_of_time_steps)
+        :param show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
+        :param number_of_paths: Number of current_value for the FX option.
+        :param number_of_time_steps: Number of time steps for the FX option.
+        :param plot_paths: If set to True plots the current_value.
+        :return: Monte Carlo price for an FX Option.
+        """
+        drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+
+        gbm: TimeIndependentGBM = \
+            TimeIndependentGBM(drift, self.volatility, self.notional, self.initial_spot, self.time_to_maturity)
+
+        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps)
 
         if plot_paths:
             gbm.create_plots(paths)
@@ -109,7 +101,7 @@ class EuropeanEquityOption:
         if self.call_or_put == CallOrPut.CALL:
             payoffs = \
                 np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
-                np.exp(-1 * self.interest_rate * self.time_to_maturity)
+                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
@@ -118,7 +110,7 @@ class EuropeanEquityOption:
         elif self.call_or_put == CallOrPut.PUT:
             payoffs = \
                 np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
-                np.exp(-1 * self.interest_rate * self.time_to_maturity)
+                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
