@@ -14,17 +14,7 @@ class TestsAnalyticalPricers:
         expected_price: float = 5.068933121521976
         assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
-    def test_fx_forward(self):
-        notional: float = 1
-        initial_spot: float = 50
-        strike: float = 52
-        domestic_interest_rate: float = 0.2
-        foreign_interest_rate: float = 0.1
-        time_to_maturity: float = 5 / 12
-        actual_price: float = \
-            fx_forward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
-        expected_price: float = 0.11716329473210145
-        assert actual_price == pytest.approx(expected_price, 0.000000000001)
+
 
     def test_garman_kohlhagen(self):
         notional: float = 1

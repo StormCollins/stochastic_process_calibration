@@ -39,12 +39,10 @@ class FxForward:
 
     def get_analytical_price(self) -> float:
         """
-        Returns the analytical (discounted) FX forward price.
+        Returns the analytical (discounted) price of the FX Forward.
         """
-        payoff: float = \
-            self.notional * self.initial_spot * \
-            (np.exp((self.domestic_interest_rate - self.foreign_interest_rate) * self.time_to_maturity) - self.strike)
-
+        drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+        payoff: float = self.notional * (self.initial_spot * np.exp(drift * self.time_to_maturity) - self.strike)
         discounted_payoff: float = payoff * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
         return discounted_payoff
 
@@ -79,8 +77,8 @@ class FxForward:
         if plot_paths:
             gbm.create_plots(paths, drift, volatility, self.time_to_maturity)
 
-        # if show_stats:
-        #     statistics(paths, initial_spot, drift, volatility, time_to_maturity)
+        if show_stats:
+            gbm.get_path_statistics(paths, self.initial_spot, drift, volatility, self.time_to_maturity)
 
         payoffs = \
             (paths[:, -1] - self.notional * self.strike) * \

@@ -1,12 +1,21 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from scipy.stats import norm
+from scipy.stats import jarque_bera
 from scipy.stats import lognorm
+from scipy.stats import norm
 
 
 class TimeIndependentGBM:
+    """
+    Class for generating GBM paths where volatility is time independent.
+    """
     def __init__(self, drift: float, volatility: float):
+        """
+        Class constructor.
+        :param drift: Drift.
+        :param volatility: Volatility.
+        """
         self.drift = drift
         self.volatility = volatility
 
@@ -40,7 +49,7 @@ class TimeIndependentGBM:
         return paths
 
     @staticmethod
-    def create_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
+    def create_plots(paths: np.ndarray, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
         """
         Plots different figures such as:
 
@@ -94,3 +103,44 @@ class TimeIndependentGBM:
         ax3.set_title('Comparison of GBM normal-returns to log-normal PDF')
         ax3.legend()
         plt.show()
+
+    @staticmethod
+    def get_path_statistics(
+            paths: np.ndarray,
+            initial_spot: float,
+            drift: float,
+            volatility: float,
+            time_to_maturity: float) -> None:
+        """
+        Tests if the log-returns of the GBM paths normally distributed.
+
+        :param paths: The GBM simulated Monte Carlo paths.
+        :param initial_spot: Initial spot.
+        :param drift: Drift.
+        :param volatility: Volatility.
+        :param time_to_maturity: Time to maturity.
+        :return: None.
+        """
+        log_returns = np.log(paths[:, -1] / paths[:, 0])
+        mean: float = initial_spot * np.exp(drift + (volatility ** 2 / 2))
+
+        standard_deviation: float = \
+            initial_spot * np.sqrt((np.exp(volatility ** 2) - 1) * np.exp((2 * drift + volatility ** 2)))
+
+        pfe: float = \
+            initial_spot * np.exp(drift * time_to_maturity + norm.ppf(0.95) * volatility * np.sqrt(time_to_maturity))
+
+        print()
+        print(f' Time-Independent Statistics of GBM')
+        print(f' ----------------------------------')
+        print(f'  Mean: {mean}')
+        print(f'  Standard Deviation: {standard_deviation}')
+        print(f'  95% PFE: {pfe}')
+        jarque_bera_test: [float, float] = jarque_bera(log_returns)
+        print(f'  Jarque-Bera Test Results:')
+        print(f'     p-value: {jarque_bera_test[0]}')
+
+        if jarque_bera_test[0] > 0.05:
+            print('     GBM log-returns are normally distributed.')
+        else:
+            print('     GBM log-returns are not normally distributed.')

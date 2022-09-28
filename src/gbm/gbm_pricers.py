@@ -4,7 +4,6 @@ import numpy as np
 import seaborn as sns
 from scipy.stats import norm
 from scipy.stats import lognorm
-from scipy.stats import jarque_bera
 from collections import namedtuple
 from src.gbm.gbm_simulation import GBM
 from src.call_or_put import CallOrPut
@@ -336,23 +335,3 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     plt.show()
 
 
-def statistics(paths, initial_spot, drift, volatility, time_to_maturity):
-    log_returns = np.log(paths[:, -1] / paths[:, 0])
-    jarque_bera_test = jarque_bera(log_returns)
-    print(jarque_bera_test)
-    print(f'p-value: {jarque_bera_test.pvalue}')
-    if jarque_bera_test.pvalue > 0.05:
-        print('GBM current_value are normally distributed.')
-    else:
-        print('GBM current_value are not normally distributed.')
-
-    # Path statistics
-    mean: float = initial_spot * math.exp(drift + (volatility ** 2 / 2))
-    standard_deviation: float = \
-        initial_spot * np.sqrt((math.exp(volatility ** 2) - 1) * math.exp((2 * drift + volatility ** 2)))
-    percentile: float = initial_spot * math.exp(
-        drift * time_to_maturity + norm.ppf(0.95) * volatility * math.sqrt(time_to_maturity))
-
-    print(f'Mean: {mean}')
-    print(f'Standard Deviation: {standard_deviation}')
-    print(f'95% PFE: {percentile}')
