@@ -1,4 +1,3 @@
-# TODO: Setup more tests for theta with 'real' interest rate curves.
 import pytest
 import scipy.stats
 
@@ -12,6 +11,12 @@ def curve_tenors():
 
 @pytest.fixture
 def flat_zero_rate_curve(curve_tenors):
+    """
+    Example flat zero rate curve (rate = 10%).
+
+    :param curve_tenors: Curve tenors.
+    :return: Flat zero rate curve.
+    """
     rate = 0.1
     discount_factors: np.ndarray = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)
@@ -19,6 +24,11 @@ def flat_zero_rate_curve(curve_tenors):
 
 @pytest.fixture
 def real_zero_rate_curve():
+    """
+    Example real world zero rate curve.
+
+    :return: Real world curve.
+    """
     tenors: np.ndarray = \
         np.array([
             0.000,
@@ -104,7 +114,7 @@ def test_theta_with_flat_zero_rate_curve_and_zero_vol(flat_zero_rate_curve):
 
 def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, curve_tenors):
     """
-    See https://gitlab.fsa-aks.deloitte.co.za/Valuations/bmi_projects/stochastic_process_calibration_2022/-/blob/main/tests-hull-white/tests_hullwhite.py
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#theta_t
     """
     alpha = 0.001
     sigma = 0.1
@@ -115,7 +125,11 @@ def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, cu
     assert all([a == pytest.approx(b, abs=0.01) for a, b in zip(actual, expected)])
 
 
+# TODO: Finish test.
 def test_theta_with_real_zero_rate_curve_and_time_tends_to_infinity(real_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#theta_t
+    """
     alpha: float = 1.0
     sigma: float = 0.1
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=real_zero_rate_curve, short_rate_tenor=0.01)
@@ -125,6 +139,9 @@ def test_theta_with_real_zero_rate_curve_and_time_tends_to_infinity(real_zero_ra
 
 
 def test_b_function_large_alpha(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#b-function
+    """
     alpha: float = 10_000
     sigma: float = 0
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
@@ -133,6 +150,9 @@ def test_b_function_large_alpha(flat_zero_rate_curve):
 
 
 def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#a-function
+    """
     alpha = 1_000
     sigma = 0.1
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
@@ -146,6 +166,9 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
 
 
 def test_a_function_with_flat_curve(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#a-function
+    """
     alpha = 0.25
     sigma = 0.1
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
@@ -164,6 +187,9 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
 
 
 def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#discount_factors
+    """
     alpha = 1_000
     sigma = 0.1
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
@@ -178,6 +204,9 @@ def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_zero_rate_cur
 
 
 def test_get_discount_factors_with_zero_vol(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#discount_factors
+    """
     alpha = 0.1
     sigma = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
@@ -191,19 +220,46 @@ def test_get_discount_factors_with_zero_vol(flat_zero_rate_curve):
     assert actual[0] == pytest.approx(expected, abs=0.0001)
 
 
-def test_exponential_stochastic_integral_for_small_alpha(flat_zero_rate_curve):
-    alpha = 0.0001
-    sigma = 0.1
-    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.25)
-    np.random.seed(999)
-    time_step_size = 0.01
-    x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
-    assert x.mean() == pytest.approx(0.0, abs=0.05)
-    assert x.var() == pytest.approx(1 * time_step_size, abs=0.02)
+def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
+    """
+    https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#discount_factors
+    """
+    alpha: float = 0.1
+    sigma: float = 0.1
+    maturity: float = 5
+    number_of_time_steps: int = 100
+    number_of_paths: int = 100_000
+    short_rate_tenor: float = maturity / (number_of_time_steps + 1)
+    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
+    tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
+    stochastic_discount_factors: np.ndarray = \
+        np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
+    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
+
+    time_steps: np.ndarray = \
+        np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
+    initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
+
+    fig, ax = plt.subplots()
+    ax.set_title('Comparison of Stochastic and Initial Curve Discount Factors')
+    ax.plot(time_steps, initial_curve_discount_factors, color='#0D8390', label='Initial Curve')
+    ax.plot(time_steps, stochastic_discount_factors, color='#86BC25', label='Stochastic Discount Factors')
+    ax.grid(True)
+    ax.set_facecolor('#AAAAAA')
+    ax.set_xlabel('$t$ (years)')
+    ax.set_ylabel('$P(0, t)$')
+    ax.set_xlim([0, time_steps[-1]])
+    ax.set_ylim([0, 1])
+    ax.legend()
+    plt.show()
+
+    assert all([a == pytest.approx(b, 0.05)
+                for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
 
 
 def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate_curve):
     """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#r_t
     Under these conditions the simulated short rate doesn't deviate from the initial short rate.
     """
     maturity = 5
@@ -216,7 +272,24 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
 
 
+def test_exponential_stochastic_integral_for_small_alpha(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#r_t
+    """
+    alpha = 0.0001
+    sigma = 0.1
+    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.25)
+    np.random.seed(999)
+    time_step_size = 0.01
+    x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
+    assert x.mean() == pytest.approx(0.0, abs=0.05)
+    assert x.var() == pytest.approx(1 * time_step_size, abs=0.02)
+
+
 def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_curve):
+    """
+    See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#r_t
+    """
     maturity = 1
     alpha = 0.1
     sigma = 0.1
@@ -303,36 +376,3 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
     assert hw_short_short_rate_tenor.initial_short_rate == \
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
-
-def test_initial_curve_fit(flat_zero_rate_curve):
-    alpha: float = 0.1
-    sigma: float = 0.1
-    maturity: float = 5
-    number_of_time_steps: int = 100
-    number_of_paths: int = 100_000
-    short_rate_tenor: float = maturity / (number_of_time_steps + 1)
-    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
-    tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
-    stochastic_discount_factors: np.ndarray = \
-        np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
-    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
-
-    time_steps: np.ndarray = \
-        np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
-    initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
-
-    fig, ax = plt.subplots()
-    ax.set_title('Comparison of Stochastic and Initial Curve Discount Factors')
-    ax.plot(time_steps, initial_curve_discount_factors, color='#0D8390', label='Initial Curve')
-    ax.plot(time_steps, stochastic_discount_factors, color='#86BC25', label='Stochastic Discount Factors')
-    ax.grid(True)
-    ax.set_facecolor('#AAAAAA')
-    ax.set_xlabel('$t$ (years)')
-    ax.set_ylabel('$P(0, t)$')
-    ax.set_xlim([0, time_steps[-1]])
-    ax.set_ylim([0, 1])
-    ax.legend()
-    plt.show()
-
-    assert all([a == pytest.approx(b, 0.05)
-                for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
