@@ -5,10 +5,10 @@ import seaborn as sns
 from scipy.stats import norm
 from scipy.stats import lognorm
 from scipy.stats import jarque_bera
-from scipy.interpolate import interp1d
 from collections import namedtuple
-import pandas as pd
 from src.gbm.gbm_simulation import GBM
+from src.call_or_put import CallOrPut
+
 
 MonteCarloResult = namedtuple('MonteCarloResult', ['price', 'error'])
 VolData = namedtuple('VolData', ['Tenors', 'VolSurface'])
@@ -21,7 +21,7 @@ def slow_equity_european_option_monte_carlo_pricer(
         interest_rate: float,
         volatility: float,
         time_to_maturity: float,
-        call_or_put: str,
+        call_or_put: CallOrPut,
         number_of_paths: int,
         number_of_time_steps: int,
         show_stats: bool = False) -> [MonteCarloResult | str]:
@@ -43,7 +43,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
     :param number_of_paths: Number of current_value to simulate for the option.
     :param number_of_time_steps: Number of time steps for the option.
-    :show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+    :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
     :return: Slow Monte Carlo price for an equity european option.
     """
 
@@ -64,7 +64,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     if show_stats:
         statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
 
-    if str.upper(call_or_put) == 'CALL':
+    if call_or_put == CallOrPut.CALL:
         payoffs: np.ndarray = np.zeros(number_of_paths)
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([paths[i, -1] - notional * strike, 0]) * math.exp(-interest_rate * time_to_maturity)
@@ -72,7 +72,7 @@ def slow_equity_european_option_monte_carlo_pricer(
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloResult(price, error)
 
-    elif str.upper(call_or_put) == 'PUT':
+    elif call_or_put == CallOrPut.PUT:
         payoffs: np.ndarray = np.zeros(number_of_paths)
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([notional * strike - paths[i, -1], 0]) * math.exp(-interest_rate * time_to_maturity)
@@ -92,11 +92,11 @@ def fast_equity_european_option_monte_carlo_pricer(
         interest_rate: float,
         volatility: float,
         time_to_maturity: float,
-        call_or_put: str,
+        call_or_put: CallOrPut,
         number_of_paths: int,
         number_of_time_steps: int,
-        excel_file_path,
-        sheet_name,
+        excel_file_path: str,
+        sheet_name: str,
         plot_paths: bool = False,
         show_stats: bool = False) -> [MonteCarloResult | str]:
     """
@@ -135,14 +135,14 @@ def fast_equity_european_option_monte_carlo_pricer(
     if show_stats:
         statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
 
-    if str.upper(call_or_put) == 'CALL':
+    if call_or_put == CallOrPut.CALL:
         payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
                   * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloResult(price, error)
 
-    elif str.upper(call_or_put) == 'PUT':
+    elif call_or_put == CallOrPut.PUT:
         payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
                   * np.exp(-interest_rate * time_to_maturity)
         price: float = np.average(payoffs)
@@ -175,7 +175,7 @@ def fx_option_monte_carlo_pricer(
     :param sheet_name:
     :param excel_file_path:
     :param show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
-    :param notional: The notional of the FX forward denominated in the foreign currency
+    :param notional: Notional of the FX forward denominated in the foreign currency
         i.e. we exchange the notional amount in the foreign currency for
         strike * notional amount in the domestic currency
         e.g. if strike = 17 USDZAR and notional = 1,000,000
@@ -311,7 +311,7 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     sigma: float = volatility * np.sqrt(time_to_maturity)
     pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
     ax2.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
-    ax2.set_title('Comparison of GBM log-returns to normal PDF');
+    ax2.set_title('Comparison of GBM log-returns to normal PDF')
     ax2.legend()
     plt.show()
 
@@ -327,12 +327,12 @@ def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_mat
     sigma: float = volatility * np.sqrt(time_to_maturity)
     pdf = lognorm.pdf(x=bin_centers, s=sigma, scale=np.exp(mu))
     ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
-    ax3.set_title('Comparison of GBM normal-returns to log-normal PDF');
+    ax3.set_title('Comparison of GBM normal-returns to log-normal PDF')
     ax3.legend()
     plt.show()
 
 
-def statistics(paths, initial_spot, drift, volatility, time_to_maturity) -> float:
+def statistics(paths, initial_spot, drift, volatility, time_to_maturity):
     log_returns = np.log(paths[:, -1] / paths[:, 0])
     jarque_bera_test = jarque_bera(log_returns)
     print(jarque_bera_test)

@@ -1,7 +1,5 @@
 from analytical_pricers import *
 from gbm_pricers import *
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 # ----------------------------------------------------------------------------------------------------------------------
