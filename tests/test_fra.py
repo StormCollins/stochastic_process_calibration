@@ -102,11 +102,11 @@ def test_get_monte_carlo_value_compared_to_analytical(flat_zero_rate_curve, atm_
     assert actual[-1] == pytest.approx(expected, abs=450)
 
 
+@pytest.mark.skip(reason="Long running - move to Jupyter notebook.")
 def test_fra_value_vs_alpha(flat_zero_rate_curve, atm_fra):
     alphas = np.arange(0, 2, 0.1) + 0.1
     sigma = 0.1
     number_of_steps_list = [10, 20, 50, 100, 200]
-    number_of_steps = 10
     number_of_paths = 100_000
     for number_of_steps in number_of_steps_list:
         fra_values = list()
