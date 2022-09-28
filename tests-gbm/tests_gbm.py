@@ -1,5 +1,5 @@
 import pytest
-from gbm.gbm import GBM
+from gbm.gbm_simulation import GBM
 import numpy as np
 
 
@@ -26,8 +26,10 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
     time_to_maturity = 1
     gbm: GBM = GBM(drift, volatility, excel_file_path, 'constant_vol_surface')
     np.random.seed(999)
-    actual_paths = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity, True)
-    expected_paths = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity, False)
+    actual_paths = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity,
+                                     True)
+    expected_paths = gbm.get_gbm_paths(number_of_paths, number_of_time_steps, notional, initial_spot, time_to_maturity,
+                                       False)
     assert actual_paths == pytest.approx(expected_paths, 0.001)
 
 
