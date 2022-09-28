@@ -57,12 +57,14 @@ def test_slow_equity_european_option_monte_carlo_pricer():
             interest_rate=interest_rate,
             volatility=volatility,
             time_to_maturity=time_to_maturity,
-            call_or_put="put",
+            call_or_put=CallOrPut.PUT,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             show_stats=True)
 
-    expected: float = black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "put")
+    expected: float = \
+        black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, CallOrPut.PUT)
+
     assert expected == pytest.approx(actual.price, actual.error)
 
 

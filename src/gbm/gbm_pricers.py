@@ -30,7 +30,7 @@ def slow_equity_european_option_monte_carlo_pricer(
     This is the slow equity european option monte carlo pricer, because it takes a longer time to run with more
     simulations.
 
-    :param notional: The notional of the FX forward denominated in the foreign currency
+    :param notional: Notional of the FX forward denominated in the foreign currency
         i.e. we exchange the notional amount in the foreign currency for
         strike * notional amount in the domestic currency
         e.g. if strike = 17 USDZAR and notional = 1,000,000
@@ -66,16 +66,20 @@ def slow_equity_european_option_monte_carlo_pricer(
 
     if call_or_put == CallOrPut.CALL:
         payoffs: np.ndarray = np.zeros(number_of_paths)
+
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([paths[i, -1] - notional * strike, 0]) * math.exp(-interest_rate * time_to_maturity)
+
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloResult(price, error)
 
     elif call_or_put == CallOrPut.PUT:
         payoffs: np.ndarray = np.zeros(number_of_paths)
+
         for i in range(0, number_of_paths):
             payoffs[i] = np.max([notional * strike - paths[i, -1], 0]) * math.exp(-interest_rate * time_to_maturity)
+
         price: float = np.average(payoffs)
         # Brandimarte, Numerical Methods in Finance and Economics, pg 265, eq 4.5
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)

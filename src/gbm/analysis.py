@@ -1,5 +1,5 @@
-from analytical_pricers import *
-from gbm_pricers import *
+from src.gbm.analytical_pricers import *
+from src.gbm.gbm_pricers import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -22,13 +22,13 @@ slow_price: float =\
             interest_rate,
             volatility,
             time_to_maturity,
-            "call",
+            CallOrPut.CALL,
             number_of_paths,
             number_of_time_steps)
 
 fast_price: float = \
     fast_equity_european_option_monte_carlo_pricer(notional, initial_spot, strike, interest_rate, volatility,
-                                                   time_to_maturity, "put", number_of_paths, number_of_time_steps,,
+                                                   time_to_maturity, CallOrPut.PUT, number_of_paths, number_of_time_steps,,
 
 
 print()
