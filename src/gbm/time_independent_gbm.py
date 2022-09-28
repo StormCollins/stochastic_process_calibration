@@ -10,35 +10,29 @@ class TimeIndependentGBM:
     """
     Class for generating GBM paths where volatility is time independent.
     """
-    def __init__(self, drift: float, volatility: float):
+    def __init__(self, drift: float, volatility: float, notional: float, initial_spot: float, time_to_maturity: float):
         """
         Class constructor.
         :param drift: Drift.
         :param volatility: Volatility.
         """
-        self.drift = drift
-        self.volatility = volatility
+        self.drift: float = drift
+        self.volatility: float = volatility
+        self.notional: float = notional
+        self.initial_spot: float = initial_spot
+        self.time_to_maturity: float = time_to_maturity
 
-    def get_paths(
-            self,
-            number_of_paths: int,
-            number_of_time_steps: int,
-            notional: float,
-            initial_spot: float,
-            time_to_maturity: float) -> np.ndarray:
+    def get_paths(self, number_of_paths: int, number_of_time_steps: int) -> np.ndarray:
         """
         Generates the GBM paths used to price various instruments.
 
         :param number_of_paths: Number of the current value.
         :param number_of_time_steps: Number of time steps.
-        :param notional: The notional amount.
-        :param initial_spot: Initial spot price.
-        :param time_to_maturity: Time to maturity (in years).
         :return: The simulated GBM paths.
         """
         paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-        paths[:, 0] = initial_spot * notional
-        dt: float = time_to_maturity / number_of_time_steps
+        paths[:, 0] = self.initial_spot * self.notional
+        dt: float = self.time_to_maturity / number_of_time_steps
 
         for j in range(1, number_of_time_steps + 1):
             z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
@@ -48,8 +42,7 @@ class TimeIndependentGBM:
 
         return paths
 
-    @staticmethod
-    def create_plots(paths: np.ndarray, interest_rate: float, volatility: float, time_to_maturity: float) -> None:
+    def create_plots(self, paths: np.ndarray) -> None:
         """
         Plots different figures such as:
 
@@ -58,7 +51,7 @@ class TimeIndependentGBM:
            This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
         """
 
-        time = np.linspace(0, time_to_maturity, paths.shape[1])
+        time = np.linspace(0, self.time_to_maturity, paths.shape[1])
 
         # Path plot
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
@@ -70,7 +63,7 @@ class TimeIndependentGBM:
         ax1.set_facecolor('#AAAAAA')
         ax1.set_xlabel('Time')
         ax1.set_ylabel('Value')
-        ax1.set_xlim([0, time_to_maturity])
+        ax1.set_xlim([0, self.time_to_maturity])
 
         # Histogram of log-returns
         plt.style.use('ggplot')
@@ -80,8 +73,8 @@ class TimeIndependentGBM:
         log_returns = np.log(paths[:, -1] / paths[:, 0])
         (values, bins, _) = ax2.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
-        mu: float = (interest_rate - 0.5 * volatility ** 2) * time_to_maturity
-        sigma: float = volatility * np.sqrt(time_to_maturity)
+        mu: float = (self.drift - 0.5 * self.volatility ** 2) * self.time_to_maturity
+        sigma: float = self.volatility * np.sqrt(self.time_to_maturity)
         pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
         ax2.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
         ax2.set_title('Comparison of GBM log-returns to normal PDF')
@@ -96,41 +89,34 @@ class TimeIndependentGBM:
         normal_returns = paths[:, -1] / paths[:, 0]
         (values, bins, _) = ax3.hist(normal_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
-        mu: float = (interest_rate - 0.5 * volatility ** 2) * time_to_maturity
-        sigma: float = volatility * np.sqrt(time_to_maturity)
+        mu: float = (self.drift - 0.5 * self.volatility ** 2) * self.time_to_maturity
+        sigma: float = self.volatility * np.sqrt(self.time_to_maturity)
         pdf = lognorm.pdf(x=bin_centers, s=sigma, scale=np.exp(mu))
         ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
         ax3.set_title('Comparison of GBM normal-returns to log-normal PDF')
         ax3.legend()
         plt.show()
 
-    @staticmethod
-    def get_path_statistics(
-            paths: np.ndarray,
-            initial_spot: float,
-            drift: float,
-            volatility: float,
-            time_to_maturity: float) -> None:
+    def get_path_statistics(self, paths: np.ndarray) -> None:
         """
         Tests if the log-returns of the GBM paths normally distributed.
 
         :param paths: The GBM simulated Monte Carlo paths.
-        :param initial_spot: Initial spot.
-        :param drift: Drift.
-        :param volatility: Volatility.
-        :param time_to_maturity: Time to maturity.
         :return: None.
         """
         log_returns = np.log(paths[:, -1] / paths[:, 0])
-        mean: float = initial_spot * np.exp(drift + (volatility ** 2 / 2))
+        mean: float = self.initial_spot * np.exp(self.drift + (self.volatility ** 2 / 2))
 
         standard_deviation: float = \
-            initial_spot * np.sqrt((np.exp(volatility ** 2) - 1) * np.exp((2 * drift + volatility ** 2)))
+            self.initial_spot * \
+            np.sqrt((np.exp(self.volatility ** 2) - 1) * np.exp((2 * self.drift + self.volatility ** 2)))
 
         pfe: float = \
-            initial_spot * np.exp(drift * time_to_maturity + norm.ppf(0.95) * volatility * np.sqrt(time_to_maturity))
+            self.initial_spot * \
+            np.exp(self.drift * self.time_to_maturity +
+                   norm.ppf(0.95) * self.volatility * np.sqrt(self.time_to_maturity))
 
-        print()
+        print('\n')
         print(f' Time-Independent Statistics of GBM')
         print(f' ----------------------------------')
         print(f'  Mean: {mean}')

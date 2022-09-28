@@ -3,40 +3,6 @@ from src.gbm.gbm_pricers import *
 import pytest
 
 
-def test_fast_equity_european_option_monte_carlo_pricer():
-    notional: float = 1_000_000
-    initial_spot: float = 50
-    strike: float = 52
-    interest_rate: float = 0.149
-    volatility: float = 0.1
-    time_to_maturity: float = 6 / 12
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 1000
-    excel_file_path: str = r'atm-volatility-surface.xlsx'
-    sheet_name: str = 'constant_vol_surface'
-
-    actual: MonteCarloResult = \
-        fast_equity_european_option_monte_carlo_pricer(
-            notional=notional,
-            initial_spot=initial_spot,
-            strike=strike,
-            interest_rate=interest_rate,
-            volatility=volatility,
-            time_to_maturity=time_to_maturity,
-            call_or_put=CallOrPut.CALL,
-            number_of_paths=number_of_paths,
-            number_of_time_steps=number_of_time_steps,
-            excel_file_path=excel_file_path,
-            sheet_name=sheet_name,
-            plot_paths=True,
-            show_stats=True)
-
-    print(f'Monte Carlo price: {actual}')
-    expected: float = \
-        black_scholes(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, "call")
-
-    print(f'Black-Scholes price: {expected}')
-    assert expected == pytest.approx(actual.price, actual.error)
 
 
 def test_slow_equity_european_option_monte_carlo_pricer():

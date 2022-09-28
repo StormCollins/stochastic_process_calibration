@@ -88,74 +88,6 @@ def slow_equity_european_option_monte_carlo_pricer(
         return f'Unknown option type: {call_or_put}'
 
 
-def fast_equity_european_option_monte_carlo_pricer(
-        notional: float,
-        initial_spot: float,
-        strike: float,
-        interest_rate: float,
-        volatility: float,
-        time_to_maturity: float,
-        call_or_put: CallOrPut,
-        number_of_paths: int,
-        number_of_time_steps: int,
-        excel_file_path: str,
-        sheet_name: str,
-        plot_paths: bool = False,
-        show_stats: bool = False) -> [MonteCarloResult | str]:
-    """
-    Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations
-    (does not take into account whether you are 'long' or 'short' the option).
-    This function uses 'vectorisation' unlike the slow_equity_european_option_monte_carlo_pricer function thus
-    speeding up performance.
-
-    :param sheet_name: The name of the sheet in the Excel file where the volatility term structure is stored.
-    :param excel_file_path: The path of where the volatility term structure Excel file is stored.
-    :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
-    :param notional: The notional of the FX forward denominated in the foreign currency
-        i.e. we exchange the notional amount in the foreign currency for
-        strike * notional amount in the domestic currency
-        e.g. if strike = 17 USDZAR and notional = 1,000,000
-        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
-    :param initial_spot:The initial spot price of the option.
-    :param strike: The option strike price.
-    :param interest_rate: The interest rate/drift used for the option.
-    :param volatility: The option volatility.
-    :param time_to_maturity: The time (in years) at which the option expires.
-    :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :param number_of_paths: Number of current_value to simulate for the option.
-    :param number_of_time_steps: Number of time steps for the option.
-    :param plot_paths: If set to True plots the current_value.
-    :return: Fast Monte Carlo price for an equity european option.
-    """
-
-    gbm: GBM = GBM(interest_rate, volatility, excel_file_path, sheet_name)
-    paths: np.ndarray = GBM.get_gbm_paths(gbm, number_of_paths, number_of_time_steps, notional, initial_spot,
-                                          time_to_maturity, True)
-    if plot_paths:
-        create_gbm_plots(paths, interest_rate,
-                         volatility, time_to_maturity)
-
-    if show_stats:
-        statistics(paths, initial_spot, interest_rate, volatility, time_to_maturity)
-
-    if call_or_put == CallOrPut.CALL:
-        payoffs = np.maximum(paths[:, -1] - notional * strike, 0) \
-                  * np.exp(-interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
-
-    elif call_or_put == CallOrPut.PUT:
-        payoffs = np.maximum(notional * strike - paths[:, -1], 0) \
-                  * np.exp(-interest_rate * time_to_maturity)
-        price: float = np.average(payoffs)
-        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
-
-    else:
-        return f'Unknown option type: {call_or_put}'
-
-
 def fx_option_monte_carlo_pricer(
         notional: float,
         initial_spot: float,
@@ -223,60 +155,6 @@ def fx_option_monte_carlo_pricer(
 
     else:
         return f'Unknown option type: {call_or_put}'
-
-
-def fx_forward_monte_carlo_pricer(
-        notional: float,
-        initial_spot: float,
-        strike: float,
-        domestic_interest_rate: float,
-        foreign_interest_rate: float,
-        time_to_maturity: float,
-        number_of_paths: int,
-        number_of_time_steps: int,
-        volatility,
-        excel_file_path,
-        sheet_name,
-        plot_paths: bool = True,
-        show_stats: bool = True) -> [MonteCarloResult | str]:
-    """
-    Returns the price for an FX forward (FEC) using monte carlo simulations.
-
-    :param sheet_name:
-    :param excel_file_path:
-    :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
-    :param volatility: Time-dependent FEC volatility
-    :param notional: The notional of the FX forward denominated in the foreign currency
-        i.e. we exchange the notional amount in the foreign currency for
-        strike * notional amount in the domestic currency
-        e.g. if strike = 17 USDZAR and notional = 1,000,000
-        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
-    :param initial_spot: Initial spot price for the FX forward.
-    :param strike: Strike price for the FX forward.
-    :param domestic_interest_rate: Domestic interest rate.
-    :param foreign_interest_rate: Foreign interest rate.
-    :param time_to_maturity: Time to maturity (in years) of the FX forward.
-    :param number_of_paths: Number of current_value for the FX forward.
-    :param number_of_time_steps: Number of time steps for the FX forward.
-    :param plot_paths: If set to True plots the current_value.
-    :return: Monte Carlo price for an FX forward in the domestic currency.
-    """
-    drift: float = domestic_interest_rate - foreign_interest_rate
-    gbm: GBM = GBM(drift, volatility, excel_file_path, sheet_name)
-    paths: np.ndarray = GBM.get_gbm_paths(gbm, number_of_paths, number_of_time_steps, notional, initial_spot,
-                                          time_to_maturity, True)
-
-    if plot_paths:
-        create_gbm_plots(paths, domestic_interest_rate - foreign_interest_rate,
-                         volatility, time_to_maturity)
-
-    if show_stats:
-        statistics(paths, initial_spot, drift, volatility, time_to_maturity)
-
-    payoffs = (paths[:, -1] - notional * strike) * np.exp(-domestic_interest_rate * time_to_maturity)
-    price: float = np.average(payoffs)
-    error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-    return MonteCarloResult(price, error)
 
 
 def create_gbm_plots(paths, interest_rate: float, volatility: float, time_to_maturity: float) -> None:

@@ -1,12 +1,12 @@
 import numpy as np
 from scipy.stats import norm
-from src.monte_carlo_result import MonteCarloResult
+from src.monte_carlo_results import MonteCarloResults
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
 class FxForward:
     """
-    A class for an FX (Foreign Exchange) Forward.
+    A class representing an FX (Foreign Exchange) Forward.
     We follow the convention of quoting domestic (DOM) currency per foreign (FOR) currency i.e., FORDOM
     e.g., USDZAR = 17, means ZAR is the domestic currency, USD is the foreign currency, and it is 17 domestic (ZAR) to
     1 foreign (USD).
@@ -21,7 +21,7 @@ class FxForward:
             foreign_interest_rate: float,
             time_to_maturity: float):
         """
-        FX Forward constructor.
+        Class constructor.
 
         :param notional: Notional.
         :param initial_spot: Initial FX spot rate.
@@ -52,9 +52,9 @@ class FxForward:
             number_of_time_steps: int,
             volatility: float,
             plot_paths: bool = True,
-            show_stats: bool = True) -> [MonteCarloResult | str]:
+            show_stats: bool = True) -> [MonteCarloResults | str]:
         """
-        Returns the price (in domestic currency) for an FX (Foreign Exchange) forward using time independent GBM
+        Returns the price (in domestic currency) for an FX (Foreign Exchange) forward using time-independent GBM
         simulations.
 
         :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
@@ -65,20 +65,16 @@ class FxForward:
         :return: Monte Carlo price for an FX forward in the domestic currency.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
-        gbm: TimeIndependentGBM = TimeIndependentGBM(drift, volatility)
-        paths: np.ndarray = \
-            gbm.get_paths(
-                number_of_paths=number_of_paths,
-                number_of_time_steps=number_of_time_steps,
-                notional=self.notional,
-                initial_spot=self.initial_spot,
-                time_to_maturity=self.time_to_maturity)
+        gbm: TimeIndependentGBM = \
+            TimeIndependentGBM(drift, volatility, self.notional, self.initial_spot, self.time_to_maturity)
+
+        paths: np.ndarray = gbm.get_paths(number_of_paths=number_of_paths, number_of_time_steps=number_of_time_steps)
 
         if plot_paths:
-            gbm.create_plots(paths, drift, volatility, self.time_to_maturity)
+            gbm.create_plots(paths)
 
         if show_stats:
-            gbm.get_path_statistics(paths, self.initial_spot, drift, volatility, self.time_to_maturity)
+            gbm.get_path_statistics(paths)
 
         payoffs = \
             (paths[:, -1] - self.notional * self.strike) * \
@@ -86,4 +82,4 @@ class FxForward:
 
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResult(price, error)
+        return MonteCarloResults(price, error)

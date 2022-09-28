@@ -1,6 +1,6 @@
 import pytest
 from src.instruments.fx_forward import FxForward
-from src.monte_carlo_result import MonteCarloResult
+from src.monte_carlo_results import MonteCarloResults
 
 
 @pytest.fixture
@@ -45,10 +45,13 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer():
     fec: FxForward = \
         FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
 
-    actual: MonteCarloResult = \
+    actual: MonteCarloResults = \
         fec.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, volatility, True, True)
 
-    print(f'FX Forward Monte Carlo Price: {actual.price:,.2} ± {actual.error:,.2}')
+    print()
+    print(f' FX Forward Prices')
+    print(f' -----------------')
+    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected: float = fec.get_analytical_price()
-    print(f'FX Forward Analytical: {expected}')
+    print(f'  Analytical: {expected:,.2f}')
     assert expected == pytest.approx(actual.price, actual.error)

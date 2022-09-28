@@ -4,46 +4,6 @@ from src.call_or_put import CallOrPut
 from scipy.stats import norm
 
 
-def black_scholes(
-        notional: float,
-        initial_spot: float,
-        strike: float,
-        interest_rate: float,
-        volatility: float,
-        time_to_maturity: float,
-        call_or_put: CallOrPut) -> float | str:
-    """
-    Returns the standard Black-Scholes price for a 'CALL' or 'PUT' option.
-    Note it does not take into account whether the option is 'long' or 'short'.
-
-    :param notional: Notional of the FX forward denominated in the foreign currency
-        i.e. we exchange the notional amount in the foreign currency for
-        strike * notional amount in the domestic currency
-        e.g. if strike = 17 USDZAR and notional = 1,000,000
-        then we are exchanging USD 1,000,000 for ZAR 17,000,000.
-    :param initial_spot: The initial spot price of the option.
-    :param strike: The option strike price.
-    :param interest_rate: The interest rate/drift used for the option.
-    :param volatility: The option volatility.
-    :param time_to_maturity: The time (in years) at which the option expires.
-    :param call_or_put: Indicates whether the option is a 'CALL' or a 'PUT'.
-    :return: Black-Scholes price for an option.
-    """
-    initial_spot = initial_spot * notional
-    strike = strike * notional
-
-    d_1: float = (np.log(initial_spot / strike) + ((interest_rate + 0.5 * volatility ** 2) * time_to_maturity)) / \
-                 (volatility * math.sqrt(time_to_maturity))
-    d_2: float = d_1 - volatility * math.sqrt(time_to_maturity)
-
-    if call_or_put == CallOrPut.CALL:
-        return initial_spot * norm.cdf(d_1) - strike * math.exp(-interest_rate * time_to_maturity) * norm.cdf(d_2)
-    elif call_or_put == CallOrPut.PUT:
-        return - initial_spot * norm.cdf(-d_1) + strike * math.exp(-interest_rate * time_to_maturity) * norm.cdf(-d_2)
-    else:
-        return f'Unknown option type: {call_or_put}'
-
-
 def garman_kohlhagen(
         notional: float,
         initial_spot: float,
