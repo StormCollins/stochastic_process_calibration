@@ -5,10 +5,34 @@ import pandas as pd
 
 
 class TimeDependentGBM:
-    def __init__(self, drift: float, excel_file_path: str, sheet_name: str):
-        self.drift = drift
+    """
+    Class for generating GBM paths where volatility is time-independent.
+    """
+
+    def __init__(
+            self,
+            drift: float,
+            excel_file_path: str,
+            sheet_name: str,
+            notional: float,
+            initial_spot: float,
+            time_to_maturity: float):
+        """
+        Class constructor.
+
+        :param drift: Drift.
+        :param excel_file_path: Path to Excel file containing the ATM volatility term structure.
+        :param sheet_name: The sheet name of the Excel file containing the ATM volatility term structure.
+        :param notional: Notional.
+        :param initial_spot: Initial spot.
+        :param time_to_maturity: Time to maturity.
+        """
+        self.drift: float = drift
         # Here 'variance' means 'sigma**2 * time'.
-        self.variance_interpolator = self.setup_variance_interpolator(excel_file_path, sheet_name)
+        self.variance_interpolator: interp1d = self.setup_variance_interpolator(excel_file_path, sheet_name)
+        self.notional: float = notional
+        self.initial_spot: float = initial_spot
+        self.time_to_maturity: float = time_to_maturity
 
     def get_gbm_paths(
             self,
@@ -56,10 +80,12 @@ class TimeDependentGBM:
         vols: list[float] = list(map(float, excel_records_df.Quotes))
         squared_vols: list[float] = list(map(lambda x: pow(x, 2), vols))
         new_vols = []
+
         for dt1, dt2 in zip(squared_vols, tenors):
             new_vols.append(dt1 * dt2)
-        interpolated_volatility: interp1d = interp1d(tenors, new_vols, kind='linear', fill_value='extrapolate')
-        return interpolated_volatility
+
+        variance_interpolator: interp1d = interp1d(tenors, new_vols, kind='linear', fill_value='extrapolate')
+        return variance_interpolator
 
     def get_time_dependent_vol(self, tenor: float) -> float:
         return np.sqrt(self.variance_interpolator(tenor) / tenor) / 100

@@ -8,11 +8,13 @@ from scipy.stats import norm
 
 class TimeIndependentGBM:
     """
-    Class for generating GBM paths where volatility is time independent.
+    Class for generating GBM paths where volatility is time-independent.
     """
+
     def __init__(self, drift: float, volatility: float, notional: float, initial_spot: float, time_to_maturity: float):
         """
         Class constructor.
+
         :param drift: Drift.
         :param volatility: Volatility.
         """
