@@ -2,6 +2,8 @@ image: python:latest
 
 test:
   script:
+    - pwd
+    - cd '/tests'
     - python --version
     - python -m pip install matplotlib numpy openpyxl pandas pytest QuantLib scipy seaborn
     - python -m pytest tests/
