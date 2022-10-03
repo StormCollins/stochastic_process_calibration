@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.stats import norm
-from scipy.interpolate import interp1d
 import pandas as pd
+from scipy.interpolate import interp1d
+from scipy.stats import norm
 
 
 class TimeDependentGBM:
