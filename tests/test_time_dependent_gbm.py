@@ -7,7 +7,7 @@ from src.gbm.time_independent_gbm import TimeIndependentGBM
 def test_get_time_dependent_volatility():
     drift: float = 0.1
     volatility: float = 0.1
-    excel_file_path = r'atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/atm-volatility-surface.xlsx'
 
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
@@ -28,7 +28,7 @@ def test_get_time_dependent_volatility():
 def test_get_time_dependent_gbm_paths_for_constant_vols():
     drift: float = 0.1
     volatility: float = 0.1
-    excel_file_path = 'atm-volatility-surface.xlsx'
+    excel_file_path = 'tests/atm-volatility-surface.xlsx'
     number_of_paths: int = 10
     number_of_time_steps: int = 2
     notional: float = 1
