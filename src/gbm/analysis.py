@@ -1,7 +1,5 @@
-from analytical_pricers import *
-from gbm_pricers import *
-import matplotlib.pyplot as plt
-import numpy as np
+from src.gbm.analytical_pricers import *
+from src.gbm.gbm_pricers import *
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -24,13 +22,13 @@ slow_price: float =\
             interest_rate,
             volatility,
             time_to_maturity,
-            "call",
+            CallOrPut.CALL,
             number_of_paths,
             number_of_time_steps)
 
 fast_price: float = \
     fast_equity_european_option_monte_carlo_pricer(notional, initial_spot, strike, interest_rate, volatility,
-                                                   time_to_maturity, "put", number_of_paths, number_of_time_steps,,
+                                                   time_to_maturity, CallOrPut.PUT, number_of_paths, number_of_time_steps,,
 
 
 print()
@@ -161,14 +159,3 @@ print(f'Black-Scholes (Garman-Kohlhagen) FX option price: ' +
 #             number_of_paths,
 #             number_of_time_steps,
 #             False)))
-
-"""
-This function returns the estimated Hull-White parameter setup_theta.
-
-:param forward_rate: Continuously compounded forward rate.
-:param interest_rate_sim_times: Times to maturity. (I don't really know about this one)
-:param alpha: Calibration parameter from Josh Knipe's Jupyter Notebook.
-:param sigma: Calibration parameter from Josh Knipe's Jupyter Notebook.
-:return: Estimated Hull-White Theta parameter.
-
-"""

@@ -1,4 +1,4 @@
-from gbm.gbm_pricers import *
+from time_independent_gbm.gbm_pricers import *
 import numpy as np
 
 notional: float = 1_000_000
