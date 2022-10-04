@@ -82,11 +82,16 @@ class EuropeanEquityOption:
             self,
             number_of_paths: int,
             number_of_time_steps: int,
-            plot_paths: bool,
-            show_stats: bool) -> MonteCarloResults:
+            plot_paths: bool = False,
+            show_stats: bool = False) -> MonteCarloResults:
         """
         Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
+
+        :param number_of_paths: Number of paths in the Monte Carlo simulation.
+        :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
+        :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
+        :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False.
         """
         gbm: TimeIndependentGBM = \
             TimeIndependentGBM(
@@ -124,10 +129,47 @@ class EuropeanEquityOption:
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloResults(price, error)
 
-    # def get_time_dependent_monte_carlo_price(
-    #         self,
-    #         number_of_paths: int,
-    #         number_of_time_steps: int,
-    #         volatility_excel_path: str,
-    #         volatility_excel_sheet_name: str):
-        # gbm: TimeDependentGBM = TimeDependentGBM(self.interest_rate, volatility_excel_path, volatility_excel_sheet_name,
+    def get_time_dependent_monte_carlo_price(
+            self,
+            number_of_paths: int,
+            number_of_time_steps: int,
+            volatility_excel_path: str,
+            volatility_excel_sheet_name: str,
+            plot_paths: bool = False,
+            show_stats: bool = False):
+
+        gbm: TimeDependentGBM = \
+            TimeDependentGBM(
+                drift=self.interest_rate,
+                excel_file_path=volatility_excel_path,
+                sheet_name=volatility_excel_sheet_name,
+                initial_spot=self.initial_spot,
+                time_to_maturity=self.time_to_maturity)
+
+        paths: np.ndarray = \
+            self.notional * \
+            gbm.get_gbm_paths(number_of_paths, number_of_time_steps, self.initial_spot, self.time_to_maturity)
+
+        if plot_paths:
+            gbm.create_plots(paths)
+
+        if show_stats:
+            gbm.get_path_statistics(paths)
+
+        if self.call_or_put == CallOrPut.CALL:
+            payoffs = \
+                np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
+                np.exp(-1 * self.interest_rate * self.time_to_maturity)
+
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResults(price, error)
+
+        elif self.call_or_put == CallOrPut.PUT:
+            payoffs = \
+                np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
+                np.exp(-1 * self.interest_rate * self.time_to_maturity)
+
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResults(price, error)

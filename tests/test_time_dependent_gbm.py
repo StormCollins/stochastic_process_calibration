@@ -6,7 +6,7 @@ from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 def test_get_time_dependent_volatility():
     drift: float = 0.1
-    volatility: float = 0.1
+    volatility: float = 0.4
     excel_file_path = r'tests/atm-volatility-surface.xlsx'
 
     gbm: TimeDependentGBM = \
@@ -14,7 +14,6 @@ def test_get_time_dependent_volatility():
             drift=drift,
             excel_file_path=excel_file_path,
             sheet_name='constant_vol_surface',
-            notional=0,
             initial_spot=0,
             time_to_maturity=0)
 
@@ -27,11 +26,10 @@ def test_get_time_dependent_volatility():
 
 def test_get_time_dependent_gbm_paths_for_constant_vols():
     drift: float = 0.1
-    volatility: float = 0.1
+    volatility: float = 0.4
     excel_file_path = 'tests/atm-volatility-surface.xlsx'
     number_of_paths: int = 10
     number_of_time_steps: int = 2
-    notional: float = 1
     initial_spot: float = 50
     time_to_maturity = 1
 
@@ -49,7 +47,6 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
         time_dependent_gbm.get_gbm_paths(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            notional=notional,
             initial_spot=initial_spot,
             time_to_maturity=time_to_maturity)
 
@@ -60,4 +57,3 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
     expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps)
 
     assert actual_paths == pytest.approx(expected_paths, 0.001)
-
