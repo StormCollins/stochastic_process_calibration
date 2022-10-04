@@ -40,7 +40,6 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
             drift=drift,
             excel_file_path=excel_file_path,
             sheet_name='constant_vol_surface',
-            notional=notional,
             initial_spot=initial_spot,
             time_to_maturity=time_to_maturity)
 
@@ -55,7 +54,7 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
             time_to_maturity=time_to_maturity)
 
     time_independent_gbm: TimeIndependentGBM = \
-        TimeIndependentGBM(drift, volatility, notional, initial_spot, time_to_maturity)
+        TimeIndependentGBM(drift, volatility, initial_spot, time_to_maturity)
 
     np.random.seed(999)
     expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps)

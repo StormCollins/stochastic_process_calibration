@@ -66,9 +66,10 @@ class FxForward:
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
         gbm: TimeIndependentGBM = \
-            TimeIndependentGBM(drift, volatility, self.notional, self.initial_spot, self.time_to_maturity)
+            TimeIndependentGBM(drift, volatility, self.initial_spot, self.time_to_maturity)
 
         paths: np.ndarray = gbm.get_paths(number_of_paths=number_of_paths, number_of_time_steps=number_of_time_steps)
+        paths = paths * self.notional
 
         if plot_paths:
             gbm.create_plots(paths)

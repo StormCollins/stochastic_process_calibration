@@ -24,7 +24,7 @@ def test_get_black_scholes_price(european_equity_option):
     assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
 
-def test_fast_equity_european_option_monte_carlo_pricer(european_equity_option):
+def test_monte_carlo_pricer(european_equity_option):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1000
 

@@ -11,16 +11,17 @@ class TimeIndependentGBM:
     Class for generating GBM paths where volatility is time-independent.
     """
 
-    def __init__(self, drift: float, volatility: float, notional: float, initial_spot: float, time_to_maturity: float):
+    def __init__(self, drift: float, volatility: float, initial_spot: float, time_to_maturity: float):
         """
         Class constructor.
 
         :param drift: Drift.
         :param volatility: Volatility.
+        :param initial_spot: Initial spot.
+        :param time_to_maturity: Time to maturity.
         """
         self.drift: float = drift
         self.volatility: float = volatility
-        self.notional: float = notional
         self.initial_spot: float = initial_spot
         self.time_to_maturity: float = time_to_maturity
 
@@ -33,7 +34,7 @@ class TimeIndependentGBM:
         :return: The simulated GBM paths.
         """
         paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-        paths[:, 0] = self.initial_spot * self.notional
+        paths[:, 0] = self.initial_spot
         dt: float = self.time_to_maturity / number_of_time_steps
 
         for j in range(1, number_of_time_steps + 1):

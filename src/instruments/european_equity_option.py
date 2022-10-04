@@ -3,6 +3,7 @@ from scipy.stats import norm
 from src.call_or_put import CallOrPut
 from src.long_or_short import LongOrShort
 from src.monte_carlo_results import MonteCarloResults
+from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
@@ -91,12 +92,11 @@ class EuropeanEquityOption:
             TimeIndependentGBM(
                 drift=self.interest_rate,
                 volatility=self.volatility,
-                notional=self.notional,
                 initial_spot=self.initial_spot,
                 time_to_maturity=self.time_to_maturity)
 
         paths: np.ndarray = \
-            gbm.get_paths(
+            self.notional * gbm.get_paths(
                 number_of_paths=number_of_paths,
                 number_of_time_steps=number_of_time_steps)
 
@@ -123,3 +123,11 @@ class EuropeanEquityOption:
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloResults(price, error)
+
+    # def get_time_dependent_monte_carlo_price(
+    #         self,
+    #         number_of_paths: int,
+    #         number_of_time_steps: int,
+    #         volatility_excel_path: str,
+    #         volatility_excel_sheet_name: str):
+        # gbm: TimeDependentGBM = TimeDependentGBM(self.interest_rate, volatility_excel_path, volatility_excel_sheet_name,
