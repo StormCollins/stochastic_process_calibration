@@ -32,6 +32,7 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
     number_of_time_steps: int = 2
     initial_spot: float = 50
     time_to_maturity = 1
+    np.random.seed(999)
 
     time_dependent_gbm: TimeDependentGBM = \
         TimeDependentGBM(
@@ -44,7 +45,7 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
     np.random.seed(999)
 
     actual_paths = \
-        time_dependent_gbm.get_gbm_paths(
+        time_dependent_gbm.get_paths(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             initial_spot=initial_spot,
@@ -55,5 +56,4 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
 
     np.random.seed(999)
     expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps)
-
     assert actual_paths == pytest.approx(expected_paths, 0.001)

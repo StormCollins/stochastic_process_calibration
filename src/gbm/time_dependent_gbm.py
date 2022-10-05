@@ -6,6 +6,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import jarque_bera
 from scipy.stats import lognorm
 from scipy.stats import norm
+from src.utils.plot_utils import PlotUtils
 
 
 class TimeDependentGBM:
@@ -35,7 +36,7 @@ class TimeDependentGBM:
         self.initial_spot: float = initial_spot
         self.time_to_maturity: float = time_to_maturity
 
-    def get_gbm_paths(
+    def get_paths(
             self,
             number_of_paths: int,
             number_of_time_steps: int,
@@ -51,16 +52,21 @@ class TimeDependentGBM:
         :return: The simulated GBM paths.
         """
         paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
-        paths[:, 0] = initial_spot
+        # paths[:, 0] = initial_spot
         dt: float = time_to_maturity / number_of_time_steps
 
-        for j in range(1, number_of_time_steps + 1):
-            z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
-            volatility: float = self.get_time_dependent_vol(j * dt)
-            paths[:, j] = \
-                paths[:, j - 1] * \
-                np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility * np.sqrt(dt) * z)
+        time_steps: np.ndarray = np.arange(0, time_to_maturity + dt, dt)
+        volatility = self.get_time_dependent_vol(time_steps[1:])
 
+        # for j in range(1, number_of_time_steps + 1):
+        #     z: float = norm.ppf(np.random.uniform(0, 1, number_of_paths))
+        #     # volatility: float = self.get_time_dependent_vol(j * dt)
+        #     paths[:, j] = \
+        #         paths[:, j - 1] * \
+        #         np.exp((self.drift - 0.5 * volatility[j] ** 2) * dt + volatility[j] * np.sqrt(dt) * z)
+        z = np.random.normal(0, 1, (number_of_paths, number_of_time_steps))
+        paths = self.initial_spot * np.cumprod(np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility * np.sqrt(dt) * z), 1)
+        paths = np.insert(paths, 0, np.tile(self.initial_spot, number_of_paths), axis=1)
         return paths
 
     @staticmethod
@@ -94,6 +100,15 @@ class TimeDependentGBM:
         """
         return np.sqrt(self.variance_interpolator(tenor) / tenor) / 100
 
+    def get_time_dependent_vol(self, tenors: np.ndarray) -> np.ndarray:
+        """
+        Gets the time-dependent volatility at the given tenor.
+
+        :param tenors: The tenor at which we want to extract the given volatility.
+        :return: The time-dependent volatility at the given tenor.
+        """
+        return np.sqrt(self.variance_interpolator(tenors) / tenors) / 100
+
     def create_plots(self, paths: np.ndarray) -> None:
         """
         Plots different figures such as:
@@ -120,36 +135,53 @@ class TimeDependentGBM:
         maturity_volatility: float = self.get_time_dependent_vol(self.time_to_maturity)
 
         # Histogram of log-returns
-        plt.style.use('ggplot')
-        fig2, ax2 = plt.subplots(ncols=1, nrows=1)
-        ax2.set_facecolor('#AAAAAA')
-        ax2.grid(False)
+        # plt.style.use('ggplot')
+        # fig2, ax2 = plt.subplots(ncols=1, nrows=1)
+        # ax2.set_facecolor('#AAAAAA')
+        # ax2.grid(False)
         log_returns = np.log(paths[:, -1] / paths[:, 0])
-        (values, bins, _) = ax2.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
-        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        # (values, bins, _) = ax2.hist(log_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
+        # bin_centers = 0.5 * (bins[1:] + bins[:-1])
         mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
         sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
-        pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
-        ax2.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
-        ax2.set_title('Comparison of GBM log-returns to normal PDF')
-        ax2.legend()
-        plt.show()
+        PlotUtils.plot_normal_histogram(
+            data=log_returns,
+            histogram_title='Time-Dependent GBM Log-Returns vs. Normal PDF',
+            histogram_label='Log-returns histogram',
+            mean=mu,
+            variance=sigma)
+
+        # pdf = norm.pdf(x=bin_centers, loc=mu, scale=sigma)
+        # ax2.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
+        # ax2.set_title('Comparison of GBM log-returns to normal PDF')
+        # ax2.legend()
+        # plt.show()
 
         # Histogram of the returns
-        plt.style.use('ggplot')
-        fig3, ax3 = plt.subplots(ncols=1, nrows=1)
-        ax3.set_facecolor('#AAAAAA')
-        ax3.grid(False)
-        normal_returns = paths[:, -1] / paths[:, 0]
-        (values, bins, _) = ax3.hist(normal_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
-        bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        # plt.style.use('ggplot')
+        # fig3, ax3 = plt.subplots(ncols=1, nrows=1)
+        # ax3.set_facecolor('#AAAAAA')
+        # ax3.grid(False)
+        # normal_returns = paths[:, -1] / paths[:, 0]
+        # (values, bins, _) = ax3.hist(normal_returns, bins=75, density=True, label='Histogram of samples', color='#6C3D91')
+        # bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        # mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
+        # sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
+        # pdf = lognorm.pdf(x=bin_centers, s=sigma, scale=np.exp(mu))
+        # ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
+        # ax3.set_title('Comparison of GBM normal-returns to log-normal PDF')
+        # ax3.legend()
+        # plt.show()
+
+        returns: np.ndarray = paths[:, -1] / paths[:, 0]
         mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
         sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
-        pdf = lognorm.pdf(x=bin_centers, s=sigma, scale=np.exp(mu))
-        ax3.plot(bin_centers, pdf, label='PDF', color='black', linewidth=3)
-        ax3.set_title('Comparison of GBM normal-returns to log-normal PDF')
-        ax3.legend()
-        plt.show()
+        PlotUtils.plot_lognormal_histogram(
+            data=returns,
+            histogram_title='Time-Independent GBM Returns vs. Log-Normal PDF',
+            histogram_label='Returns Histogram',
+            mean=mu,
+            variance=sigma)
 
     def get_path_statistics(self, paths: np.ndarray) -> None:
         """

@@ -148,7 +148,7 @@ class EuropeanEquityOption:
 
         paths: np.ndarray = \
             self.notional * \
-            gbm.get_gbm_paths(number_of_paths, number_of_time_steps, self.initial_spot, self.time_to_maturity)
+            gbm.get_paths(number_of_paths, number_of_time_steps, self.initial_spot, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths)
