@@ -3,6 +3,7 @@ from scipy.stats import norm
 from src.call_or_put import CallOrPut
 from src.long_or_short import LongOrShort
 from src.monte_carlo_results import MonteCarloResults
+from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
@@ -91,6 +92,64 @@ class FxOption:
             TimeIndependentGBM(drift, self.volatility, self.initial_spot, self.time_to_maturity)
 
         paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps)
+
+        if plot_paths:
+            gbm.create_plots(paths)
+
+        if show_stats:
+            gbm.get_path_statistics(paths)
+
+        if self.call_or_put == CallOrPut.CALL:
+            payoffs = \
+                np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
+                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
+
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResults(price, error)
+
+        elif self.call_or_put == CallOrPut.PUT:
+            payoffs = \
+                np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
+                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
+
+            price: float = np.average(payoffs)
+            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+            return MonteCarloResults(price, error)
+
+    def get_time_dependent_monte_carlo_price(
+            self,
+            number_of_paths: int,
+            number_of_time_steps: int,
+            volatility_excel_path: str,
+            volatility_excel_sheet_name: str,
+            plot_paths: bool = False,
+            show_stats: bool = False):
+        """
+        Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations.
+
+        :param number_of_paths: Number of current_value for the FX option.
+        :param number_of_time_steps: Number of time steps for the FX option.
+        :param volatility_excel_path: Specifies the path where the Excel file of volatilities is stored.
+        :param volatility_excel_sheet_name: Specifies the name of the Excel sheet where the volatilities are stored.
+        :param plot_paths: If set to True plots the current_value.
+        :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+        :return: Monte Carlo price for an FX Option.
+
+        """
+
+        drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+
+        gbm: TimeDependentGBM = \
+            TimeDependentGBM(
+                    drift=drift,
+                    excel_file_path=volatility_excel_path,
+                    sheet_name=volatility_excel_sheet_name,
+                    initial_spot=self.initial_spot,
+                    time_to_maturity=self.time_to_maturity)
+
+        paths: np.ndarray =\
+            gbm.get_gbm_paths(number_of_paths, number_of_time_steps, self.initial_spot, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths)

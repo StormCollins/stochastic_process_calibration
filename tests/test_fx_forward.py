@@ -1,10 +1,11 @@
 import pytest
+import numpy as np
 from src.instruments.fx_forward import FxForward
 from src.monte_carlo_results import MonteCarloResults
 
 
 @pytest.fixture
-def fx_forward():
+def fx_forward_constant_vol():
     notional: float = 1
     initial_spot: float = 50
     strike: float = 52
@@ -14,13 +15,8 @@ def fx_forward():
     return FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
 
 
-def test_fx_forward_get_analytical_price(fx_forward):
-    actual_price: float = fx_forward.get_analytical_price()
-    expected_price: float = 0.11716329473210145
-    assert actual_price == pytest.approx(expected_price, 0.000000000001)
-
-
-def test_fx_forward_get_time_independent_monte_carlo_pricer():
+@pytest.fixture
+def fx_forward_non_constant_vol():
     """
     Note where these values come from:
     1. xvalite_fec_trade-data_2022-03-31.xlsx
@@ -37,21 +33,78 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer():
     strike: float = 17
     domestic_interest_rate: float = 0.061339421
     foreign_interest_rate: float = 0.020564138
-    volatility: float = 0.149
     time_to_maturity: float = 1
+    return FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
+
+
+def test_fx_forward_get_analytical_price(fx_forward_constant_vol):
+    actual_price: float = fx_forward_constant_vol.get_analytical_price()
+    expected_price: float = 0.11716329473210145
+    assert actual_price == pytest.approx(expected_price, 0.000000000001)
+
+
+def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forward_constant_vol):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1_000
+    volatility: float = 0.4
+    np.random.seed(999)
 
-    fec: FxForward = \
-        FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
-
-    actual: MonteCarloResults = \
-        fec.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, volatility, True, True)
+    actual: MonteCarloResults = fx_forward_constant_vol.get_time_independent_monte_carlo_price(
+                                number_of_paths,
+                                number_of_time_steps,
+                                volatility,
+                                True,
+                                True)
 
     print()
     print(f' FX Forward Prices')
     print(f' -----------------')
     print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
-    expected: float = fec.get_analytical_price()
+    expected: float = fx_forward_constant_vol.get_analytical_price()
+    print(f'  Analytical: {expected:,.2f}')
+    assert expected == pytest.approx(actual.price, actual.error)
+
+
+def test_fx_forward_get_time_dependent_monte_carlo_pricer_constant_vol(fx_forward_constant_vol):
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 1_000
+    excel_file_path: str = r'tests/atm-volatility-surface.xlsx'
+    np.random.seed(999)
+    actual: MonteCarloResults = fx_forward_constant_vol.get_time_dependent_monte_carlo_price(
+                                number_of_paths=number_of_paths,
+                                number_of_time_steps=number_of_time_steps,
+                                volatility_excel_path=excel_file_path,
+                                volatility_excel_sheet_name='vol_surface',
+                                plot_paths=True,
+                                show_stats=True)
+
+    print()
+    print(f' FX Forward Prices')
+    print(f' -----------------')
+    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
+    expected: float = fx_forward_constant_vol.get_analytical_price()
+    print(f'  Analytical: {expected:,.2f}')
+    assert expected == pytest.approx(actual.price, actual.error)
+
+
+def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_forward_non_constant_vol):
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 1_000
+    excel_file_path: str = r'tests/fec_atm_vol_surface.xlsx'
+    np.random.seed(999)
+
+    actual: MonteCarloResults = fx_forward_non_constant_vol.get_time_dependent_monte_carlo_price(
+                                number_of_paths=number_of_paths,
+                                number_of_time_steps=number_of_time_steps,
+                                volatility_excel_path=excel_file_path,
+                                volatility_excel_sheet_name='vol_surface',
+                                plot_paths=True,
+                                show_stats=True)
+
+    print()
+    print(f' FX Forward Prices')
+    print(f' -----------------')
+    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
+    expected: float = fx_forward_non_constant_vol.get_analytical_price()
     print(f'  Analytical: {expected:,.2f}')
     assert expected == pytest.approx(actual.price, actual.error)

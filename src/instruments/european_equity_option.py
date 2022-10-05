@@ -92,7 +92,10 @@ class EuropeanEquityOption:
         :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
         :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
         :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False.
+        :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
+        volatility is time-independent.
         """
+
         gbm: TimeIndependentGBM = \
             TimeIndependentGBM(
                 drift=self.interest_rate,
@@ -137,6 +140,19 @@ class EuropeanEquityOption:
             volatility_excel_sheet_name: str,
             plot_paths: bool = False,
             show_stats: bool = False):
+        """
+        Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
+        volatility is time-dependent.
+
+        :param number_of_paths: Number of paths in the Monte Carlo simulation.
+        :param number_of_time_steps: Number of time steps in the Monte Carlo simulation
+        :param volatility_excel_path: Specifies the path where the Excel file of volatilities is stored.
+        :param volatility_excel_sheet_name: Specifies the name of the Excel sheet where the volatilities are stored.
+        :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
+        :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False
+        :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
+        volatility is time-dependent.
+        """
 
         gbm: TimeDependentGBM = \
             TimeDependentGBM(

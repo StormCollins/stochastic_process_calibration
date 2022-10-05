@@ -33,7 +33,7 @@ def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
 
 
 def test_get_black_scholes_price(option_for_constant_vol_tests):
-    # TODO: Add reference to Paolo Brandiparte's book page etc.
+    # Reference: Paolo Brandimarte: 2.6.4 Black-Scholes model in MATLAB, page 113.
     actual_price: float = option_for_constant_vol_tests.get_black_scholes_price()
     expected_price: float = 5.068933121521976
     assert actual_price == pytest.approx(expected_price, 0.000000000001)

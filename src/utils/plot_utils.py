@@ -9,6 +9,14 @@ class PlotUtils:
             variable_to_plot: np.ndarray,
             histogram_title: str,
             histogram_label: str):
+        """
+        Plots the histogram of the returns, including the theoretical PDF of a normal distribution.
+
+        :param variable_to_plot: Specifies what will be plotted. For example, the log-returns or the normal returns.
+        :param histogram_title: Indicates the title of the histogram based on what is being plotted.
+        :param histogram_label: Indicates the labels of the histogram (legend) based on what is being plotted.
+        :return: The histogram of the returns, including the theoretical PDF of a normal distribution.
+        """
         plt.style.use('ggplot')
         fig2, ax2 = plt.subplots(ncols=1, nrows=1)
         ax2.set_facecolor('#AAAAAA')
