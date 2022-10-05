@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from src.gbm.time_independent_gbm import TimeIndependentGBM
+from src.path_statistics import PathStatistics
 
 
 def test_distribution():
@@ -17,6 +18,8 @@ def test_distribution():
     """
     np.random.seed(999)
     gbm: TimeIndependentGBM = TimeIndependentGBM(0.0, 0.1, 100, 1.0)
-    paths: np.ndarray = gbm.get_paths(100_000, 1)
+    paths: np.ndarray = gbm.get_paths(1_000, 50)
     gbm.create_plots(paths)
-    gbm.get_path_statistics(paths)
+    path_stats: PathStatistics = gbm.get_path_statistics(paths)
+    assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=0.05)
+    assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=0.05)

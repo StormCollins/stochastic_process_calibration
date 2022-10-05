@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import norm
-from src.monte_carlo_results import MonteCarloResults
+from src.monte_carlo_pricing_results import MonteCarloPricingResults
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
@@ -52,7 +52,7 @@ class FxForward:
             number_of_time_steps: int,
             volatility: float,
             plot_paths: bool = True,
-            show_stats: bool = True) -> [MonteCarloResults | str]:
+            show_stats: bool = True) -> [MonteCarloPricingResults | str]:
         """
         Returns the price (in domestic currency) for an FX (Foreign Exchange) forward using time-independent GBM
         simulations.
@@ -83,4 +83,4 @@ class FxForward:
 
         price: float = np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-        return MonteCarloResults(price, error)
+        return MonteCarloPricingResults(price, error)

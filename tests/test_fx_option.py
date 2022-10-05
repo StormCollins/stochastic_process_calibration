@@ -2,7 +2,7 @@ import pytest
 from src.call_or_put import CallOrPut
 from src.instruments.fx_option import FxOption
 from src.long_or_short import LongOrShort
-from src.monte_carlo_results import MonteCarloResults
+from src.monte_carlo_pricing_results import MonteCarloPricingResults
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def test_get_time_independent_monte_carlo_price(fx_option):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1_000
 
-    actual: MonteCarloResults = \
+    actual: MonteCarloPricingResults = \
         fx_option.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, True, True)
 
     expected_price: float = fx_option.get_garman_kohlhagen_price()

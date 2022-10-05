@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
+from src.path_statistics import PathStatistics
 
 
 def test_get_time_dependent_volatility():
@@ -48,7 +49,6 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
         time_dependent_gbm.get_paths(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            initial_spot=initial_spot,
             time_to_maturity=time_to_maturity)
 
     time_independent_gbm: TimeIndependentGBM = \
@@ -57,3 +57,13 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
     np.random.seed(999)
     expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps)
     assert actual_paths == pytest.approx(expected_paths, 0.001)
+
+
+def test_distribution():
+    np.random.seed(999)
+    gbm: TimeDependentGBM = TimeDependentGBM(0.0, 'tests/atm-volatility-surface.xlsx', 'constant_vol_surface', 100, 1.0)
+    paths: np.ndarray = gbm.get_paths(10_000, 50, 1.0)
+    gbm.create_plots(paths)
+    path_stats: PathStatistics = gbm.get_path_statistics(paths)
+    assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=0.05)
+    assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=0.05)

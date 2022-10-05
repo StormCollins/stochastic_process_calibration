@@ -1,8 +1,7 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from scipy.stats import jarque_bera
 from scipy.stats import norm
+from src.path_statistics import PathStatistics
 from src.utils.plot_utils import PlotUtils
 
 
@@ -53,22 +52,9 @@ class TimeIndependentGBM:
         2. The histogram of the log-returns, including the theoretical PDF of a normal distribution.
            This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
         """
+        time_steps = np.linspace(0, self.time_to_maturity, paths.shape[1])
+        PlotUtils.plot_monte_carlo_paths(time_steps, paths, 'Time-Independent GBM Paths')
 
-        time = np.linspace(0, self.time_to_maturity, paths.shape[1])
-
-        # Path plot
-        # indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
-        # sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-        # sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
-        # fig1, ax1 = plt.subplots()
-        # ax1.plot(time, sorted_paths)
-        # ax1.grid(True)
-        # ax1.set_facecolor('#AAAAAA')
-        # ax1.set_xlabel('Time')
-        # ax1.set_ylabel('Value')
-        # ax1.set_xlim([0, self.time_to_maturity])
-
-        # Histogram of log-returns
         log_returns = np.log(paths[:, -1] / paths[:, 0])
         mu: float = (self.drift - 0.5 * self.volatility ** 2) * self.time_to_maturity
         sigma: float = self.volatility * np.sqrt(self.time_to_maturity)
@@ -79,7 +65,6 @@ class TimeIndependentGBM:
             mean=mu,
             variance=sigma)
 
-        # Histogram of the returns
         returns: np.ndarray = paths[:, -1] / paths[:, 0]
         mu: float = (self.drift - 0.5 * self.volatility ** 2) * self.time_to_maturity
         sigma: float = self.volatility * np.sqrt(self.time_to_maturity)
@@ -90,20 +75,21 @@ class TimeIndependentGBM:
             mean=mu,
             variance=sigma)
 
-    def get_path_statistics(self, paths: np.ndarray) -> None:
+    def get_path_statistics(self, paths: np.ndarray) -> PathStatistics:  # dict[str, float]:
         """
         Tests if the log-returns of the GBM paths normally distributed.
 
         :param paths: The GBM simulated Monte Carlo paths.
         :return: None.
         """
-        log_returns = np.log(paths[:, -1] / paths[:, 0])
-        mean: float = self.initial_spot * np.exp(self.drift + (self.volatility ** 2 / 2))
-
-        standard_deviation: float = \
+        log_returns: np.ndarray = np.log(paths[:, -1] / paths[:, 0])
+        theoretical_mean: float = self.initial_spot * np.exp(self.drift + (self.volatility ** 2 / 2))
+        theoretical_standard_deviation: float = \
             self.initial_spot * \
             np.sqrt((np.exp(self.volatility ** 2) - 1) * np.exp((2 * self.drift + self.volatility ** 2)))
 
+        empirical_mean: float = float(np.mean(paths[:, -1]))
+        empirical_standard_deviation: float = float(np.std(paths[:, -1]))
         pfe: float = \
             self.initial_spot * \
             np.exp(self.drift * self.time_to_maturity +
@@ -112,8 +98,8 @@ class TimeIndependentGBM:
         print('\n')
         print(f' Time-Independent Statistics of GBM')
         print(f' ----------------------------------')
-        print(f'  Mean: {mean}')
-        print(f'  Standard Deviation: {standard_deviation}')
+        print(f'  Mean: {theoretical_mean}')
+        print(f'  Standard Deviation: {theoretical_standard_deviation}')
         print(f'  95% PFE: {pfe}')
         jarque_bera_test: [float, float] = jarque_bera(log_returns)
         print(f'  Jarque-Bera Test Results:')
@@ -123,3 +109,9 @@ class TimeIndependentGBM:
             print('     GBM log-returns are normally distributed.')
         else:
             print('     GBM log-returns are not normally distributed.')
+
+        return PathStatistics(
+            theoretical_mean,
+            empirical_mean,
+            theoretical_standard_deviation,
+            empirical_standard_deviation)

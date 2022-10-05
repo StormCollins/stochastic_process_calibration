@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 from src.call_or_put import CallOrPut
 from src.long_or_short import LongOrShort
-from src.monte_carlo_results import MonteCarloResults
+from src.monte_carlo_pricing_results import MonteCarloPricingResults
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
@@ -83,7 +83,7 @@ class EuropeanEquityOption:
             number_of_paths: int,
             number_of_time_steps: int,
             plot_paths: bool = False,
-            show_stats: bool = False) -> MonteCarloResults:
+            show_stats: bool = False) -> MonteCarloPricingResults:
         """
         Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
@@ -118,7 +118,7 @@ class EuropeanEquityOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)
 
         elif self.call_or_put == CallOrPut.PUT:
             payoffs = \
@@ -127,7 +127,7 @@ class EuropeanEquityOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)
 
     def get_time_dependent_monte_carlo_price(
             self,
@@ -148,7 +148,7 @@ class EuropeanEquityOption:
 
         paths: np.ndarray = \
             self.notional * \
-            gbm.get_paths(number_of_paths, number_of_time_steps, self.initial_spot, self.time_to_maturity)
+            gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths)
@@ -163,7 +163,7 @@ class EuropeanEquityOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)
 
         elif self.call_or_put == CallOrPut.PUT:
             payoffs = \
@@ -172,4 +172,4 @@ class EuropeanEquityOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)

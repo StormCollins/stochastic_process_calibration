@@ -3,7 +3,7 @@ import pytest
 from src.call_or_put import CallOrPut
 from src.instruments.european_equity_option import EuropeanEquityOption
 from src.long_or_short import LongOrShort
-from src.monte_carlo_results import MonteCarloResults
+from src.monte_carlo_pricing_results import MonteCarloPricingResults
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1000
 
-    actual: MonteCarloResults = \
+    actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
@@ -64,7 +64,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
     number_of_time_steps: int = 100
     excel_file_path = r'tests/atm-volatility-surface.xlsx'
 
-    actual: MonteCarloResults = \
+    actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
@@ -88,7 +88,7 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
     excel_file_path = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)
 
-    actual: MonteCarloResults = \
+    actual: MonteCarloPricingResults = \
         option_for_non_constant_vol_tests.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,

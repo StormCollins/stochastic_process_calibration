@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 from src.call_or_put import CallOrPut
 from src.long_or_short import LongOrShort
-from src.monte_carlo_results import MonteCarloResults
+from src.monte_carlo_pricing_results import MonteCarloPricingResults
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 
@@ -75,7 +75,7 @@ class FxOption:
             number_of_paths: int,
             number_of_time_steps: int,
             plot_paths: bool = True,
-            show_stats: bool = False) -> MonteCarloResults:
+            show_stats: bool = False) -> MonteCarloPricingResults:
         """
         Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations.
 
@@ -105,7 +105,7 @@ class FxOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)
 
         elif self.call_or_put == CallOrPut.PUT:
             payoffs = \
@@ -114,4 +114,4 @@ class FxOption:
 
             price: float = np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloResults(price, error)
+            return MonteCarloPricingResults(price, error)
