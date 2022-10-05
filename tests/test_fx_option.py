@@ -33,14 +33,13 @@ def fx_option_constant_vol():
 @pytest.fixture
 def fx_option_non_constant_vol():
     """
-       # TODO: Update docstring for fx option
         Note where these values come from:
-       1. xvalite_fec_trade-data_2022-03-31.xlsx
-           Strike - Forward Exchange Contracts Sheet
-       2. xvalite_fec-and-fx-option_market-data_2022-03-31.xlsx
-           initial_spot - FXHistories Sheet
-           volatility - ATMFxOptions
-       3. xvalite_fec-and-fx-option_discount-curves_2022-03-31.xlsx
+        These values are for a USD/ZAR call option.
+       1. xvalite_fx-option_trade-data_2022-03-31.xlsx
+           Strike - Fx Options Sheet (Trade ID: 571494)
+       2. xvalite_fx-option_market-data_2022-03-31.xlsx
+           initial_spot - FX Histories Sheet
+           volatility - FX Histories Sheet
            domestic_interest_rate - Discount Curves
            foreign_interest_rate - Discount Curves
 
