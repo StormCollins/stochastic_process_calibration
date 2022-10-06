@@ -95,7 +95,6 @@ class EuropeanEquityOption:
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
         """
-
         gbm: TimeIndependentGBM = \
             TimeIndependentGBM(
                 drift=self.interest_rate,
@@ -141,7 +140,7 @@ class EuropeanEquityOption:
             plot_paths: bool = False,
             show_stats: bool = False):
         """
-        Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
+        Returns the price for a 'CALL' or 'PUT' european equity option using Monte Carlo simulations where the
         volatility is time-dependent.
 
         :param number_of_paths: Number of paths in the Monte Carlo simulation.
@@ -153,7 +152,6 @@ class EuropeanEquityOption:
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-dependent.
         """
-
         gbm: TimeDependentGBM = \
             TimeDependentGBM(
                 drift=self.interest_rate,

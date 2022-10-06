@@ -48,13 +48,13 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forw
     number_of_time_steps: int = 1_000
     volatility: float = 0.4
     np.random.seed(999)
-
-    actual: MonteCarloResults = fx_forward_constant_vol.get_time_independent_monte_carlo_price(
-                                number_of_paths,
-                                number_of_time_steps,
-                                volatility,
-                                True,
-                                True)
+    actual: MonteCarloResults = \
+        fx_forward_constant_vol.get_time_independent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            volatility=volatility,
+            plot_paths=True,
+            show_stats=True)
 
     print()
     print(f' FX Forward Prices')
@@ -71,12 +71,12 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_constant_vol(fx_forwar
     excel_file_path: str = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)
     actual: MonteCarloResults = fx_forward_constant_vol.get_time_dependent_monte_carlo_price(
-                                number_of_paths=number_of_paths,
-                                number_of_time_steps=number_of_time_steps,
-                                volatility_excel_path=excel_file_path,
-                                volatility_excel_sheet_name='vol_surface',
-                                plot_paths=True,
-                                show_stats=True)
+        number_of_paths=number_of_paths,
+        number_of_time_steps=number_of_time_steps,
+        volatility_excel_path=excel_file_path,
+        volatility_excel_sheet_name='vol_surface',
+        plot_paths=True,
+        show_stats=True)
 
     print()
     print(f' FX Forward Prices')
@@ -93,13 +93,14 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
     excel_file_path: str = r'tests/fec_atm_vol_surface.xlsx'
     np.random.seed(999)
 
-    actual: MonteCarloResults = fx_forward_non_constant_vol.get_time_dependent_monte_carlo_price(
-                                number_of_paths=number_of_paths,
-                                number_of_time_steps=number_of_time_steps,
-                                volatility_excel_path=excel_file_path,
-                                volatility_excel_sheet_name='vol_surface',
-                                plot_paths=True,
-                                show_stats=True)
+    actual: MonteCarloResults = \
+        fx_forward_non_constant_vol.get_time_dependent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            volatility_excel_path=excel_file_path,
+            volatility_excel_sheet_name='vol_surface',
+            plot_paths=True,
+            show_stats=True)
 
     print()
     print(f' FX Forward Prices')

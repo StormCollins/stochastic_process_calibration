@@ -41,7 +41,6 @@ class FxForward:
     def get_analytical_price(self) -> float:
         """
         Returns the analytical (discounted) price of the FX Forward.
-
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
         payoff: float = self.notional * (self.initial_spot * np.exp(drift * self.time_to_maturity) - self.strike)
@@ -106,7 +105,6 @@ class FxForward:
         :param plot_paths: If set to True plots the current_value.
         :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
         :return: Monte Carlo price for an FX forward in the domestic currency.
-
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
         gbm: TimeDependentGBM = \

@@ -75,7 +75,6 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
 def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_vol):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 1_000
-
     actual: MonteCarloResults = \
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, True, True)
 
@@ -89,7 +88,6 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
     number_of_time_steps: int = 1_000
     excel_file_path = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)
-
     actual: MonteCarloResults = \
         fx_option_constant_vol.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
@@ -109,13 +107,10 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
 
 
 def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_option_non_constant_vol):
-
     number_of_paths = 10_000
     number_of_time_steps = 1000
     excel_file_path: str = r'tests/atm-volatility-surface.xlsx'
-
     np.random.seed(999)
-
     actual: MonteCarloResults = \
         fx_option_non_constant_vol.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,

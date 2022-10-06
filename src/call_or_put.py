@@ -3,8 +3,7 @@ from enum import Enum
 
 class CallOrPut(Enum):
     """
-    Class for specifying whether the option is a call option or a put option.
+    Enum for specifying whether an option is a call or a put.
     """
-
     CALL = 0
     PUT = 1
