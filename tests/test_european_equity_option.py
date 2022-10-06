@@ -62,7 +62,7 @@ def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
 def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 50
-    excel_file_path = r'../tests/atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/atm-volatility-surface.xlsx'
 
     actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_dependent_monte_carlo_price(
@@ -85,7 +85,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
 def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 100
-    excel_file_path = r'../tests/atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     actual: MonteCarloPricingResults = \

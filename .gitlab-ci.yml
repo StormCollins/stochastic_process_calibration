@@ -5,6 +5,5 @@ test:
     - pwd
     - ls
     - python --version
-    - cd tests
     - python -m pip install matplotlib numpy openpyxl pandas pytest QuantLib scipy seaborn
     - python -m pytest
