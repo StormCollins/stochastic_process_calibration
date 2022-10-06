@@ -97,19 +97,20 @@ class EuropeanEquityOption:
             TimeIndependentGBM(
                 drift=self.interest_rate,
                 volatility=self.volatility,
-                initial_spot=self.initial_spot,
-                time_to_maturity=self.time_to_maturity)
+                initial_spot=self.initial_spot)
 
         paths: np.ndarray = \
-            self.notional * gbm.get_paths(
+            self.notional * \
+            gbm.get_paths(
                 number_of_paths=number_of_paths,
-                number_of_time_steps=number_of_time_steps)
+                number_of_time_steps=number_of_time_steps,
+                time_to_maturity=self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths)
+            gbm.create_plots(paths, self.time_to_maturity)
 
         if show_stats:
-            gbm.get_path_statistics(paths)
+            gbm.get_path_statistics(paths, self.time_to_maturity)
 
         if self.call_or_put == CallOrPut.CALL:
             payoffs = \
@@ -143,18 +144,17 @@ class EuropeanEquityOption:
                 drift=self.interest_rate,
                 excel_file_path=volatility_excel_path,
                 sheet_name=volatility_excel_sheet_name,
-                initial_spot=self.initial_spot,
-                time_to_maturity=self.time_to_maturity)
+                initial_spot=self.initial_spot)
 
         paths: np.ndarray = \
             self.notional * \
             gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths)
+            gbm.create_plots(paths, self.time_to_maturity)
 
         if show_stats:
-            gbm.get_path_statistics(paths)
+            gbm.get_path_statistics(paths, self.time_to_maturity)
 
         if self.call_or_put == CallOrPut.CALL:
             payoffs = \

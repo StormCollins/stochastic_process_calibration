@@ -30,7 +30,7 @@ class PlotUtils:
         :param variance: The volatility of the normal distribution PDF.
         :return: None.
         """
-        plt.style.use('ggplot')
+        plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
         fig, ax = plt.subplots(ncols=1, nrows=1)
         ax.set_facecolor('white')
@@ -69,7 +69,7 @@ class PlotUtils:
         :param variance: The volatility of the log-normal distribution PDF.
         :return: None.
         """
-        plt.style.use('ggplot')
+        plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
         fig, ax = plt.subplots(ncols=1, nrows=1)
         ax.set_facecolor('white')

@@ -1,10 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 from scipy.interpolate import interp1d
 from scipy.stats import jarque_bera
-from scipy.stats import lognorm
 from scipy.stats import norm
 from src.path_statistics import PathStatistics
 from src.utils.plot_utils import PlotUtils
@@ -20,8 +17,7 @@ class TimeDependentGBM:
             drift: float,
             excel_file_path: str,
             sheet_name: str,
-            initial_spot: float,
-            time_to_maturity: float):
+            initial_spot: float):
         """
         Class constructor.
 
@@ -29,25 +25,19 @@ class TimeDependentGBM:
         :param excel_file_path: Path to Excel file containing the ATM volatility term structure.
         :param sheet_name: The sheet name of the Excel file containing the ATM volatility term structure.
         :param initial_spot: Initial spot.
-        :param time_to_maturity: Time to maturity.
         """
         self.drift: float = drift
         # Here 'variance' means 'sigma**2 * time'.
         self.variance_interpolator: interp1d = self.setup_variance_interpolator(excel_file_path, sheet_name)
         self.initial_spot: float = initial_spot
-        self.time_to_maturity: float = time_to_maturity
 
-    def get_paths(
-            self,
-            number_of_paths: int,
-            number_of_time_steps: int,
-            time_to_maturity: float) -> np.ndarray:
+    def get_paths(self, number_of_paths: int, number_of_time_steps: int, time_to_maturity: float) -> np.ndarray:
         """
         Generates the GBM paths used to price various instruments.
 
         :param number_of_paths: Number of the current value.
         :param number_of_time_steps: Number of time steps.
-        :param time_to_maturity: Time to maturity (in years).
+        :param time_to_maturity: Time to maturity.
         :return: The simulated GBM paths.
         """
         dt: float = time_to_maturity / number_of_time_steps
@@ -98,7 +88,7 @@ class TimeDependentGBM:
         """
         return np.sqrt(self.variance_interpolator(tenors) / tenors) / 100
 
-    def create_plots(self, paths: np.ndarray) -> None:
+    def create_plots(self, paths: np.ndarray, time_to_maturity: float) -> None:
         """
         Plots different figures such as:
 
@@ -106,35 +96,12 @@ class TimeDependentGBM:
         2. The histogram of the log-returns, including the theoretical PDF of a normal distribution.
            This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
         """
-
-        time_steps = np.linspace(0, self.time_to_maturity, paths.shape[1])
-        maturity_volatility: float = self.get_time_dependent_vol(self.time_to_maturity)
-        # returns: np.ndarray = paths[:, -1] / paths[:, 0]
-        # mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
-        # sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
-        # PlotUtils.plot_lognormal_histogram(
-        #     data=returns,
-        #     histogram_title='Time-Independent GBM Returns vs. Log-Normal PDF',
-        #     histogram_label='Returns Histogram',
-        #     mean=mu,
-        #     variance=sigma)
-
+        time_steps = np.linspace(0, time_to_maturity, paths.shape[1])
+        maturity_volatility: float = self.get_time_dependent_vol(time_to_maturity)
         PlotUtils.plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths')
-        # Path plot
-        # indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
-        # sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-        # sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
-        # fig1, ax1 = plt.subplots()
-        # ax1.plot(time, sorted_paths)
-        # ax1.grid(True)
-        # ax1.set_facecolor('#AAAAAA')
-        # ax1.set_xlabel('Time')
-        # ax1.set_ylabel('Value')
-        # ax1.set_xlim([0, self.time_to_maturity])
-
         log_returns = np.log(paths[:, -1] / paths[:, 0])
-        mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
-        sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
+        mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * time_to_maturity
+        sigma: float = maturity_volatility * np.sqrt(time_to_maturity)
         PlotUtils.plot_normal_histogram(
             data=log_returns,
             histogram_title='Time-Dependent GBM Log-Returns vs. Normal PDF',
@@ -143,8 +110,8 @@ class TimeDependentGBM:
             variance=sigma)
 
         returns: np.ndarray = paths[:, -1] / paths[:, 0]
-        mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * self.time_to_maturity
-        sigma: float = maturity_volatility * np.sqrt(self.time_to_maturity)
+        mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * time_to_maturity
+        sigma: float = maturity_volatility * np.sqrt(time_to_maturity)
         PlotUtils.plot_lognormal_histogram(
             data=returns,
             histogram_title='Time-Independent GBM Returns vs. Log-Normal PDF',
@@ -152,27 +119,26 @@ class TimeDependentGBM:
             mean=mu,
             variance=sigma)
 
-    def get_path_statistics(self, paths: np.ndarray) -> PathStatistics:
+    def get_path_statistics(self, paths: np.ndarray, time_to_maturity: float) -> PathStatistics:
         """
         Tests if the log-returns of the GBM paths normally distributed.
 
         :param paths: The GBM simulated Monte Carlo paths.
+        :param time_to_maturity: Time to maturity.
         :return: None.
         """
-        terminal_volatility: float = self.get_time_dependent_vol(self.time_to_maturity)
-        log_returns = np.log(paths[:, -1] / paths[:, 0])
-        theoretical_mean: float = self.initial_spot * np.exp(self.drift + (terminal_volatility ** 2 / 2))
-
+        maturity_volatility: float = self.get_time_dependent_vol(time_to_maturity)
+        log_returns: np.ndarray = np.log(paths[:, -1] / paths[:, 0])
+        theoretical_mean: float = self.initial_spot * np.exp(self.drift * time_to_maturity)
         theoretical_standard_deviation: float = \
-            self.initial_spot * \
-            np.sqrt((np.exp(terminal_volatility ** 2) - 1) * np.exp((2 * self.drift + terminal_volatility ** 2)))
+            theoretical_mean * np.sqrt((np.exp(maturity_volatility ** 2 * time_to_maturity) - 1))
 
         empirical_mean: float = float(np.mean(paths[:, -1]))
         empirical_standard_deviation: float = float(np.std(paths[:, -1]))
         pfe: float = \
             self.initial_spot * \
-            np.exp(self.drift * self.time_to_maturity +
-                   norm.ppf(0.95) * terminal_volatility * np.sqrt(self.time_to_maturity))
+            np.exp(self.drift * time_to_maturity +
+                   norm.ppf(0.95) * maturity_volatility * np.sqrt(time_to_maturity))
 
         print('\n')
         print(f' Time-Independent Statistics of GBM')

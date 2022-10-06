@@ -40,7 +40,7 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer():
     volatility: float = 0.149
     time_to_maturity: float = 1
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 1_000
+    number_of_time_steps: int = 50
 
     fec: FxForward = \
         FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)

@@ -17,9 +17,10 @@ def test_distribution():
     :return: None.
     """
     np.random.seed(999)
-    gbm: TimeIndependentGBM = TimeIndependentGBM(0.0, 0.1, 100, 1.0)
-    paths: np.ndarray = gbm.get_paths(1_000, 50)
-    gbm.create_plots(paths)
-    path_stats: PathStatistics = gbm.get_path_statistics(paths)
-    assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=0.05)
-    assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=0.05)
+    time_to_maturity: float = 1.0
+    gbm: TimeIndependentGBM = TimeIndependentGBM(0.0, 0.4, 100)
+    paths: np.ndarray = gbm.get_paths(10_000, 10, time_to_maturity)
+    gbm.create_plots(paths, time_to_maturity)
+    path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
+    assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
+    assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=1.00)

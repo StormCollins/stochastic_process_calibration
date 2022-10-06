@@ -87,16 +87,15 @@ class FxOption:
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
 
-        gbm: TimeIndependentGBM = \
-            TimeIndependentGBM(drift, self.volatility, self.initial_spot, self.time_to_maturity)
+        gbm: TimeIndependentGBM = TimeIndependentGBM(drift, self.volatility, self.initial_spot)
 
-        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps)
+        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths)
+            gbm.create_plots(paths, self.time_to_maturity)
 
         if show_stats:
-            gbm.get_path_statistics(paths)
+            gbm.get_path_statistics(paths, self.time_to_maturity)
 
         if self.call_or_put == CallOrPut.CALL:
             payoffs = \

@@ -37,7 +37,7 @@ def test_get_garman_kohlhagen_price(fx_option):
 
 def test_get_time_independent_monte_carlo_price(fx_option):
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 1_000
+    number_of_time_steps: int = 50
 
     actual: MonteCarloPricingResults = \
         fx_option.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, True, True)
