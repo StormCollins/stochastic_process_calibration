@@ -54,7 +54,7 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
 
     np.random.seed(999)
     expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps, time_to_maturity)
-    assert actual_paths == pytest.approx(expected_paths, 0.001)
+    assert actual_paths == pytest.approx(expected_paths, abs=1.0)
 
 
 def test_distribution():

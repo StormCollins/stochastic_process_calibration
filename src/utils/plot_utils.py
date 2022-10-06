@@ -44,6 +44,10 @@ class PlotUtils:
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
 
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(0.5)
+            ax.spines[axis].set_color('black')
+
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = norm.pdf(x=bin_centers, loc=mean, scale=variance)
         ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
@@ -73,8 +77,7 @@ class PlotUtils:
         plt.rcParams['font.family'] = 'calibri'
         fig, ax = plt.subplots(ncols=1, nrows=1)
         ax.set_facecolor('white')
-        ax.grid(False)
-
+        ax.grid(True)
         (values, bins, _) = \
             ax.hist(data.flatten(), bins=75, density=True, label=histogram_label, color='#86BC25')
 
@@ -84,6 +87,10 @@ class PlotUtils:
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
 
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(0.5)
+            ax.spines[axis].set_color('black')
+
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = lognorm.pdf(x=bin_centers, s=variance, scale=np.exp(mean))
         ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
@@ -92,15 +99,18 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, title: str):
+    def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, drift: float, title: str):
+        plt.style.use(['ggplot', 'fast'])
+        plt.rcParams['font.family'] = 'calibri'
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
         sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
         sns.set_palette(sns.dark_palette('#86BC25', n_colors=paths.shape[0], as_cmap=False))
         fig, ax = plt.subplots()
-        plt.style.use(['ggplot', 'fast'])
         plt.rcParams['path.simplify_threshold'] = 1.0
         ax.plot(time_steps, sorted_paths)
-        ax.grid(True)
+        empirical_path_means: np.ndarray = np.mean(paths, 0)
+        ax.plot(time_steps, empirical_path_means, label='Path Average', linestyle='dashed', color='#00A3E0')
+        ax.grid(False)
         ax.set_facecolor('white')
         ax.set_xlabel('Time')
         ax.set_ylabel('Value')
@@ -108,9 +118,16 @@ class PlotUtils:
         ax.annotate(
             f'{paths.shape[0]:,} Sims\n'
             f'{paths.shape[1] - 1:,} Time Steps',
-            xy=(0.05, 0.85),
+            xy=(0.05, 0.75),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
 
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(0.5)
+            ax.spines[axis].set_color('black')
+
+        initial_spot: float = paths[0, 0]
+        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
+        ax.legend()
         ax.set_title(title)
         plt.show(block=False)

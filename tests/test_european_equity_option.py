@@ -70,7 +70,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
-            plot_paths=False,
+            plot_paths=True,
             show_stats=True)
 
     print()
@@ -94,7 +94,7 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=False,
+            plot_paths=True,
             show_stats=True)
 
     print()
