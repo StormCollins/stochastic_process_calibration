@@ -41,10 +41,13 @@ class TimeDependentGBM:
         :return: The simulated GBM paths.
         """
         dt: float = time_to_maturity / number_of_time_steps
-        time_steps: np.ndarray = np.arange(0, time_to_maturity + dt, dt)
+        # time_steps: np.ndarray = np.arange(0, time_to_maturity + dt, dt)
+        time_steps: np.ndarray = np.linspace(0, time_to_maturity, number_of_time_steps + 1)
         volatility = self.get_time_dependent_vol(time_steps[1:])
         z = np.random.normal(0, 1, (number_of_paths, number_of_time_steps))
-        paths = self.initial_spot * np.cumprod(np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility * np.sqrt(dt) * z), 1)
+        paths = \
+            self.initial_spot * \
+            np.cumprod(np.exp((self.drift - 0.5 * volatility ** 2) * dt + volatility * np.sqrt(dt) * z), 1)
         paths = np.insert(paths, 0, np.tile(self.initial_spot, number_of_paths), axis=1)
         return paths
 

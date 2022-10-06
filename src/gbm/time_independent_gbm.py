@@ -34,7 +34,7 @@ class TimeIndependentGBM:
         paths: np.ndarray = np.array(np.zeros((number_of_paths, number_of_time_steps + 1)))
         paths[:, 0] = self.initial_spot
         dt: float = time_to_maturity / number_of_time_steps
-        z = np.random.normal(0, 1, (number_of_paths, number_of_time_steps))
+        z = np.random.normal(0, 1, (number_of_paths, number_of_time_steps - 1))
 
         paths = \
             self.initial_spot * \
