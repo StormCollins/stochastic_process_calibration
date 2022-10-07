@@ -45,7 +45,7 @@ def test_fx_forward_get_analytical_price(fx_forward_constant_vol):
 
 def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forward_constant_vol):
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 100
+    number_of_time_steps: int = 20
     volatility: float = 0.4
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
@@ -62,7 +62,7 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forw
     print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected: float = fx_forward_constant_vol.get_analytical_price()
     print(f'  Analytical: {expected:,.2f}')
-    assert expected == pytest.approx(actual.price, actual.error)
+    assert expected == pytest.approx(actual.price, abs=actual.error)
 
 
 def test_fx_forward_get_time_dependent_monte_carlo_pricer_constant_vol(fx_forward_constant_vol):

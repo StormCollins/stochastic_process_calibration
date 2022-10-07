@@ -1,5 +1,5 @@
 """
-This module is contains a single class, PlotUtils, with static methods for plotting data.
+This module contains a single class, PlotUtils, with static methods for plotting data.
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -52,6 +52,8 @@ class PlotUtils:
         pdf = norm.pdf(x=bin_centers, loc=mean, scale=variance)
         ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
         ax.set_title(histogram_title)
+        ax.set_xlabel('Return Value')
+        ax.set_ylabel('Frequency')
         ax.legend()
         plt.show()
 
@@ -94,6 +96,8 @@ class PlotUtils:
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = lognorm.pdf(x=bin_centers, s=variance, scale=np.exp(mean))
         ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
+        ax.set_xlabel('Log-Return Value')
+        ax.set_ylabel('Frequency')
         ax.set_title(histogram_title)
         ax.legend()
         plt.show()
@@ -109,7 +113,10 @@ class PlotUtils:
         plt.rcParams['path.simplify_threshold'] = 1.0
         ax.plot(time_steps, sorted_paths)
         empirical_path_means: np.ndarray = np.mean(paths, 0)
-        ax.plot(time_steps, empirical_path_means, label='Path Average', linestyle='dashed', color='#00A3E0')
+        initial_spot: float = paths[0, 0]
+        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
+        ax.plot(time_steps, theoretical_path_means, label='Theoretical Path Average', linestyle='solid', linewidth='3', color='#C4D600')
+        ax.plot(time_steps, empirical_path_means, label='Empirical Path Average', linestyle='dashed', linewidth='1', color='#00A3E0')
         ax.grid(False)
         ax.set_facecolor('white')
         ax.set_xlabel('Time')
@@ -126,8 +133,6 @@ class PlotUtils:
             ax.spines[axis].set_linewidth(0.5)
             ax.spines[axis].set_color('black')
 
-        initial_spot: float = paths[0, 0]
-        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
         ax.legend()
         ax.set_title(title)
         plt.show(block=False)
