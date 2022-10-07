@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import QuantLib as ql
 from src.call_or_put import CallOrPut
 from src.instruments.fx_option import FxOption
 from src.long_or_short import LongOrShort
@@ -8,11 +9,6 @@ from src.monte_carlo_pricing_results import MonteCarloPricingResults
 
 @pytest.fixture
 def fx_option_constant_vol():
-    """
-    Reference: Paolo Brandimarte: 2.6.4 Black-Scholes model in MATLAB, page 113.
-    Put BS price: 5.0689
-    Call BS price: 5.1911
-    """
     notional: float = 1
     initial_spot: float = 50
     strike: float = 52
@@ -71,9 +67,33 @@ def fx_option_non_constant_vol():
 
 
 def test_get_garman_kohlhagen_price(fx_option_constant_vol):
+    """
+    We used QuantLib to validate the Garman-Kohlhagen pricing.
+    See https://quant.stackexchange.com/questions/70258/quantlib-greeks-of-fx-option-in-python for an implementation of
+    an FX option using QuantLib.
+    """
     actual_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
-    expected_price: float = 4.8620672089551995
-    assert actual_price == pytest.approx(expected_price, 0.000000000001)
+    valuation_date: ql.Date = ql.Date(3, 1, 2022)
+    expiry_date: ql.Date = ql.Date(2, 6, 2022)
+    ql.Settings.instance().evaluationDate = valuation_date
+    calendar: ql.Calendar = ql.NullCalendar()
+    day_count_convention: ql.DayCounter = ql.Actual360()
+    domestic_rate_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.domestic_interest_rate))
+    domestic_curve = \
+        ql.YieldTermStructureHandle(ql.FlatForward(0, calendar, domestic_rate_handle, day_count_convention))
+
+    foreign_rate_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.foreign_interest_rate))
+    foreign_curve = ql.YieldTermStructureHandle(ql.FlatForward(0, calendar, foreign_rate_handle, day_count_convention))
+    payoff = ql.PlainVanillaPayoff(ql.Option.Put, fx_option_constant_vol.strike)
+    exercise = ql.EuropeanExercise(expiry_date)
+    option = ql.VanillaOption(payoff, exercise)
+    vol_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.volatility))
+    volatility = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(valuation_date, calendar, vol_handle, day_count_convention))
+    spot_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.initial_spot))
+    gk_process = ql.GarmanKohlagenProcess(spot_handle, foreign_curve, domestic_curve, volatility)
+    option.setPricingEngine(ql.AnalyticEuropeanEngine(gk_process))
+    expected_price: float = option.NPV()
+    assert actual_price == pytest.approx(expected_price, 0.000001)
 
 
 def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_vol):
