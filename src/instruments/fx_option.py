@@ -146,7 +146,7 @@ class FxOption:
                     sheet_name=volatility_excel_sheet_name,
                     initial_spot=self.initial_spot)
 
-        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.initial_spot)
+        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths, self.time_to_maturity)

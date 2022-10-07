@@ -108,7 +108,7 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
 
 def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_vol):
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 50
+    number_of_time_steps: int = 20
     excel_file_path = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
