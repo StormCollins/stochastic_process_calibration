@@ -150,3 +150,28 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
     expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
     print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
     assert expected_price == pytest.approx(actual.price, actual.error)
+
+
+#TODO: Compare to xVALite.
+#TODO: Give the test a better name.
+def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol2(fx_option_non_constant_vol):
+    number_of_paths = 10_000
+    number_of_time_steps = 50
+    excel_file_path: str = r'tests/fx-option-atm-vol-surface.xlsx'
+    np.random.seed(999)
+    actual: MonteCarloPricingResults = \
+        fx_option_non_constant_vol.get_time_dependent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            volatility_excel_path=excel_file_path,
+            volatility_excel_sheet_name='vol_surface',
+            plot_paths=True,
+            show_stats=True)
+
+    print()
+    print(f' FX Option Prices')
+    print(f' -----------------------------')
+    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
+    expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
+    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+    assert expected_price == pytest.approx(actual.price, actual.error)
