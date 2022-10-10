@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from src.curves.curve import Curve
 from src.instruments.irs import Irs
+from src.compounding_convention import CompoundingConvention
 
 
 @pytest.fixture
@@ -24,4 +25,6 @@ def test_payment_tenors(example_irs):
 
 def test_get_par_swap_rate(example_irs, flat_curve):
     actual: float = example_irs.get_par_swap_rate(flat_curve)
-    assert 1 == 1
+    # Since we're using a flat curve, 3m forward rate will be constant, regardless of start and end tenor.
+    expected: np.ndarray = flat_curve.get_forward_rates(np.array([1.0]), np.array([1.25]), CompoundingConvention.NACQ)
+    assert actual == pytest.approx(expected[0], abs=0.01)
