@@ -15,8 +15,8 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
     volatility: float = 0.4
     time_to_maturity: float = 5 / 12
     call: CallOrPut = CallOrPut.PUT
-    long: LongOrShort = LongOrShort.LONG
-    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, call, long)
+    short: LongOrShort = LongOrShort.SHORT
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, call, short)
 
 
 @pytest.fixture
@@ -28,8 +28,8 @@ def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
     volatility: float = 0.1545
     time_to_maturity: float = 2
     call: CallOrPut = CallOrPut.PUT
-    long: LongOrShort = LongOrShort.LONG
-    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, call, long)
+    short: LongOrShort = LongOrShort.SHORT
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, call, short)
 
 
 def test_get_black_scholes_price(option_for_constant_vol_tests):
@@ -39,7 +39,7 @@ def test_get_black_scholes_price(option_for_constant_vol_tests):
     Call BS price: 5.1911
     """
     actual_price: float = option_for_constant_vol_tests.get_black_scholes_price()
-    expected_price: float = 5.068933121521976
+    expected_price: float = -5.068933121521976
     assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
 

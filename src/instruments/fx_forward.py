@@ -78,6 +78,8 @@ class FxForward:
         :return: Monte Carlo price for an FX forward in the domestic currency.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
+
         gbm: TimeIndependentGBM = TimeIndependentGBM(drift, volatility, self.initial_spot)
         paths: np.ndarray = \
             gbm.get_paths(
@@ -97,7 +99,7 @@ class FxForward:
             (paths[:, -1] - self.notional * self.strike) * \
             np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-        price: float = np.average(payoffs)
+        price: float = direction * np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloPricingResults(price, error)
 
@@ -122,6 +124,8 @@ class FxForward:
         :return: Monte Carlo price for an FX forward in the domestic currency.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
+
         gbm: TimeDependentGBM = \
             TimeDependentGBM(
                 drift=drift,
@@ -147,6 +151,6 @@ class FxForward:
             (paths[:, -1] - self.notional * self.strike) * \
             np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-        price: float = np.average(payoffs)
+        price: float = direction * np.average(payoffs)
         error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
         return MonteCarloPricingResults(price, error)

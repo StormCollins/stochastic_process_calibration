@@ -95,6 +95,8 @@ class EuropeanEquityOption:
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
         """
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
+
         gbm: TimeIndependentGBM = \
             TimeIndependentGBM(
                 drift=self.interest_rate,
@@ -119,7 +121,7 @@ class EuropeanEquityOption:
                 np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
                 np.exp(-1 * self.interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -128,7 +130,7 @@ class EuropeanEquityOption:
                 np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
                 np.exp(-1 * self.interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -153,6 +155,8 @@ class EuropeanEquityOption:
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-dependent.
         """
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
+
         gbm: TimeDependentGBM = \
             TimeDependentGBM(
                 drift=self.interest_rate,
@@ -175,7 +179,7 @@ class EuropeanEquityOption:
                 np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
                 np.exp(-1 * self.interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -184,6 +188,6 @@ class EuropeanEquityOption:
                 np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
                 np.exp(-1 * self.interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)

@@ -16,8 +16,8 @@ def fx_option_constant_vol():
     foreign_interest_rate: float = 0.1
     volatility: float = 0.4
     time_to_maturity: float = 5 / 12
-    put: CallOrPut = CallOrPut.PUT
-    long: LongOrShort = LongOrShort.LONG
+    call: CallOrPut = CallOrPut.CALL
+    short: LongOrShort = LongOrShort.SHORT
 
     return FxOption(
         notional=notional,
@@ -27,8 +27,8 @@ def fx_option_constant_vol():
         foreign_interest_rate=foreign_interest_rate,
         volatility=volatility,
         time_to_maturity=time_to_maturity,
-        call_or_put=put,
-        long_or_short=long)
+        call_or_put=call,
+        long_or_short=short)
 
 
 @pytest.fixture
@@ -44,15 +44,15 @@ def fx_option_non_constant_vol():
            domestic_interest_rate - Discount Curves
            foreign_interest_rate - Discount Curves
     """
-    notional: float = 1
+    notional: float = 1_000_000
     initial_spot: float = 14.6
     strike: float = 17
     domestic_interest_rate: float = 0.05737
     foreign_interest_rate: float = 0.01227
     time_to_maturity: float = 0.5
     volatility: float = 0.154
-    put: CallOrPut = CallOrPut.PUT
-    long: LongOrShort = LongOrShort.LONG
+    call: CallOrPut = CallOrPut.CALL
+    short: LongOrShort = LongOrShort.SHORT
 
     return FxOption(
         notional=notional,
@@ -62,8 +62,8 @@ def fx_option_non_constant_vol():
         foreign_interest_rate=foreign_interest_rate,
         volatility=volatility,
         time_to_maturity=time_to_maturity,
-        call_or_put=put,
-        long_or_short=long)
+        call_or_put=call,
+        long_or_short=short)
 
 
 def test_get_garman_kohlhagen_price(fx_option_constant_vol):
@@ -84,7 +84,7 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
 
     foreign_rate_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.foreign_interest_rate))
     foreign_curve = ql.YieldTermStructureHandle(ql.FlatForward(0, calendar, foreign_rate_handle, day_count_convention))
-    payoff = ql.PlainVanillaPayoff(ql.Option.Put, fx_option_constant_vol.strike)
+    payoff = ql.PlainVanillaPayoff(ql.Option.Call, fx_option_constant_vol.strike)
     exercise = ql.EuropeanExercise(expiry_date)
     option = ql.VanillaOption(payoff, exercise)
     vol_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.volatility))
@@ -103,6 +103,13 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, True, True)
 
     expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
+    print()
+    print(f' FX Option Prices')
+    print(f' -----------------------------')
+    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
+    expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
+    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+    assert expected_price == pytest.approx(actual.price, actual.error)
     assert expected_price == pytest.approx(actual.price, actual.error)
 
 
@@ -154,7 +161,7 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
 
 #TODO: Compare to xVALite.
 #TODO: Give the test a better name.
-def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol2(fx_option_non_constant_vol):
+def test_xvalite_fx_option_get_time_dependent_monte_carlo_pricer(fx_option_non_constant_vol):
     number_of_paths = 10_000
     number_of_time_steps = 50
     excel_file_path: str = r'tests/fx-option-atm-vol-surface.xlsx'

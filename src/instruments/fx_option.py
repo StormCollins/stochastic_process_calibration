@@ -87,10 +87,11 @@ class FxOption:
         :return: Monte Carlo price for an FX Option.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
 
         gbm: TimeIndependentGBM = TimeIndependentGBM(drift, self.volatility, self.initial_spot)
 
-        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
+        paths: np.ndarray = self.notional * gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths, self.time_to_maturity)
@@ -103,7 +104,7 @@ class FxOption:
                 np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -112,7 +113,7 @@ class FxOption:
                 np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -138,6 +139,7 @@ class FxOption:
         """
 
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
 
         gbm: TimeDependentGBM = \
             TimeDependentGBM(
@@ -146,7 +148,7 @@ class FxOption:
                     sheet_name=volatility_excel_sheet_name,
                     initial_spot=self.initial_spot)
 
-        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
+        paths: np.ndarray = self.notional * gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths, self.time_to_maturity)
@@ -159,7 +161,7 @@ class FxOption:
                 np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
 
@@ -168,6 +170,6 @@ class FxOption:
                 np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
-            price: float = np.average(payoffs)
+            price: float = direction * np.average(payoffs)
             error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
             return MonteCarloPricingResults(price, error)
