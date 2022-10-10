@@ -106,17 +106,31 @@ class PlotUtils:
     def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, drift: float, title: str):
         plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
+        plt.rcParams['path.simplify_threshold'] = 1.0
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
         sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
         sns.set_palette(sns.dark_palette('#86BC25', n_colors=paths.shape[0], as_cmap=False))
         fig, ax = plt.subplots()
-        plt.rcParams['path.simplify_threshold'] = 1.0
         ax.plot(time_steps, sorted_paths)
         empirical_path_means: np.ndarray = np.mean(paths, 0)
         initial_spot: float = paths[0, 0]
         theoretical_path_means = initial_spot * np.exp(drift * time_steps)
-        ax.plot(time_steps, theoretical_path_means, label='Theoretical Path Average', linestyle='solid', linewidth='3', color='#C4D600')
-        ax.plot(time_steps, empirical_path_means, label='Empirical Path Average', linestyle='dashed', linewidth='1', color='#00A3E0')
+        ax.plot(
+            time_steps,
+            theoretical_path_means,
+            label='Theoretical Path Average',
+            linestyle='solid',
+            linewidth='3',
+            color='#C4D600')
+
+        ax.plot(
+            time_steps,
+            empirical_path_means,
+            label='Empirical Path Average',
+            linestyle='dashed',
+            linewidth='1',
+            color='#00A3E0')
+
         ax.grid(False)
         ax.set_facecolor('white')
         ax.set_xlabel('Time')
@@ -136,3 +150,32 @@ class PlotUtils:
         ax.legend()
         ax.set_title(title)
         plt.show(block=False)
+
+    @staticmethod
+    def plot_curves(title: str, time_steps: np.ndarray, curves: list[tuple[str, np.ndarray]]) -> None:
+        plt.style.use(['ggplot', 'fast'])
+        plt.rcParams['font.family'] = 'calibri'
+        plt.rcParams['path.simplify_threshold'] = 1.0
+        fig, ax = plt.subplots()
+        ax.set_facecolor('white')
+        ax.set_title(title)
+        ax.grid(False)
+        curve_colors: list[str] = ['#00A3E0', '#86BC25']
+        y_min: float = np.min(curves[0][1])
+        y_max: float = np.max(curves[0][1])
+        for i, curve in enumerate(curves):
+            ax.plot(time_steps, curve[1], color=curve_colors[i], label=curve[0])
+            y_min = np.min([y_min, np.min(curve[1])])
+            y_max = np.max([y_max, np.max(curve[1])])
+
+        ax.set_xlabel('$t$ (years)')
+        ax.set_ylabel('$P(0, t)$')
+        ax.set_xlim([0, time_steps[-1]])
+        ax.set_ylim([y_min, y_max])
+        ax.legend()
+
+        for axis in ['top', 'bottom', 'left', 'right']:
+            ax.spines[axis].set_linewidth(0.5)
+            ax.spines[axis].set_color('black')
+
+        plt.show()

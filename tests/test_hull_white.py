@@ -1,7 +1,7 @@
 import pytest
 import scipy.stats
-
 from src.hullwhite.hullwhite import *
+from src.utils.plot_utils import PlotUtils
 
 
 @pytest.fixture
@@ -161,6 +161,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
     expected = \
         flat_zero_rate_curve.get_discount_factors(simulation_tenors) / \
         flat_zero_rate_curve.get_discount_factors(np.array(current_tenor))
+
     actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
@@ -182,6 +183,7 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
                (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor)) ** 2 *
                (np.exp(2 * alpha * current_tenor) - 1) /
                (4 * alpha ** 3))
+
     actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
@@ -200,6 +202,7 @@ def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_zero_rate_cur
     expected = \
         flat_zero_rate_curve.get_discount_factors(tenors + current_tenor) / \
         flat_zero_rate_curve.get_discount_factors(np.array([current_tenor]))
+
     assert actual[0] == pytest.approx(expected, abs=0.00001)
 
 
@@ -217,6 +220,7 @@ def test_get_discount_factors_with_zero_vol(flat_zero_rate_curve):
     expected = \
         flat_zero_rate_curve.get_discount_factors(tenors + current_tenor) / \
         flat_zero_rate_curve.get_discount_factors(np.array([current_tenor]))
+
     assert actual[0] == pytest.approx(expected, abs=0.0001)
 
 
@@ -234,24 +238,17 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
-    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
 
+    stochastic_discount_factors = np.insert(stochastic_discount_factors, 0, 1)
     time_steps: np.ndarray = \
         np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
-    initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
 
-    fig, ax = plt.subplots()
-    ax.set_title('Comparison of Stochastic and Initial Curve Discount Factors')
-    ax.plot(time_steps, initial_curve_discount_factors, color='#0D8390', label='Initial Curve')
-    ax.plot(time_steps, stochastic_discount_factors, color='#86BC25', label='Stochastic Discount Factors')
-    ax.grid(True)
-    ax.set_facecolor('#AAAAAA')
-    ax.set_xlabel('$t$ (years)')
-    ax.set_ylabel('$P(0, t)$')
-    ax.set_xlim([0, time_steps[-1]])
-    ax.set_ylim([0, 1])
-    ax.legend()
-    plt.show()
+    initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
+    PlotUtils.plot_curves(
+        title='Mean Stochastic Discount Factors vs. Initial Discount Factors',
+        time_steps=time_steps,
+        curves=[('Initial Curve Discount Factors', initial_curve_discount_factors),
+                ('Stochastic Discount Factors', stochastic_discount_factors)])
 
     assert all([a == pytest.approx(b, 0.05)
                 for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
@@ -302,30 +299,18 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
             number_of_time_steps=1,
             method=SimulationMethod.SLOWANALYTICAL,
             plot_results=False)
-    plt.style.use('ggplot')
-    fig, ax = plt.subplots(ncols=1, nrows=1)
-    ax.set_facecolor('#AAAAAA')
-    ax.grid(False)
+
     rates: np.ndarray = short_rates[:, -1]
-    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
-    bin_centers = 0.5 * (bins[1:] + bins[:-1])
-    normal_distribution_mean = \
+    mean: float = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
         scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
-    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
-    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
-    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
-    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
-    ax.annotate(
-        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
-        xy=(0, 0.4),
-        xytext=(-2, 0.2))
-    ax.legend()
-    plt.show()
+
+    std: float = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    PlotUtils.plot_normal_histogram(rates, 'Hull-White $r(t)$ vs. Normal PDF', '$r(t)$', mean, std)
     statistic, p_value = scipy.stats.normaltest(rates)
     assert p_value > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
-    assert rates.mean() == pytest.approx(normal_distribution_mean[0], abs=0.01)
-    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.01)
+    assert rates.mean() == pytest.approx(mean, abs=0.01)
+    assert np.sqrt(rates.var()) == pytest.approx(std, abs=0.01)
 
 
 def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
@@ -343,29 +328,16 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
             plot_results=False)
 
     rates: np.ndarray = short_rates[:, -1]
-    plt.style.use('ggplot')
-    fig, ax = plt.subplots(ncols=1, nrows=1)
-    ax.set_facecolor('#AAAAAA')
-    ax.grid(False)
-    (values, bins, _) = ax.hist(rates, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
-    bin_centers = 0.5 * (bins[1:] + bins[:-1])
-    normal_distribution_mean = \
+    mean: float = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
         scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
-    normal_distribution_std = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
-    pdf = norm.pdf(x=bin_centers, loc=normal_distribution_mean, scale=normal_distribution_std)
-    ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=1, ls='solid')
-    ax.set_title('Comparison of Hull-White $r(t)$ to normal PDF')
-    ax.annotate(
-        '$\mathcal{N}(e^{-\\alpha t}r(0) + \int_0^t e^{\\alpha(s-t)}\\theta(s)ds,\\frac{\\sigma^2}{2\\alpha}\\left(1 - e^{-2\\alpha t} \\right))$',
-        xy=(0, 0.4),
-        xytext=(-2, 0.2))
-    ax.legend()
-    plt.show()
+
+    std: float = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
+    PlotUtils.plot_normal_histogram(rates, 'Hull-White $r(t)$ vs. Normal PDF', '$r(t)$', mean, std)
     statistic, pvalue = scipy.stats.normaltest(rates)
     assert pvalue > 1e-3
-    assert rates.mean() == pytest.approx(normal_distribution_mean[0], abs=0.05)
-    assert np.sqrt(rates.var()) == pytest.approx(normal_distribution_std, abs=0.05)
+    assert rates.mean() == pytest.approx(mean, abs=0.05)
+    assert np.sqrt(rates.var()) == pytest.approx(std, abs=0.05)
 
 
 def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):

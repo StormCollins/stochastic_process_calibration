@@ -1,12 +1,6 @@
 import numpy as np
-from enum import Enum
+from src.compounding_convention import CompoundingConvention
 from scipy.interpolate import interp1d
-
-
-class CompoundingConvention(Enum):
-    Simple = 1
-    NACC = 2
-    NACQ = 3
 
 
 class Curve:
@@ -57,7 +51,7 @@ class Curve:
             self,
             start_tenors: np.ndarray,
             end_tenors: np.ndarray,
-            compounding_convention: CompoundingConvention):
+            compounding_convention: CompoundingConvention) -> np.ndarray:
         """
         Gets the forward rates for between a given array of start tenors and end tenors.
 
