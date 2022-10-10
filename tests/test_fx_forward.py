@@ -96,7 +96,7 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_constant_vol(fx_forwar
 def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_forward_non_constant_vol):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path: str = r'tests/fec_atm_vol_surface.xlsx'
+    excel_file_path: str = r'tests/fec-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     actual: MonteCarloPricingResults = \
