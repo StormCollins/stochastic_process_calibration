@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from src.long_or_short import LongOrShort
 from src.instruments.fx_forward import FxForward
 from src.monte_carlo_results import MonteCarloResults
 
@@ -12,7 +13,9 @@ def fx_forward_constant_vol():
     domestic_interest_rate: float = 0.2
     foreign_interest_rate: float = 0.1
     time_to_maturity: float = 5 / 12
-    return FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
+    long: LongOrShort = LongOrShort.LONG
+    return FxForward(
+        notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity, long)
 
 
 @pytest.fixture
@@ -34,7 +37,9 @@ def fx_forward_non_constant_vol():
     domestic_interest_rate: float = 0.061339421
     foreign_interest_rate: float = 0.020564138
     time_to_maturity: float = 1
-    return FxForward(notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity)
+    long: LongOrShort = LongOrShort.LONG
+    return FxForward(
+        notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity, long)
 
 
 def test_fx_forward_get_analytical_price(fx_forward_constant_vol):

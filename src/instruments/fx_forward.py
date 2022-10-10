@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import norm
+from src.long_or_short import LongOrShort
 from src.monte_carlo_results import MonteCarloResults
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
@@ -20,7 +21,8 @@ class FxForward:
             strike: float,
             domestic_interest_rate: float,
             foreign_interest_rate: float,
-            time_to_maturity: float):
+            time_to_maturity: float,
+            long_or_short: LongOrShort):
         """
         Class constructor.
 
@@ -30,6 +32,7 @@ class FxForward:
         :param domestic_interest_rate: Domestic interest rate.
         :param foreign_interest_rate: Foreign interest rate.
         :param time_to_maturity: Time to maturity.
+        :param long_or_short: long_or_short: Indicates if the option is 'LONG' or 'SHORT'.
         """
         self.notional: float = notional
         self.initial_spot: float = initial_spot
@@ -38,12 +41,21 @@ class FxForward:
         self.foreign_interest_rate: float = foreign_interest_rate
         self.time_to_maturity: float = time_to_maturity
 
+        if long_or_short not in [LongOrShort.LONG, LongOrShort.SHORT]:
+            raise ValueError(f'Unknown direction: {long_or_short}')
+        else:
+            self.long_or_short: LongOrShort = long_or_short
+
     def get_analytical_price(self) -> float:
         """
         Returns the analytical (discounted) price of the FX Forward.
         """
+
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
-        payoff: float = self.notional * (self.initial_spot * np.exp(drift * self.time_to_maturity) - self.strike)
+        direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
+
+        payoff: float = \
+            direction * self.notional * (self.initial_spot * np.exp(drift * self.time_to_maturity) - self.strike)
         discounted_payoff: float = payoff * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
         return discounted_payoff
 
@@ -116,10 +128,10 @@ class FxForward:
                 time_to_maturity=self.time_to_maturity)
 
         paths: np.ndarray = gbm.get_gbm_paths(
-                number_of_paths=number_of_paths,
-                number_of_time_steps=number_of_time_steps,
-                initial_spot=self.initial_spot,
-                time_to_maturity=self.time_to_maturity)
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            initial_spot=self.initial_spot,
+            time_to_maturity=self.time_to_maturity)
         paths = paths * self.notional
 
         if plot_paths:
