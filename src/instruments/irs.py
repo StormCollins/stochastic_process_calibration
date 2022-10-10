@@ -36,13 +36,12 @@ class Irs:
         self.payment_tenors: np.ndarray = np.arange(self.start_tenor, self.end_tenor, self.frequency) + self.frequency
         self.receive_tenors: np.ndarray = self.payment_tenors
 
-    def get_par_swap_rate(self, curve: Curve):
+    def get_par_swap_rate(self, curve: Curve) -> float:
         numerator: float = \
             curve.get_discount_factors(self.start_tenor) - curve.get_discount_factors(self.payment_tenors[-1])
 
-        day_count_fractions: np.ndarray = np.array(self.payment_tenors[1:]) - np.array(self.payment_tenors[0:-1])
+        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
         np.insert(day_count_fractions, 0, self.payment_tenors[0] - self.start_tenor)
         discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
         denominator: float = sum([t * df for t, df in zip(day_count_fractions, discount_factors)])
         return numerator / denominator
-
