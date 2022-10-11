@@ -17,6 +17,7 @@ def fx_forward_constant_vol():
     return FxForward(
         notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity, long)
 
+
 @pytest.fixture
 def fx_forward_non_constant_vol():
     notional: float = 1
@@ -24,7 +25,7 @@ def fx_forward_non_constant_vol():
     strike: float = 52
     domestic_interest_rate: float = 0.2
     foreign_interest_rate: float = 0.1
-    time_to_maturity: float = 5/12
+    time_to_maturity: float = 5 / 12
     long: LongOrShort = LongOrShort.LONG
     return FxForward(
         notional, initial_spot, strike, domestic_interest_rate, foreign_interest_rate, time_to_maturity, long)
@@ -117,7 +118,7 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=True,
+            plot_paths=False,
             show_stats=True)
 
     print()
@@ -126,7 +127,7 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
     print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected: float = fx_forward_non_constant_vol.get_analytical_price()
     print(f'  Analytical: {expected:,.2f}')
-    assert expected == pytest.approx(actual.price, actual.error)
+    assert expected == pytest.approx(actual.price, abs=actual.error)
 
 
 def test_xvalite_fx_forward_get_time_dependent_monte_carlo_pricer(fx_forward_xvalite):
