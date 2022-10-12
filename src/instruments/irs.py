@@ -10,6 +10,7 @@ class Irs:
     """
     A class for representing Interest Rate Swaps (IRS) with identical pay and receive frequencies.
     """
+
     def __init__(
             self,
             notional: float,
@@ -57,16 +58,8 @@ class Irs:
 
     def get_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate the floating leg fair value at current_time_step, using curve.
+
         # Calculate the fixed leg fair value at current_time_step, using curve.
         return 0
 
-    def get_floating_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
-        # Calculate the forward rates (whose end tenors are > current_time_step) using curve.
-        # Calculate forward rates * day count fractions * discount factors
-        # return the above.
-        return 0
 
-    def get_fixed_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
-        # Calculate fixed rate * day count fractions * discount factors
-        # return the above.
-        return 0

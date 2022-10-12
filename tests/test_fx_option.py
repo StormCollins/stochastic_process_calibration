@@ -17,7 +17,7 @@ def fx_option_constant_vol():
     volatility: float = 0.4
     time_to_maturity: float = 5 / 12
     call: CallOrPut = CallOrPut.CALL
-    short: LongOrShort = LongOrShort.SHORT
+    long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
         notional=notional,
@@ -28,7 +28,7 @@ def fx_option_constant_vol():
         volatility=volatility,
         time_to_maturity=time_to_maturity,
         call_or_put=call,
-        long_or_short=short)
+        long_or_short=long)
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ def fx_option_non_constant_vol():
     time_to_maturity: float = 0.5
     volatility: float = 0.154
     call: CallOrPut = CallOrPut.CALL
-    short: LongOrShort = LongOrShort.SHORT
+    long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
         notional=notional,
@@ -63,7 +63,7 @@ def fx_option_non_constant_vol():
         volatility=volatility,
         time_to_maturity=time_to_maturity,
         call_or_put=call,
-        long_or_short=short)
+        long_or_short=long)
 
 
 def test_get_garman_kohlhagen_price(fx_option_constant_vol):
@@ -159,8 +159,6 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
     assert expected_price == pytest.approx(actual.price, actual.error)
 
 
-#TODO: Compare to xVALite.
-#TODO: Give the test a better name.
 def test_xvalite_fx_option_get_time_dependent_monte_carlo_pricer(fx_option_non_constant_vol):
     number_of_paths = 10_000
     number_of_time_steps = 50

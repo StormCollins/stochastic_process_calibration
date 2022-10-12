@@ -44,7 +44,7 @@ def fx_forward_xvalite():
         domestic_interest_rate - Discount Curves
         foreign_interest_rate - Discount Curves
     """
-    notional: float = 1_000_000
+    notional: float = 1
     initial_spot: float = 14.6038
     strike: float = 17
     domestic_interest_rate: float = 0.061339421
@@ -118,7 +118,7 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=False,
+            plot_paths=True,
             show_stats=True)
 
     print()
@@ -132,7 +132,7 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
 
 def test_xvalite_fx_forward_get_time_dependent_monte_carlo_pricer(fx_forward_xvalite):
     number_of_paths: int = 10_000
-    number_of_time_steps: int = 50
+    number_of_time_steps: int = 20
     excel_file_path: str = r'tests/fec-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
@@ -151,4 +151,4 @@ def test_xvalite_fx_forward_get_time_dependent_monte_carlo_pricer(fx_forward_xva
     print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected: float = fx_forward_xvalite.get_analytical_price()
     print(f'  Analytical: {expected:,.2f}')
-    assert expected == pytest.approx(actual.price, actual.error)
+    assert expected == pytest.approx(actual.price, abs=actual.error)

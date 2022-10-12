@@ -117,7 +117,7 @@ class TimeDependentGBM:
         sigma: float = maturity_volatility * np.sqrt(time_to_maturity)
         PlotUtils.plot_lognormal_histogram(
             data=returns,
-            histogram_title='Time-Independent GBM Returns vs. Log-Normal PDF',
+            histogram_title='Time-Dependent GBM Returns vs. Log-Normal PDF',
             histogram_label='Returns Histogram',
             mean=mu,
             variance=sigma)

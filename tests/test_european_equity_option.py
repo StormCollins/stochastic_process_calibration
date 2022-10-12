@@ -12,7 +12,7 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
     initial_spot: float = 50
     strike: float = 52
     interest_rate: float = 0.1
-    volatility: float = 0.1545
+    volatility: float = 0.4
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
     long: LongOrShort = LongOrShort.LONG
@@ -39,10 +39,10 @@ def test_get_black_scholes_price(option_for_constant_vol_tests):
     Call BS price: 5.1911
     """
     actual_price: float = option_for_constant_vol_tests.get_black_scholes_price()
-    expected_price: float = 1.3502939721832
+    expected_price: float = 6.9968175753991
 
-    # Call = 8.7762948121282
-    # Put = 1.3502939721832
+    # Call = 14.4228184153440
+    # Put = 6.9968175753991
     assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
 
@@ -86,7 +86,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
     print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
     print(f'  Black-Scholes Price: {expected_price:,.2f}')
-    assert expected_price == pytest.approx(actual.price, actual.error)
+    assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
 def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
