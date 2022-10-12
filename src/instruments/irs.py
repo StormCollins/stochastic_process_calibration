@@ -81,8 +81,8 @@ class Irs:
 
     def get_fixed_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate fixed rate * day count fractions * discount factors
-        tenors = self.fixed_leg_reset_end_tenors[self.fixed_leg_reset_end_tenors > current_time_step]
+        reset_end_tenors = self.fixed_leg_reset_end_tenors[self.fixed_leg_reset_end_tenors > current_time_step]
         day_count_fractions: np.ndarray = self.fixed_leg_reset_end_tenors - self.fixed_leg_reset_start_tenors
-        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in tenors[1:]])
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in reset_end_tenors[1:]])
         fixed_leg = self.notional * self.fixed_rate * day_count_fractions * discount_factors
         return fixed_leg
