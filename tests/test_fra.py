@@ -1,4 +1,6 @@
-from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
+"""
+FRA Unit tests.
+"""
 from src.instruments.fra import *
 import pytest
 

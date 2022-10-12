@@ -32,14 +32,11 @@ class HullWhite:
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
-        self.numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
+        # Small step used in numerical derivatives.
+        self.numerical_derivative_step_size: float = 0.001
         self.theta_interpolator = self.calibrate_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate = \
-            initial_curve.get_forward_rates(
-                np.array([0]),
-                np.array([self.short_rate_tenor]),
-                CompoundingConvention.NACC)
+        self.initial_short_rate = initial_curve.get_forward_rates(0, self.short_rate_tenor, CompoundingConvention.NACC)
 
     def calibrate_theta(self, theta_times: np.ndarray) -> interp1d:
         """
@@ -156,7 +153,7 @@ class HullWhite:
         # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
         return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
-    def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: np.ndarray) -> float | np.ndarray:
+    def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: float | np.ndarray) -> float | np.ndarray:
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation as per below.
@@ -164,8 +161,8 @@ class HullWhite:
         :math:`P(S,T) = A(S,T) e^{-r(S) B(S,T)}`
 
         :param simulation_tenors: The current tenor(s) in the simulation i.e., corresponding to S in P(S,T).
-        :param end_tenors: Corresponding to T in P(S,T).
-        :return: The 'B'-function value at the given tenors.
+        :param end_tenors: Corresponds to T in P(S,T).
+        :return: The 'B'-function value at the given tenor(s).
         """
         return (1 - np.exp(-self.alpha * (end_tenors - simulation_tenors))) / self.alpha
 
@@ -179,14 +176,13 @@ class HullWhite:
         :return: The 'A'-function value at the given tenors.
         """
         forward_discount_factors: np.ndarray = \
-            self.initial_curve.get_discount_factors(tenors) / \
-            self.initial_curve.get_discount_factors(np.array([simulation_tenors]))
+            self.initial_curve.get_discount_factors(tenors) / self.initial_curve.get_discount_factors(simulation_tenors)
 
         # If sigma is time-independent then we can replace the log discount factor derivatives
         # with the zero rate at that point.
         discount_factor_derivative: float = \
             -1 * self.b_function(simulation_tenors, tenors) * \
-            self.initial_curve.get_log_discount_factor_derivatives(np.array([simulation_tenors]))
+            self.initial_curve.get_log_discount_factor_derivatives(simulation_tenors)
 
         complex_factor: float = \
             self.sigma ** 2 * \

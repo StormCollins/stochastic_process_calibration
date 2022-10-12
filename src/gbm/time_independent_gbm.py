@@ -1,3 +1,6 @@
+"""
+Contains a class for generating GBM paths where volatility is time-independent.
+"""
 import numpy as np
 from scipy.stats import jarque_bera
 from scipy.stats import norm

@@ -1,5 +1,5 @@
 """
-Contains a class for representing Interest Rate Swaps (IRS).
+Contains a class for representing an Interest Rate Swap (IRS).
 """
 from src.curves.curve import *
 from src.enums_and_named_tuples.long_or_short import LongOrShort
@@ -7,7 +7,7 @@ from src.enums_and_named_tuples.long_or_short import LongOrShort
 
 class Irs:
     """
-    A class for representing Interest Rate Swaps (IRS) with identical pay and receive frequencies.
+    A class for representing Interest Rate Swap (IRS) with identical pay and receive frequencies.
     """
 
     def __init__(

@@ -1,3 +1,6 @@
+"""
+Contains a class for generating GBM paths where volatility is time-independent.
+"""
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d

@@ -1,5 +1,5 @@
 """
-This module contains a single class, PlotUtils, with static methods for plotting data.
+Contains a class with static methods for plotting data.
 """
 import matplotlib.pyplot as plt
 import numpy as np

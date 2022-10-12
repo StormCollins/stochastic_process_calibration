@@ -1,3 +1,6 @@
+"""
+Contains an enum for specifying whether an option is a call or a put.
+"""
 from enum import Enum
 
 

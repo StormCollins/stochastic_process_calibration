@@ -1,3 +1,6 @@
+"""
+Contains a class representing an FX (Foreign Exchange) option.
+"""
 import numpy as np
 from scipy.stats import norm
 from src.enums_and_named_tuples.call_or_put import CallOrPut
