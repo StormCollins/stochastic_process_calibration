@@ -1,9 +1,15 @@
+"""
+Contains a class for representing a discount curve.
+"""
 import numpy as np
 from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 from scipy.interpolate import interp1d
 
 
 class Curve:
+    """
+    A class for representing a discount curve.
+    """
     numerical_derivative_step_size: float = 0.000001
     tenors: np.ndarray
     discount_factors: np.ndarray
@@ -45,13 +51,13 @@ class Curve:
         :return: An array of forward discount factor(s).
         """
         return self.discount_factor_interpolator(np.array(end_tenors)) / \
-               self.discount_factor_interpolator(np.array(start_tenors))
+            self.discount_factor_interpolator(np.array(start_tenors))
 
     def get_forward_rates(
             self,
-            start_tenors: np.ndarray | float,
-            end_tenors: np.ndarray | float,
-            compounding_convention: CompoundingConvention) -> np.ndarray:
+            start_tenors: float | np.ndarray,
+            end_tenors: float | np.ndarray,
+            compounding_convention: CompoundingConvention) -> float | np.ndarray:
         """
         Gets the forward rates for between a given array of start tenors and end tenors.
 

@@ -1,11 +1,14 @@
-from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
+"""
+Contains a class for representing and pricing a FRA (Forward Rate Agreement).
+"""
+import numpy as np
+
 from src.hullwhite.hullwhite import *
 
 
 class Fra:
     """
-    A class for creating and pricing a FRA (Forward Rate Agreement).
-
+    A class for representing and pricing a FRA (Forward Rate Agreement).
     """
 
     def __init__(self, notional: float, strike: float, start_tenor: float, end_tenor: float):
@@ -39,7 +42,7 @@ class Fra:
         :param number_of_paths:
         :param number_of_time_steps:
         :param short_rate_tenor:
-        :return:
+        :return: Monte Carlo (mean) values and error (standard deviation) per time step.
         """
         hw: HullWhite = HullWhite(alpha, sigma, curve, short_rate_tenor)
 
@@ -47,22 +50,24 @@ class Fra:
             hw.simulate(
                 self.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
-        start_discount_factors = \
+        start_discount_factors: np.ndarray = \
             hw.a_function(tenors, np.array([self.start_tenor])) * \
             np.exp(-1 * short_rates * hw.b_function(tenors, np.array([self.start_tenor])))
 
-        end_discount_factors = \
+        end_discount_factors: np.ndarray = \
             hw.a_function(tenors, np.array([self.end_tenor])) * \
             np.exp(-1 * short_rates * hw.b_function(tenors, np.array([self.end_tenor])))
 
         # TODO: Generalise this into a function - get forward rates.
-        forward_rates = \
+        forward_rates: np.ndarray = \
             (1 / (self.end_tenor - self.start_tenor)) * ((start_discount_factors / end_discount_factors) - 1)
 
-        values = self.notional * (forward_rates - self.strike) * (self.end_tenor - self.start_tenor) * stochastic_dfs
+        values: np.ndarray = \
+            self.notional * (forward_rates - self.strike) * (self.end_tenor - self.start_tenor) * stochastic_dfs
+
         return np.mean(values, 0), np.sqrt(np.var(values, 0) / number_of_paths)
 
-    def get_fair_forward_rate(self, curve: Curve):
+    def get_fair_forward_rate(self, curve: Curve) -> float:
         """
         Gets the FRA fair forward rate.
 
