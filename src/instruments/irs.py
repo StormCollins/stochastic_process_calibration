@@ -62,4 +62,19 @@ class Irs:
         # Calculate the fixed leg fair value at current_time_step, using curve.
         return 0
 
+    def get_floating_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
+        # Calculate the forward rates (whose end tenors are > current_time_step) using curve.
+        tenors = self.receive_tenors > current_time_step
+        forward_rates = Curve.get_forward_rates(curve, tenors[0], tenors[-1], CompoundingConvention.NACQ)
+        # Calculate forward rates * day count fractions * discount factors
+        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
+        floating_leg = forward_rates * day_count_fractions * discount_factors
+        return floating_leg
 
+    def get_fixed_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
+        # Calculate fixed rate * day count fractions * discount factors
+        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
+        fixed_leg = self.fixed_rate * day_count_fractions * discount_factors
+        return fixed_leg
