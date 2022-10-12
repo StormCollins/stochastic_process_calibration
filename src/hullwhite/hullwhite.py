@@ -66,6 +66,7 @@ class HullWhite:
         # TODO: Check extrapolation.
         theta_interpolator: interp1d = \
             interp1d(theta_times, np.log(thetas), kind='linear', fill_value='extrapolate')
+
         return theta_interpolator
 
     def theta(self, tenor: float) -> float:
@@ -150,43 +151,46 @@ class HullWhite:
         """
         dt = time_step_size
         random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
+        # TODO: Storm vs. Massi's approach.
         # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
         return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
-    def b_function(self, current_tenor, tenors):
+    def b_function(self, simulation_tenors: np.ndarray, end_tenors: np.ndarray) -> np.ndarray:
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
-        factors in the Hull-White simulation.
+        factors in the Hull-White simulation as per below.
 
-        :param tenors: The tenors at which we'd like to calculate the 'B'-function.
-        :param current_tenor: The current volatility_tenor in the simulation.
+        :math:`P(S,T) = A(S,T) e^{-r(S) B(S,T)}`
+
+        :param simulation_tenors: The current tenor(s) in the simulation i.e., corresponding to S in P(S,T).
+        :param end_tenors: Corresponding to T in P(S,T).
         :return: The 'B'-function value at the given tenors.
         """
-        return (1 - np.exp(-self.alpha * (tenors - current_tenor))) / self.alpha
+        return (1 - np.exp(-self.alpha * (end_tenors - simulation_tenors))) / self.alpha
 
-    def a_function(self, current_tenor: float, tenors: np.ndarray) -> np.ndarray:
+    def a_function(self, simulation_tenors: np.ndarray, tenors: np.ndarray) -> np.ndarray:
         """
         Used to calculate the 'A'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation.
 
-        :param tenors: The tenors at which we'd like to calculate the 'A'-function.
-        :param current_tenor: The current tenor in the simulation.
+        :param simulation_tenors: The current tenor(s) in the simulation i.e., corresponding to S in P(S,T).
+        :param tenors: Corresponding to T in P(S,T).
         :return: The 'A'-function value at the given tenors.
         """
         forward_discount_factors: np.ndarray = \
             self.initial_curve.get_discount_factors(tenors) / \
-            self.initial_curve.get_discount_factors(np.array([current_tenor]))
+            self.initial_curve.get_discount_factors(np.array([simulation_tenors]))
 
         # If sigma is time-independent then we can replace the log discount factor derivatives
         # with the zero rate at that point.
         discount_factor_derivative: float = \
-            -1 * self.b_function(current_tenor, tenors) * \
-            self.initial_curve.get_log_discount_factor_derivatives(np.array([current_tenor]))
+            -1 * self.b_function(simulation_tenors, tenors) * \
+            self.initial_curve.get_log_discount_factor_derivatives(np.array([simulation_tenors]))
 
         complex_factor: float = \
             self.sigma ** 2 * \
-            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * current_tenor)) ** 2 * \
-            (np.exp(2 * self.alpha * current_tenor) - 1) / \
+            (np.exp(-1 * self.alpha * tenors) - np.exp(-1 * self.alpha * simulation_tenors)) ** 2 * \
+            (np.exp(2 * self.alpha * simulation_tenors) - 1) / \
             (4 * self.alpha ** 3)
 
         return forward_discount_factors * np.exp(discount_factor_derivative - complex_factor)
@@ -194,19 +198,19 @@ class HullWhite:
     def get_discount_curve(
             self,
             short_rate: float,
-            current_tenor: float) -> Curve:
+            simulation_tenors: np.ndarray) -> Curve:
         """
         Gets the discount curve at the given time-step in the Hull-White simulation.
 
         :param short_rate: The short rate at the current point in the Hull-White simulation.
-        :param current_tenor: The current time point in the Hull-White simulation.
-        :return: A discount curve at the current time point in the Hull-White simulation.
+        :param simulation_tenors: The time point(s) in the Hull-White simulation.
+        :return: A discount curve at the time point(s) in the Hull-White simulation.
         """
         tenors = self.initial_curve.tenors
-        b = self.b_function(current_tenor, tenors)
-        a = self.a_function(current_tenor, tenors)
+        b = self.b_function(simulation_tenors, tenors)
+        a = self.a_function(simulation_tenors, tenors)
         discount_factors: np.ndarray = a * np.transpose(np.exp(-np.outer(b, short_rate)))
-        current_tenors = tenors[tenors >= current_tenor] - current_tenor
+        current_tenors = tenors[tenors >= simulation_tenors] - simulation_tenors
         current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
 

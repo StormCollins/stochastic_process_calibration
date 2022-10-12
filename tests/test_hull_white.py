@@ -162,7 +162,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
         flat_zero_rate_curve.get_discount_factors(simulation_tenors) / \
         flat_zero_rate_curve.get_discount_factors(np.array(current_tenor))
 
-    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
+    actual: np.ndarray = hw.a_function(simulation_tenors=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
@@ -184,7 +184,7 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
                (np.exp(2 * alpha * current_tenor) - 1) /
                (4 * alpha ** 3))
 
-    actual: np.ndarray = hw.a_function(current_tenor=0.25, tenors=simulation_tenors)
+    actual: np.ndarray = hw.a_function(simulation_tenors=0.25, tenors=simulation_tenors)
     assert actual == pytest.approx(expected, abs=0.0001)
 
 
@@ -195,7 +195,7 @@ def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_zero_rate_cur
     alpha = 1_000
     sigma = 0.1
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
-    curve = hw.get_discount_curve(short_rate=0.1, current_tenor=0.25)
+    curve = hw.get_discount_curve(short_rate=0.1, simulation_tenors=0.25)
     tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
     actual = curve.get_discount_factors(tenors)
     current_tenor = 0.25
@@ -213,7 +213,7 @@ def test_get_discount_factors_with_zero_vol(flat_zero_rate_curve):
     alpha = 0.1
     sigma = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
-    curve = hw.get_discount_curve(short_rate=0.1, current_tenor=0.25)
+    curve = hw.get_discount_curve(short_rate=0.1, simulation_tenors=0.25)
     tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
     actual = curve.get_discount_factors(tenors)
     current_tenor = 0.25

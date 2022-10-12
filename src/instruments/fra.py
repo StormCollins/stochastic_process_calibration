@@ -34,9 +34,6 @@ class Fra:
         tenors, short_rates, stochastic_dfs = \
             hw.simulate(self.start_tenor, number_of_paths, number_of_time_steps, SimulationMethod.SLOWANALYTICAL)
 
-        # discount_factors = \
-        #     hw.a_function(self.start_tenor, np.array([self.end_tenor])) * \
-        #     np.exp(-1 * short_rates * hw.b_function(self.start_tenor, np.array([self.end_tenor])))
         start_discount_factors = \
             hw.a_function(tenors, np.array([self.start_tenor])) * \
             np.exp(-1 * short_rates * hw.b_function(tenors, np.array([self.start_tenor])))
