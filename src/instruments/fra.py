@@ -34,22 +34,20 @@ class Fra:
         tenors, short_rates, stochastic_dfs = \
             hw.simulate(self.start_tenor, number_of_paths, number_of_time_steps, SimulationMethod.SLOWANALYTICAL)
 
-        discount_factors = \
-            hw.a_function(self.start_tenor, np.array([self.end_tenor])) * \
-            np.exp(-1 * short_rates * hw.b_function(self.start_tenor, np.array([self.end_tenor])))
+        # discount_factors = \
+        #     hw.a_function(self.start_tenor, np.array([self.end_tenor])) * \
+        #     np.exp(-1 * short_rates * hw.b_function(self.start_tenor, np.array([self.end_tenor])))
+        start_discount_factors = \
+            hw.a_function(tenors, np.array([self.start_tenor])) * \
+            np.exp(-1 * short_rates * hw.b_function(tenors, np.array([self.start_tenor])))
 
-        # TODO: Replace '1 / discount_factors' with 'start_discount_factors / end_discount_factors'
-        forward_rates = (1 / (self.end_tenor - self.start_tenor)) * ((1 / discount_factors) - 1)
-        f = forward_rates[:, -1]
+        end_discount_factors = \
+            hw.a_function(tenors, np.array([self.end_tenor])) * \
+            np.exp(-1 * short_rates * hw.b_function(tenors, np.array([self.end_tenor])))
 
-        # plt.style.use('ggplot')
-        # fig, ax = plt.subplots(ncols=1, nrows=1)
-        # ax.set_facecolor('#AAAAAA')
-        # ax.grid(False)
-        # rates: np.ndarray = short_rates[:, -1]
-        # (values, bins, _) = ax.hist(f, bins=75, density=True, label='Histogram of $r(t)$', color='#6C3D91')
-        # plt.show()
-        # bin_centers = 0.5 * (bins[1:] + bins[:-1])
+        # TODO: Generalise this into a function - get forward rates.
+        forward_rates = \
+            (1 / (self.end_tenor - self.start_tenor)) * ((start_discount_factors / end_discount_factors) - 1)
 
         values = self.notional * (forward_rates - self.strike) * (self.end_tenor - self.start_tenor) * stochastic_dfs
         return np.mean(values, 0), np.sqrt(np.var(values, 0) / number_of_paths)
