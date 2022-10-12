@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from src.call_or_put import CallOrPut
+from src.enums_and_named_tuples.call_or_put import CallOrPut
 from src.instruments.european_equity_option import EuropeanEquityOption
-from src.long_or_short import LongOrShort
-from src.monte_carlo_pricing_results import MonteCarloPricingResults
+from src.enums_and_named_tuples.long_or_short import LongOrShort
+from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
 
 
 @pytest.fixture

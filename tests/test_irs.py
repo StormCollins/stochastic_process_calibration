@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from src.curves.curve import Curve
 from src.instruments.irs import Irs
-from src.long_or_short import LongOrShort
-from src.compounding_convention import CompoundingConvention
+from src.enums_and_named_tuples.long_or_short import LongOrShort
+from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 
 
 @pytest.fixture

@@ -1,11 +1,15 @@
 import pytest
 import scipy.stats
+from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 
 
 @pytest.fixture
 def curve_tenors():
+    """
+    Curve tenors.
+    """
     return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
 
 
@@ -13,9 +17,6 @@ def curve_tenors():
 def flat_zero_rate_curve(curve_tenors):
     """
     Example flat zero rate curve (rate = 10%).
-
-    :param curve_tenors: Curve tenors.
-    :return: Flat zero rate curve.
     """
     rate = 0.1
     discount_factors: np.ndarray = np.array([np.exp(-rate * t) for t in curve_tenors])
@@ -26,8 +27,6 @@ def flat_zero_rate_curve(curve_tenors):
 def real_zero_rate_curve():
     """
     Example real world zero rate curve.
-
-    :return: Real world curve.
     """
     tenors: np.ndarray = \
         np.array([
@@ -235,7 +234,9 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     number_of_paths: int = 100_000
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
     hw = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
-    tenors, rates, stochastic_dfs = hw.simulate(maturity, number_of_paths, number_of_time_steps, method=SimulationMethod.SLOWANALYTICAL)
+    tenors, rates, stochastic_dfs = \
+        hw.simulate(maturity, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
 
@@ -259,12 +260,17 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#r_t
     Under these conditions the simulated short rate doesn't deviate from the initial short rate.
     """
-    maturity = 5
-    alpha = 0.00001
-    sigma = 0.0
+    maturity: float = 5
+    alpha: float = 0.00001
+    sigma: float = 0.0
     hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.1)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(maturity, number_of_paths=2, number_of_time_steps=5, method=SimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=2,
+            number_of_time_steps=5,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+
     for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
 
@@ -297,7 +303,7 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=1,
-            method=SimulationMethod.SLOWANALYTICAL,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 
     rates: np.ndarray = short_rates[:, -1]
@@ -324,7 +330,7 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=1,
-            method=SimulationMethod.SLOWANALYTICAL,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 
     rates: np.ndarray = short_rates[:, -1]

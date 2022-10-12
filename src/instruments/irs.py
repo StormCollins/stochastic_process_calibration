@@ -1,9 +1,8 @@
 """
 Contains a class for representing Interest Rate Swaps (IRS).
 """
-import numpy as np
 from src.curves.curve import *
-from src.long_or_short import LongOrShort
+from src.enums_and_named_tuples.long_or_short import LongOrShort
 
 
 class Irs:

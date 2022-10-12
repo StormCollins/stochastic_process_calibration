@@ -1,5 +1,5 @@
 import numpy as np
-from src.compounding_convention import CompoundingConvention
+from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 from scipy.interpolate import interp1d
 
 
@@ -49,8 +49,8 @@ class Curve:
 
     def get_forward_rates(
             self,
-            start_tenors: np.ndarray,
-            end_tenors: np.ndarray,
+            start_tenors: np.ndarray | float,
+            end_tenors: np.ndarray | float,
             compounding_convention: CompoundingConvention) -> np.ndarray:
         """
         Gets the forward rates for between a given array of start tenors and end tenors.
@@ -64,14 +64,14 @@ class Curve:
         end_discount_factors: np.ndarray = self.get_discount_factors(end_tenors)
         if compounding_convention == compounding_convention.NACC:
             return (-1 / (end_tenors - start_tenors)) * np.log(end_discount_factors / start_discount_factors)
-        if compounding_convention == compounding_convention.NACQ:
+        elif compounding_convention == compounding_convention.NACQ:
             return 4 * ((start_discount_factors / end_discount_factors) ** (4 * (end_tenors - start_tenors)) - 1)
         elif compounding_convention == compounding_convention.Simple:
             return (1 / (end_tenors - start_tenors)) * (start_discount_factors / end_discount_factors - 1)
 
     def get_zero_rates(
             self,
-            tenors: np.ndarray,
+            tenors: float | np.ndarray,
             compounding_convention: CompoundingConvention = CompoundingConvention.NACC) -> np.ndarray:
         """
         Gets the zero rates (NACC by default) for a specified array of tenors.
@@ -89,7 +89,7 @@ class Curve:
         else:
             raise ValueError(f'Invalid compounding convention: {compounding_convention}')
 
-    def get_discount_factor_derivatives(self, tenors: np.ndarray):
+    def get_discount_factor_derivatives(self, tenors: float | np.ndarray):
         """
         Gets the derivative values of the discount factors at the given tenors.
 

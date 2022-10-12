@@ -1,14 +1,21 @@
+from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 from src.instruments.fra import *
 import pytest
 
 
 @pytest.fixture
 def curve_tenors():
+    """
+    Curve tenors.
+    """
     return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
 
 
 @pytest.fixture
 def flat_zero_rate_curve(curve_tenors):
+    """
+    Flat zero rate curve.
+    """
     rate = 0.1
     discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)
@@ -16,6 +23,9 @@ def flat_zero_rate_curve(curve_tenors):
 
 @pytest.fixture
 def atm_fra(flat_zero_rate_curve):
+    """
+    At-the-money (ATM) FRA.
+    """
     notional: float = 1_000_000
     strike: float = 0.10126
     start_tenor = 1
@@ -25,6 +35,9 @@ def atm_fra(flat_zero_rate_curve):
 
 @pytest.fixture
 def hw(flat_zero_rate_curve):
+    """
+    Hull-White process for a flat zero rate curve.
+    """
     short_rate_tenor: float = 0.01
     alpha: float = 0.1
     sigma: float = 0.1
@@ -33,7 +46,12 @@ def hw(flat_zero_rate_curve):
 
 def test_get_fair_forward_rate(flat_zero_rate_curve, atm_fra):
     actual: float = atm_fra.get_fair_forward_rate(flat_zero_rate_curve)
-    expected: float = flat_zero_rate_curve.get_forward_rates(atm_fra.start_tenor, atm_fra.end_tenor, CompoundingConvention.Simple)
+    expected: float = \
+        float(flat_zero_rate_curve.get_forward_rates(
+            start_tenors=atm_fra.start_tenor,
+            end_tenors=atm_fra.end_tenor,
+            compounding_convention=CompoundingConvention.Simple))
+
     assert actual == pytest.approx(expected, 0.0001)
 
 
@@ -65,7 +83,8 @@ def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hw):
 
     np.random.seed(999)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(atm_fra.start_tenor, number_of_paths, number_of_time_steps, SimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            atm_fra.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     dt = atm_fra.start_tenor / number_of_time_steps
     stochastic_discount_factors = np.prod(np.exp(-1 * short_rates * dt), 1)

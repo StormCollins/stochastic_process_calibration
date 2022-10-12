@@ -1,3 +1,4 @@
+from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 from src.hullwhite.hullwhite import *
 
 
@@ -29,10 +30,22 @@ class Fra:
             number_of_paths: int,
             number_of_time_steps: int,
             short_rate_tenor: float = 0.01) -> [np.ndarray, np.ndarray]:
+        """
+        Gets the Monte Carlo values of the FRA at the various simulation time steps.
+
+        :param alpha:
+        :param sigma:
+        :param curve:
+        :param number_of_paths:
+        :param number_of_time_steps:
+        :param short_rate_tenor:
+        :return:
+        """
         hw: HullWhite = HullWhite(alpha, sigma, curve, short_rate_tenor)
 
         tenors, short_rates, stochastic_dfs = \
-            hw.simulate(self.start_tenor, number_of_paths, number_of_time_steps, SimulationMethod.SLOWANALYTICAL)
+            hw.simulate(
+                self.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
         start_discount_factors = \
             hw.a_function(tenors, np.array([self.start_tenor])) * \

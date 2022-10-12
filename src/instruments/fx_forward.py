@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import norm
-from src.monte_carlo_pricing_results import MonteCarloPricingResults
-from src.long_or_short import LongOrShort
+from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
+from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 

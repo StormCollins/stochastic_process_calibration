@@ -1,21 +1,18 @@
-from src.curves.curve import *
-import numpy as np
-from enum import Enum
-import scipy.integrate
-from scipy.interpolate import interp1d
-from scipy.stats import norm
-import math
+"""
+Contains a class representing a Hull-White stochastic process.
+"""
 import matplotlib.pyplot as plt
+import scipy.integrate
 import seaborn as sns
-
-
-class SimulationMethod(Enum):
-    SLOWANALYTICAL = 1
-    FASTANALYTICAL = 2
-    SLOWAPPROXIMATE = 3
+from scipy.stats import norm
+from src.curves.curve import *
+from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 
 
 class HullWhite:
+    """
+    A class representing a Hull-White stochastic process.
+    """
     current_discount_factor_interpolator: interp1d
 
     def __init__(
@@ -83,7 +80,7 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: SimulationMethod = SimulationMethod.SLOWANALYTICAL,
+            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
@@ -102,13 +99,13 @@ class HullWhite:
         # time_steps: np.ndarray = np.tile(np.linspace(0, maturity, short_rates.shape[1]), (number_of_paths, 1))
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
-        if method == SimulationMethod.SLOWAPPROXIMATE:
+        if method == HullWhiteSimulationMethod.SLOWAPPROXIMATE:
             for j in range(number_of_time_steps):
                 z: np.ndarray = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
-                    self.sigma * z * math.sqrt(dt)
-        elif method == SimulationMethod.SLOWANALYTICAL:
+                    self.sigma * z * np.sqrt(dt)
+        elif method == HullWhiteSimulationMethod.SLOWANALYTICAL:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * dt) * short_rates[:, j] + \
@@ -140,7 +137,11 @@ class HullWhite:
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
 
-    def exponential_stochastic_integral(self, maturity: float, time_step_size: float, number_of_paths: int):
+    def exponential_stochastic_integral(
+            self,
+            maturity: float,
+            time_step_size: float,
+            number_of_paths: int) -> np.ndarray:
         """
         Calculates the stochastic integral of the exponential term in the Hull-White analytical formula.
 
@@ -151,11 +152,11 @@ class HullWhite:
         """
         dt = time_step_size
         random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
-        # TODO: Storm vs. Massi's approach.
+        # TODO: Storm vs. Massi's approach - add toggle to switch between the two.
         # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
         return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
-    def b_function(self, simulation_tenors: np.ndarray, end_tenors: np.ndarray) -> np.ndarray:
+    def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: np.ndarray) -> float | np.ndarray:
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation as per below.
@@ -168,7 +169,7 @@ class HullWhite:
         """
         return (1 - np.exp(-self.alpha * (end_tenors - simulation_tenors))) / self.alpha
 
-    def a_function(self, simulation_tenors: np.ndarray, tenors: np.ndarray) -> np.ndarray:
+    def a_function(self, simulation_tenors: float | np.ndarray, tenors: float | np.ndarray) -> float | np.ndarray:
         """
         Used to calculate the 'A'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation.
@@ -195,6 +196,7 @@ class HullWhite:
 
         return forward_discount_factors * np.exp(discount_factor_derivative - complex_factor)
 
+    # TODO: Check if this function is used.
     def get_discount_curve(
             self,
             short_rate: float,
@@ -214,22 +216,25 @@ class HullWhite:
         current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]
         return Curve(current_tenors, current_discount_factors)
 
-    def get_discount_factors(self, tenors: np.ndarray):
+    # TODO: Check if this function is used.
+    def get_discount_factors(self, tenors: float | np.ndarray) -> float | np.ndarray:
         """
+        Gets the discount factors
 
         :param tenors:
         :return:
         """
         return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)
 
+    # TODO: Check if this function is used.
     @staticmethod
-    def plot_paths(time_steps, paths):
+    def plot_paths(time_steps, paths) -> None:
         """
         Plots the paths from Monte Carlo simulation vs. the time steps.
 
         :param time_steps: The time steps.
         :param paths: The output paths from the simulation.
-        :return:
+        :return: None
         """
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
         sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])

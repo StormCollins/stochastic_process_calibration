@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from src.gbm.time_independent_gbm import TimeIndependentGBM
-from src.path_statistics import PathStatistics
+from src.enums_and_named_tuples.path_statistics import PathStatistics
 
 
 def test_distribution():

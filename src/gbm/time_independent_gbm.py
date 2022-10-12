@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import jarque_bera
 from scipy.stats import norm
-from src.path_statistics import PathStatistics
+from src.enums_and_named_tuples.path_statistics import PathStatistics
 from src.utils.plot_utils import PlotUtils
 
 

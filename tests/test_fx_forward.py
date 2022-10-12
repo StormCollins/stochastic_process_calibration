@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
-from src.long_or_short import LongOrShort
+from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.instruments.fx_forward import FxForward
-from src.monte_carlo_pricing_results import MonteCarloPricingResults
+from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
 
 
 @pytest.fixture
