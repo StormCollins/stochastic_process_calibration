@@ -47,4 +47,6 @@ def test_get_par_swap_rate_for_curve(example_irs, curve_rates):
 
 def test_irs_fixed_rate(flat_curve):
     irs = Irs(1_000_000, 0.0, 1.0, 0.25, LongOrShort.LONG, None, flat_curve)
-
+    expected: float = irs.get_par_swap_rate(flat_curve)
+    actual: float = irs.fixed_rate
+    assert actual == pytest.approx(expected, abs=0.01)
