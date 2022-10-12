@@ -36,8 +36,12 @@ class Irs:
         self.start_tenor: float = start_tenor
         self.end_tenor: float = end_tenor
         self.frequency: float = frequency
-        self.payment_tenors: np.ndarray = np.arange(self.start_tenor, self.end_tenor, self.frequency) + self.frequency
-        self.receive_tenors: np.ndarray = self.payment_tenors
+        self.long_or_short: LongOrShort = long_or_short
+        self.fixed_leg_reset_start_tenors: np.ndarray = np.arange(self.start_tenor, self.end_tenor, self.frequency)
+        self.fixed_leg_reset_end_tenors: np.ndarray = \
+            np.arange(self.start_tenor, self.end_tenor, self.frequency) + self.frequency
+        self.floating_leg_reset_start_tenors: np.ndarray = self.fixed_leg_reset_start_tenors
+        self.floating_leg_reset_end_tenors: np.ndarray = self.fixed_leg_reset_end_tenors
 
         if fixed_rate is not None:
             self.fixed_rate = fixed_rate
@@ -48,33 +52,37 @@ class Irs:
 
     def get_par_swap_rate(self, curve: Curve) -> float:
         numerator: float = \
-            curve.get_discount_factors(self.start_tenor) - curve.get_discount_factors(self.payment_tenors[-1])
+            curve.get_discount_factors(self.start_tenor) - curve.get_discount_factors(self.fixed_leg_reset_end_tenors[-1])
 
-        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
-        np.insert(day_count_fractions, 0, self.payment_tenors[0] - self.start_tenor)
-        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
+        day_count_fractions: np.ndarray = self.fixed_leg_reset_end_tenors - self.fixed_leg_reset_start_tenors
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.fixed_leg_reset_end_tenors])
         denominator: float = sum([t * df for t, df in zip(day_count_fractions, discount_factors)])
         return numerator / denominator
 
     def get_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate the floating leg fair value at current_time_step, using curve.
-
         # Calculate the fixed leg fair value at current_time_step, using curve.
-        return 0
+        floating_leg_value = self.get_floating_leg_fair_value(current_time_step, curve)
+        fixed_leg_value = self.get_fixed_leg_fair_value(current_time_step, curve)
+        if self.long_or_short == LongOrShort.LONG:
+            return floating_leg_value - fixed_leg_value
+        else:
+            return fixed_leg_value - floating_leg_value
 
     def get_floating_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate the forward rates (whose end tenors are > current_time_step) using curve.
-        tenors = self.receive_tenors > current_time_step
-        forward_rates = Curve.get_forward_rates(curve, tenors[0], tenors[-1], CompoundingConvention.NACQ)
+        reset_end_tenors = self.floating_leg_reset_end_tenors[self.floating_leg_reset_end_tenors > current_time_step]
+        forward_rates = Curve.get_forward_rates(curve, reset_end_tenors[:-1], reset_end_tenors, CompoundingConvention.NACQ)
+        day_count_fractions: np.ndarray = self.floating_leg_reset_end_tenors - self.floating_leg_reset_start_tenors
         # Calculate forward rates * day count fractions * discount factors
-        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
-        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
-        floating_leg = forward_rates * day_count_fractions * discount_factors
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in reset_end_tenors])
+        floating_leg = self.notional * forward_rates * day_count_fractions * discount_factors
         return floating_leg
 
     def get_fixed_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate fixed rate * day count fractions * discount factors
-        day_count_fractions: np.ndarray = self.payment_tenors - np.insert(self.start_tenor, 1, self.payment_tenors[:-1])
-        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in self.payment_tenors])
-        fixed_leg = self.fixed_rate * day_count_fractions * discount_factors
+        tenors = self.fixed_leg_reset_end_tenors[self.fixed_leg_reset_end_tenors > current_time_step]
+        day_count_fractions: np.ndarray = self.fixed_leg_reset_end_tenors - self.fixed_leg_reset_start_tenors
+        discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in tenors[1:]])
+        fixed_leg = self.notional * self.fixed_rate * day_count_fractions * discount_factors
         return fixed_leg
