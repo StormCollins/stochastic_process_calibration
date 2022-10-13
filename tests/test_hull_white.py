@@ -314,7 +314,8 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     std: float = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
     PlotUtils.plot_normal_histogram(rates, 'Hull-White $r(t)$ vs. Normal PDF', '$r(t)$', mean, std)
     statistic, p_value = scipy.stats.normaltest(rates)
-    assert p_value > 1e-3  # Null hypothesis (that rates are normal) cannot be rejected.
+    # Null hypothesis (that rates are normal) cannot be rejected.
+    assert p_value > 1e-3
     assert rates.mean() == pytest.approx(mean, abs=0.01)
     assert np.sqrt(rates.var()) == pytest.approx(std, abs=0.01)
 

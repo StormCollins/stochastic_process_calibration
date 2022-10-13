@@ -104,7 +104,7 @@ class TimeDependentGBM:
         """
         time_steps = np.linspace(0, time_to_maturity, paths.shape[1])
         maturity_volatility: float = self.get_time_dependent_vol(time_to_maturity)
-        PlotUtils.plot_monte_carlo_paths(time_steps, paths, self.drift, 'Time-Dependent GBM Paths')
+        PlotUtils.plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths', self.drift)
         log_returns = np.log(paths[:, -1] / paths[:, 0])
         mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * time_to_maturity
         sigma: float = maturity_volatility * np.sqrt(time_to_maturity)

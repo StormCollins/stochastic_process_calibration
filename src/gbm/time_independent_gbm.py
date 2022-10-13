@@ -55,7 +55,7 @@ class TimeIndependentGBM:
            This plot shows that the Geometric Brownian Motion log-returns are normally distributed.
         """
         time_steps = np.linspace(0, time_to_maturity, paths.shape[1])
-        PlotUtils.plot_monte_carlo_paths(time_steps, paths, self.drift, 'Time-Independent GBM Paths')
+        PlotUtils.plot_monte_carlo_paths(time_steps, paths, 'Time-Independent GBM Paths', self.drift)
 
         log_returns = np.log(paths[:, -1] / paths[:, 0])
         mu: float = (self.drift - 0.5 * self.volatility ** 2) * time_to_maturity

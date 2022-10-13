@@ -1,9 +1,8 @@
 """
 Contains a class for representing and pricing a FRA (Forward Rate Agreement).
 """
-import numpy as np
-
 from src.hullwhite.hullwhite import *
+from src.utils.plot_utils import PlotUtils
 
 
 class Fra:
@@ -29,32 +28,36 @@ class Fra:
             self,
             alpha: float,
             sigma: float,
-            curve: Curve,
+            initial_curve: Curve,
             number_of_paths: int,
             number_of_time_steps: int,
-            short_rate_tenor: float = 0.01) -> [np.ndarray, np.ndarray]:
+            short_rate_tenor: float = 0.01,
+            plot_paths: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Gets the Monte Carlo values of the FRA at the various simulation time steps.
 
-        :param alpha:
-        :param sigma:
-        :param curve:
-        :param number_of_paths:
-        :param number_of_time_steps:
-        :param short_rate_tenor:
+        :param alpha: The mean reversion speed for the Hull-White simulation.
+        :param sigma: The (constant) volatility for the Hull-White simulation.
+        :param initial_curve: Initial curve.
+        :param number_of_paths: Number of paths in Monte Carlo simulation.
+        :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
+        :param short_rate_tenor: The tenor of the underlying short rate to simulate.
+        :param plot_paths: Plot the values of the FRA paths. Default = False.
         :return: Monte Carlo (mean) values and error (standard deviation) per time step.
         """
-        hw: HullWhite = HullWhite(alpha, sigma, curve, short_rate_tenor)
+        hw: HullWhite = HullWhite(alpha, sigma, initial_curve, short_rate_tenor)
 
-        tenors, short_rates, stochastic_dfs = \
+        simulation_tenors, short_rates, stochastic_dfs = \
             hw.simulate(
                 self.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
         start_discount_factors: np.ndarray = \
-            hw.a_function(tenors, self.start_tenor) * np.exp(-1 * short_rates * hw.b_function(tenors, self.start_tenor))
+            hw.a_function(simulation_tenors, self.start_tenor) * \
+            np.exp(-1 * short_rates * hw.b_function(simulation_tenors, self.start_tenor))
 
         end_discount_factors: np.ndarray = \
-            hw.a_function(tenors, self.end_tenor) * np.exp(-1 * short_rates * hw.b_function(tenors, self.end_tenor))
+            hw.a_function(simulation_tenors, self.end_tenor) * \
+            np.exp(-1 * short_rates * hw.b_function(simulation_tenors, self.end_tenor))
 
         # TODO: Generalise this into a function - get forward rates.
         forward_rates: np.ndarray = \
@@ -62,6 +65,9 @@ class Fra:
 
         values: np.ndarray = \
             self.notional * (forward_rates - self.strike) * (self.end_tenor - self.start_tenor) * stochastic_dfs
+
+        if plot_paths:
+            PlotUtils.plot_monte_carlo_paths(simulation_tenors, values, "Simulated FRA Values")
 
         return np.mean(values, 0), np.sqrt(np.var(values, 0) / number_of_paths)
 
