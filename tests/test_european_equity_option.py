@@ -28,8 +28,8 @@ def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
     volatility: float = 0.1545
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
-    long: LongOrShort = LongOrShort.LONG
-    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, long)
+    short: LongOrShort = LongOrShort.SHORT
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, short)
 
 
 def test_get_black_scholes_price(option_for_constant_vol_tests):
@@ -47,15 +47,15 @@ def test_get_black_scholes_price(option_for_constant_vol_tests):
 
 
 def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 20
+    number_of_paths: int = 1_000_000
+    number_of_time_steps: int = 50
 
     actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            plot_paths=True,
-            show_stats=True)
+            plot_paths=False,
+            show_stats=False)
 
     print()
     print(f' European Equity Option Prices')
@@ -77,8 +77,8 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
-            plot_paths=True,
-            show_stats=True)
+            plot_paths=False,
+            show_stats=False)
 
     print()
     print(f' European Equity Option Prices')
@@ -101,8 +101,8 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=True,
-            show_stats=True)
+            plot_paths=False,
+            show_stats=False)
 
     print()
     print(f' European Equity Option Prices')
