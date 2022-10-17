@@ -297,7 +297,7 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     alpha = 0.1
     sigma = 0.1
     np.random.seed(999)
-    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.001)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.9)
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
@@ -325,12 +325,12 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     alpha = 0.1
     sigma = 0.5
     np.random.seed(999)
-    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.001)
+    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.00001)
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
             number_of_paths=100_000,
-            number_of_time_steps=1,
+            number_of_time_steps=100,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 

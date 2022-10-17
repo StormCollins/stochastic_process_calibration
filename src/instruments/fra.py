@@ -1,6 +1,7 @@
 """
 Contains a class for representing and pricing a FRA (Forward Rate Agreement).
 """
+import numpy as np
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 

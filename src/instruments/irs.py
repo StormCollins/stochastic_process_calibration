@@ -59,10 +59,9 @@ class Irs:
         return numerator / denominator
 
     def get_fair_value(self, current_time_step: float, curve: Curve) -> float:
-        # Calculate the floating leg fair value at current_time_step, using curve.
-        # Calculate the fixed leg fair value at current_time_step, using curve.
         floating_leg_value = self.get_floating_leg_fair_value(current_time_step, curve)
         fixed_leg_value = self.get_fixed_leg_fair_value(current_time_step, curve)
+
         if self.long_or_short == LongOrShort.LONG:
             return floating_leg_value - fixed_leg_value
         else:
@@ -85,3 +84,7 @@ class Irs:
         discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in reset_end_tenors[1:]])
         fixed_leg = self.notional * self.fixed_rate * day_count_fractions * discount_factors
         return fixed_leg
+
+    def get_monte_carlo_fair_values(
+            self,):
+        return 0

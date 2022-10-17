@@ -66,13 +66,13 @@ class FxOption:
         if self.call_or_put == CallOrPut.CALL:
             return direction * \
                    (initial_spot * np.exp(-1 * self.foreign_interest_rate * self.time_to_maturity) * norm.cdf(d_1) -
-                    self.strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(d_2))
+                    strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(d_2))
 
         elif self.call_or_put == CallOrPut.PUT:
             return direction * \
                    (-1 * initial_spot * np.exp(-1 * self.foreign_interest_rate * self.time_to_maturity) *
                     norm.cdf(-1 * d_1) +
-                    self.strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(-1 * d_2))
+                    strike * np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity) * norm.cdf(-1 * d_2))
 
     def get_time_independent_monte_carlo_price(
             self,

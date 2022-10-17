@@ -2,6 +2,7 @@
 Contains a class representing a Hull-White stochastic process.
 """
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.integrate
 import seaborn as sns
 from scipy.stats import norm
@@ -243,3 +244,37 @@ class HullWhite:
         ax.set_ylabel('$r(t)$')
         ax.set_xlim([0, time_steps[-1]])
         plt.show()
+
+    def get_forward_discount_factors(self, start_tenors, end_tenors, short_rates):
+        return self.a_function(start_tenors, end_tenors) * \
+               np.exp(-1 * short_rates * self.b_function(start_tenors, end_tenors))
+
+    def get_fixings(
+            self,
+            simulation_tenors: np.ndarray,
+            simulated_short_rates: np.ndarray,
+            fixing_start_tenors: np.ndarray,
+            fixing_end_tenors: np.ndarray):
+        """
+        Gets the simulated fixings (i.e., the reset rates) between the given start and end tenors.
+
+        :param simulation_tenors: The simulat
+        :param simulated_short_rates:
+        :param fixing_start_tenors:
+        :param fixing_end_tenors:
+        :return:
+        """
+
+        # Get discount factors between fixing_start_tenors and fixing_end_tenors.
+        # The points in the simulation tenors which correspond to the start tenors of the fixing periods.
+        fixing_start_tenor_indices = np.in1d(fixing_start_tenors, simulation_tenors)
+        fixing_start_tenor_short_rates = simulated_short_rates[fixing_start_tenor_indices]
+
+        forward_discount_factors: np.ndarray = \
+            self.a_function(fixing_start_tenors, fixing_end_tenors) * \
+            np.exp(-1 * fixing_start_tenor_short_rates * self.b_function(fixing_start_tenors, fixing_end_tenors))
+
+        fixings: np.ndarray = (1 / (fixing_end_tenors - fixing_end_tenors)) * (forward_discount_factors - 1)
+        return fixings
+
+
