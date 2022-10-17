@@ -73,8 +73,12 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     an FX option using QuantLib.
     """
     actual_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
+
+    # QuantLib pricing.
     valuation_date: ql.Date = ql.Date(3, 1, 2022)
-    expiry_date: ql.Date = ql.Date(8, 1, 2022)
+    calendar: ql.Calendar = ql.NullCalendar()
+    period: ql.Period = ql.Period(f'{fx_option_constant_vol.time_to_maturity * 360}d')
+    expiry_date: ql.Date = calendar.advance(valuation_date, period)
     ql.Settings.instance().evaluationDate = valuation_date
     calendar: ql.Calendar = ql.NullCalendar()
     day_count_convention: ql.DayCounter = ql.Actual360()
@@ -93,7 +97,7 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     spot_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.initial_spot))
     gk_process = ql.GarmanKohlagenProcess(spot_handle, foreign_curve, domestic_curve, volatility)
     option.setPricingEngine(ql.AnalyticEuropeanEngine(gk_process))
-    expected_price: float = option.NPV()
+    expected_price: float = fx_option_constant_vol.notional * option.NPV()
     assert actual_price == pytest.approx(expected_price, 0.000001)
 
 
