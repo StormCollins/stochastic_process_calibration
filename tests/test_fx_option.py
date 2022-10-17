@@ -16,7 +16,7 @@ def fx_option_constant_vol():
     foreign_interest_rate: float = 0.01227
     volatility: float = 0.154
     time_to_maturity: float = 0.5
-    call: CallOrPut = CallOrPut.CALL
+    put: CallOrPut = CallOrPut.PUT
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
@@ -27,7 +27,7 @@ def fx_option_constant_vol():
         foreign_interest_rate=foreign_interest_rate,
         volatility=volatility,
         time_to_maturity=time_to_maturity,
-        call_or_put=call,
+        call_or_put=put,
         long_or_short=long)
 
 
@@ -51,7 +51,7 @@ def fx_option_non_constant_vol():
     foreign_interest_rate: float = 0.01227
     time_to_maturity: float = 0.5
     volatility: float = 0.154
-    call: CallOrPut = CallOrPut.CALL
+    put: CallOrPut = CallOrPut.PUT
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
@@ -62,7 +62,7 @@ def fx_option_non_constant_vol():
         foreign_interest_rate=foreign_interest_rate,
         volatility=volatility,
         time_to_maturity=time_to_maturity,
-        call_or_put=call,
+        call_or_put=put,
         long_or_short=long)
 
 
@@ -102,7 +102,7 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
     number_of_time_steps: int = 100
     actual: MonteCarloPricingResults = \
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, False, False)
-
+    np.random.seed(999)
     print()
     print(f' FX Option Prices')
     print(f' -----------------------------')
