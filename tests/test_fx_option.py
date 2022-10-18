@@ -107,7 +107,11 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
     number_of_time_steps: int = 10
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
-        fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, False, False)
+        fx_option_constant_vol.get_time_independent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            plot_paths=False,
+            show_stats=False)
     np.random.seed(999)
     print()
     print(f' FX Option Prices')
