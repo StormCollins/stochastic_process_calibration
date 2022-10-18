@@ -160,19 +160,11 @@ class FxOption:
             gbm.get_path_statistics(paths, self.time_to_maturity)
 
         if self.call_or_put == CallOrPut.CALL:
-            payoffs = \
-                self.notional * np.maximum(paths[:, -1] - self.strike, 0) * \
-                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
-
-            price: float = direction * np.average(payoffs)
-            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloPricingResults(price, error)
-
+            payoffs = self.notional * np.maximum(paths[:, -1] - self.strike, 0)
         elif self.call_or_put == CallOrPut.PUT:
-            payoffs = \
-                self.notional * np.maximum(self.strike - paths[:, -1], 0) * \
-                np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
+            payoffs = self.notional * np.maximum(self.strike - paths[:, -1], 0)
 
-            price: float = direction * np.average(payoffs)
-            error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
-            return MonteCarloPricingResults(price, error)
+        discounted_payoffs: np.ndarray = payoffs * np.exp(-1 * (self.domestic_interest_rate - self.foreign_interest_rate) * self.time_to_maturity)
+        price: float = direction * np.average(discounted_payoffs)
+        error = norm.ppf(0.95) * np.std(payoffs) / np.sqrt(number_of_paths)
+        return MonteCarloPricingResults(price, error)

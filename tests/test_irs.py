@@ -1,18 +1,27 @@
+"""
+Unit tests for interest rate swap (IRS).
+"""
 import numpy as np
 import pytest
 from src.curves.curve import Curve
-from src.instruments.irs import Irs
 from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
+from src.instruments.irs import Irs
 
 
 @pytest.fixture
 def example_irs():
-    return Irs(1_000_000, 0.0, 1.0, 0.25, 0.1)
+    """
+    Example IRS.
+    """
+    return Irs(1_000_000, 0.0, 1.0, 0.25, LongOrShort.LONG, 0.1)
 
 
 @pytest.fixture
 def flat_curve():
+    """
+    Curve with flat/constant zero rate of 10%.
+    """
     tenors: np.ndarray = np.array([0.0, 0.25, 0.50, 0.75, 1.00])
     discount_factors: np.ndarray = np.array([np.exp(-0.1 * t) for t in tenors])
     return Curve(tenors, discount_factors)

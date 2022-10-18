@@ -1,13 +1,21 @@
+"""
+Unit tests for European equity options.
+"""
 import numpy as np
 import pytest
 from src.enums_and_named_tuples.call_or_put import CallOrPut
-from src.instruments.european_equity_option import EuropeanEquityOption
 from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
+from src.instruments.european_equity_option import EuropeanEquityOption
+from src.utils.console_utils import ConsoleUtils
+from tests_config import TestsConfig
 
 
 @pytest.fixture
 def option_for_constant_vol_tests() -> EuropeanEquityOption:
+    """
+    Option used for testing constant vol simulations.
+    """
     notional: float = 1
     initial_spot: float = 50
     strike: float = 52
@@ -21,6 +29,9 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
 
 @pytest.fixture
 def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
+    """
+    Option used for testing non-constant vol simulations.
+    """
     notional: float = 1
     initial_spot: float = 50
     strike: float = 52
@@ -47,29 +58,30 @@ def test_get_black_scholes_price(option_for_constant_vol_tests):
 
 
 def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
-    number_of_paths: int = 1_000_000
-    number_of_time_steps: int = 50
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 20
 
     actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            plot_paths=False,
-            show_stats=False)
+            plot_paths=TestsConfig.plots_on,
+            show_stats=True)
 
-    print()
-    print(f' European Equity Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
-    print(f'  Black-Scholes Price: {expected_price:,.2f}')
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='European Equity Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, actual.error)
 
 
 def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path = r'tests/atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
 
     actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_dependent_monte_carlo_price(
@@ -77,22 +89,23 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
-            plot_paths=False,
-            show_stats=False)
+            plot_paths=TestsConfig.plots_on,
+            show_stats=True)
 
-    print()
-    print(f' European Equity Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
-    print(f'  Black-Scholes Price: {expected_price:,.2f}')
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='European Equity Options Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
 def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path = r'tests/atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     actual: MonteCarloPricingResults = \
@@ -101,13 +114,14 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=False,
-            show_stats=False)
+            plot_paths=TestsConfig.plots_on,
+            show_stats=True)
 
-    print()
-    print(f' European Equity Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = option_for_non_constant_vol_tests.get_black_scholes_price()
-    print(f'  Black-Scholes Price: {expected_price:,.2f}')
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='European Equity Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, 0.1)

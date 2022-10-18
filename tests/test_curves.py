@@ -1,3 +1,6 @@
+"""
+Unit tests for interest rate curves.
+"""
 import pytest
 import QuantLib as ql
 from src.curves.curve import *
@@ -5,6 +8,9 @@ from src.curves.curve import *
 
 @pytest.fixture
 def single_curve():
+    """
+    A curve with a single set of discount factors.
+    """
     tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75, 1.00])
     discount_factors: np.ndarray = np.array([1.00, 0.95, 0.90, 0.85, 0.80])
     return Curve(tenors, discount_factors)
@@ -12,6 +18,9 @@ def single_curve():
 
 @pytest.fixture
 def ql_curve():
+    """
+    Curve in the format QuantLib requires.
+    """
     dates = \
         [ql.Date(1, 1, 2022),
          ql.Date(1, 4, 2022),
@@ -25,11 +34,20 @@ def ql_curve():
 
 @pytest.fixture
 def multiple_curve_tenors():
+    """
+    Tenors for the multiple curve discount factors.
+    This library allows for a curve data structure where there is a single set of tenors but multiple corresponding
+    discount factors allowing us to represent several curves simultaneously - this is useful for Monte Carlo simulation.
+    """
     return np.array([0.00, 0.50, 1.00])
 
 
 @pytest.fixture
 def multiple_curve_discount_factors():
+    """
+    This library allows for a curve data structure where there is a single set of tenors but multiple corresponding
+    discount factors allowing us to represent several curves simultaneously - this is useful for Monte Carlo simulation.
+    """
     return np.array([[1.00, 0.99, 0.98],
                      [1.00, 0.97, 0.96],
                      [1.00, 0.95, 0.90]])
@@ -37,16 +55,26 @@ def multiple_curve_discount_factors():
 
 @pytest.fixture
 def multiple_curves(multiple_curve_tenors, multiple_curve_discount_factors):
+    """
+    This library allows for a curve data structure where there is a single set of tenors but multiple corresponding
+    discount factors allowing us to represent several curves simultaneously - this is useful for Monte Carlo simulation.
+    """
     return Curve(multiple_curve_tenors, multiple_curve_discount_factors)
 
 
 @pytest.fixture
 def curve_tenors():
+    """
+    Tenors for a curve.
+    """
     return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
 
 
 @pytest.fixture
 def flat_zero_rate_curve(curve_tenors):
+    """
+    A curve with a flat/constant zero rate of 10%.
+    """
     rate = 0.1
     discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
     return Curve(curve_tenors, discount_factors)

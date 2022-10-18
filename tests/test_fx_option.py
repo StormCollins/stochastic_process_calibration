@@ -1,14 +1,22 @@
+"""
+FX option unit tests.
+"""
 import pytest
 import numpy as np
 import QuantLib as ql
 from src.enums_and_named_tuples.call_or_put import CallOrPut
-from src.instruments.fx_option import FxOption
 from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
+from src.instruments.fx_option import FxOption
+from src.utils.console_utils import ConsoleUtils
+from tests_config import TestsConfig
 
 
 @pytest.fixture
-def fx_option_constant_vol():
+def fx_option_constant_vol() -> FxOption:
+    """
+    FX option for constant vol testing.
+    """
     notional: float = 1_000_000
     initial_spot: float = 14.6
     strike: float = 17
@@ -32,7 +40,7 @@ def fx_option_constant_vol():
 
 
 @pytest.fixture
-def fx_option_non_constant_vol():
+def fx_option_non_constant_vol() -> FxOption:
     """
         Note where these values come from:
         These values are for a USD/ZAR call option.
@@ -108,12 +116,14 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
     actual: MonteCarloPricingResults = \
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, False, False)
 
-    print()
-    print(f' FX Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
-    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='FX Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
@@ -122,7 +132,7 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
 def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_vol):
     number_of_paths: int = 100_000
     number_of_time_steps: int = 100
-    excel_file_path = r'tests/atm-volatility-surface.xlsx'
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_option_constant_vol.get_time_dependent_monte_carlo_price(
@@ -130,43 +140,52 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
-            plot_paths=True,
+            plot_paths=TestsConfig.plots_on,
             show_stats=True)
 
-    print()
-    print(f' FX Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
-    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='FX Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
 def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_option_non_constant_vol):
-    number_of_paths = 1_000_000
-    number_of_time_steps = 100
-    excel_file_path: str = r'tests/atm-volatility-surface.xlsx'
+    number_of_paths = 100_000
+    number_of_time_steps = 20
+    excel_file_path: str = r'tests/equity-atm-volatility-surface.xlsx'
+    # excel_vol = 14.9
+    # fx_option_vol = 14.9
     np.random.seed(999)
+
     actual: MonteCarloPricingResults = \
         fx_option_non_constant_vol.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=False,
-            show_stats=False)
+            plot_paths=TestsConfig.plots_on,
+            show_stats=True)
 
-    print()
-    print(f' FX Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
-    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='FX Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
+# -----------------------------------------------------------------------------------
+# Consider later
 def test_xvalite_fx_option_get_time_dependent_monte_carlo_pricer(fx_option_non_constant_vol):
-    number_of_paths = 100_000
+    number_of_paths = 1_000_000
     number_of_time_steps = 100
     excel_file_path: str = r'tests/fx-option-atm-vol-surface.xlsx'
     np.random.seed(999)
@@ -176,13 +195,14 @@ def test_xvalite_fx_option_get_time_dependent_monte_carlo_pricer(fx_option_non_c
             number_of_time_steps=number_of_time_steps,
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
-            plot_paths=False,
-            show_stats=False)
+            plot_paths=TestsConfig.plots_on,
+            show_stats=True)
 
-    print()
-    print(f' FX Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
-    print(f'  Garman-Kohlhagen Price: {expected_price:,.2f}')
+    ConsoleUtils.print_monte_carlo_pricing_results(
+        title='FX Option Prices',
+        monte_carlo_price=actual.price,
+        monte_carlo_price_error=actual.error,
+        analytical_price=expected_price)
+
     assert expected_price == pytest.approx(actual.price, abs=actual.error)

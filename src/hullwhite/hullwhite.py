@@ -197,7 +197,7 @@ class HullWhite:
     def get_discount_curve(
             self,
             short_rate: float,
-            simulation_tenors: np.ndarray) -> Curve:
+            simulation_tenors: float | np.ndarray) -> Curve:
         """
         Gets the discount curve at the given time-step in the Hull-White simulation.
 

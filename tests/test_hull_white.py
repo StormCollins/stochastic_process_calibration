@@ -1,6 +1,8 @@
+"""
+Hull-White unit tests.
+"""
 import pytest
 import scipy.stats
-from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 
@@ -177,7 +179,8 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
     expected = \
         flat_zero_rate_curve.get_discount_factors(simulation_tenors) / \
         flat_zero_rate_curve.get_discount_factors(np.array(current_tenor)) * \
-        np.exp(hw.b_function(current_tenor, simulation_tenors) * flat_zero_rate_curve.get_zero_rates(np.array([current_tenor])) -
+        np.exp(hw.b_function(current_tenor, simulation_tenors) *
+               flat_zero_rate_curve.get_zero_rates(np.array([current_tenor])) -
                sigma ** 2 *
                (np.exp(-1 * alpha * simulation_tenors) - np.exp(-1 * alpha * current_tenor)) ** 2 *
                (np.exp(2 * alpha * current_tenor) - 1) /
@@ -354,4 +357,3 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
     hw_long_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.25)
     assert hw_short_short_rate_tenor.initial_short_rate == \
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
-

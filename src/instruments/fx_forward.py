@@ -90,8 +90,6 @@ class FxForward:
                 number_of_time_steps=number_of_time_steps,
                 time_to_maturity=self.time_to_maturity)
 
-        paths = paths * self.notional
-
         if plot_paths:
             gbm.create_plots(paths, self.time_to_maturity)
 
@@ -99,7 +97,7 @@ class FxForward:
             gbm.get_path_statistics(paths, self.time_to_maturity)
 
         payoffs = \
-            (paths[:, -1] - self.notional * self.strike) * \
+            self.notional * (paths[:, -1] - self.strike) * \
             np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
         price: float = direction * np.average(payoffs)

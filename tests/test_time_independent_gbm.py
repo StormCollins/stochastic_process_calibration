@@ -1,3 +1,6 @@
+"""
+Time-independent GBM unit tests.
+"""
 import numpy as np
 import pytest
 from src.gbm.time_independent_gbm import TimeIndependentGBM
