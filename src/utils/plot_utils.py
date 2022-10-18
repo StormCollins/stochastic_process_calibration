@@ -1,5 +1,5 @@
 """
-This module contains a single class, PlotUtils, with static methods for plotting data.
+Contains a class with static methods for plotting data.
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -103,7 +103,17 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, drift: float, title: str):
+    def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, title: str, drift: float = None) -> None:
+        """
+        Used to plot Monte Carlo paths.
+
+        :param time_steps: The time steps of the Monte Carlo simulation.
+        :param paths: The paths simulated during the Monte Carlo run.
+        :param title: The title of the plot.
+        :param drift: The (constant) drift, if applicable, of the process. This just corresponds to the standard drift
+        in GBM. Currently, Hull-White is not supported.
+        :return: 
+        """
         plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
         plt.rcParams['path.simplify_threshold'] = 1.0
@@ -114,14 +124,16 @@ class PlotUtils:
         ax.plot(time_steps, sorted_paths)
         empirical_path_means: np.ndarray = np.mean(paths, 0)
         initial_spot: float = paths[0, 0]
-        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
-        ax.plot(
-            time_steps,
-            theoretical_path_means,
-            label='Theoretical Path Average',
-            linestyle='solid',
-            linewidth='3',
-            color='#C4D600')
+
+        if drift is not None:
+            theoretical_path_means = initial_spot * np.exp(drift * time_steps)
+            ax.plot(
+                time_steps,
+                theoretical_path_means,
+                label='Theoretical Path Average',
+                linestyle='solid',
+                linewidth='3',
+                color='#C4D600')
 
         ax.plot(
             time_steps,

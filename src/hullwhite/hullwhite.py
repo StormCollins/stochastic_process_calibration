@@ -2,6 +2,7 @@
 Contains a class representing a Hull-White stochastic process.
 """
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.integrate
 import seaborn as sns
 from scipy.stats import norm
@@ -32,14 +33,11 @@ class HullWhite:
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
-        self.numerical_derivative_step_size: float = 0.001  # Small step used in numerical derivatives.
+        # Small step used in numerical derivatives.
+        self.numerical_derivative_step_size: float = 0.001
         self.theta_interpolator = self.calibrate_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
-        self.initial_short_rate = \
-            initial_curve.get_forward_rates(
-                np.array([0]),
-                np.array([self.short_rate_tenor]),
-                CompoundingConvention.NACC)
+        self.initial_short_rate = initial_curve.get_forward_rates(0, self.short_rate_tenor, CompoundingConvention.NACC)
 
     def calibrate_theta(self, theta_times: np.ndarray) -> interp1d:
         """
@@ -156,7 +154,7 @@ class HullWhite:
         # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
         return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
-    def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: np.ndarray) -> float | np.ndarray:
+    def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: float | np.ndarray) -> float | np.ndarray:
         """
         Used to calculate the 'B'-function commonly affiliated with Hull-White and used in the calculation of discount
         factors in the Hull-White simulation as per below.
@@ -164,8 +162,8 @@ class HullWhite:
         :math:`P(S,T) = A(S,T) e^{-r(S) B(S,T)}`
 
         :param simulation_tenors: The current tenor(s) in the simulation i.e., corresponding to S in P(S,T).
-        :param end_tenors: Corresponding to T in P(S,T).
-        :return: The 'B'-function value at the given tenors.
+        :param end_tenors: Corresponds to T in P(S,T).
+        :return: The 'B'-function value at the given tenor(s).
         """
         return (1 - np.exp(-self.alpha * (end_tenors - simulation_tenors))) / self.alpha
 
@@ -179,14 +177,13 @@ class HullWhite:
         :return: The 'A'-function value at the given tenors.
         """
         forward_discount_factors: np.ndarray = \
-            self.initial_curve.get_discount_factors(tenors) / \
-            self.initial_curve.get_discount_factors(np.array([simulation_tenors]))
+            self.initial_curve.get_discount_factors(tenors) / self.initial_curve.get_discount_factors(simulation_tenors)
 
         # If sigma is time-independent then we can replace the log discount factor derivatives
         # with the zero rate at that point.
         discount_factor_derivative: float = \
             -1 * self.b_function(simulation_tenors, tenors) * \
-            self.initial_curve.get_log_discount_factor_derivatives(np.array([simulation_tenors]))
+            self.initial_curve.get_log_discount_factor_derivatives(simulation_tenors)
 
         complex_factor: float = \
             self.sigma ** 2 * \
@@ -247,3 +244,37 @@ class HullWhite:
         ax.set_ylabel('$r(t)$')
         ax.set_xlim([0, time_steps[-1]])
         plt.show()
+
+    def get_forward_discount_factors(self, start_tenors, end_tenors, short_rates):
+        return self.a_function(start_tenors, end_tenors) * \
+               np.exp(-1 * short_rates * self.b_function(start_tenors, end_tenors))
+
+    def get_fixings(
+            self,
+            simulation_tenors: np.ndarray,
+            simulated_short_rates: np.ndarray,
+            fixing_start_tenors: np.ndarray,
+            fixing_end_tenors: np.ndarray):
+        """
+        Gets the simulated fixings (i.e., the reset rates) between the given start and end tenors.
+
+        :param simulation_tenors: The simulat
+        :param simulated_short_rates:
+        :param fixing_start_tenors:
+        :param fixing_end_tenors:
+        :return:
+        """
+
+        # Get discount factors between fixing_start_tenors and fixing_end_tenors.
+        # The points in the simulation tenors which correspond to the start tenors of the fixing periods.
+        fixing_start_tenor_indices = np.in1d(fixing_start_tenors, simulation_tenors)
+        fixing_start_tenor_short_rates = simulated_short_rates[fixing_start_tenor_indices]
+
+        forward_discount_factors: np.ndarray = \
+            self.a_function(fixing_start_tenors, fixing_end_tenors) * \
+            np.exp(-1 * fixing_start_tenor_short_rates * self.b_function(fixing_start_tenors, fixing_end_tenors))
+
+        fixings: np.ndarray = (1 / (fixing_end_tenors - fixing_end_tenors)) * (forward_discount_factors - 1)
+        return fixings
+
+

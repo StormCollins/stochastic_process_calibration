@@ -79,7 +79,7 @@ def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hw):
         atm_fra.get_monte_carlo_values(
             alpha=alpha,
             sigma=sigma,
-            curve=flat_zero_rate_curve,
+            initial_curve=flat_zero_rate_curve,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps)
 
@@ -114,10 +114,11 @@ def test_get_monte_carlo_value_compared_to_analytical(flat_zero_rate_curve, atm_
         atm_fra.get_monte_carlo_values(
             alpha=hw.alpha,
             sigma=hw.sigma,
-            curve=flat_zero_rate_curve,
-            number_of_paths=100_000,
-            number_of_time_steps=100,
-            short_rate_tenor=hw.short_rate_tenor)
+            initial_curve=flat_zero_rate_curve,
+            number_of_paths=10_000,
+            number_of_time_steps=20,
+            short_rate_tenor=hw.short_rate_tenor,
+            plot_paths=True)
 
     # TODO: Can we get the Monte Carlo value closer to zero?
     assert actual[-1] == pytest.approx(expected, abs=450)
@@ -139,7 +140,7 @@ def test_fra_value_vs_alpha(flat_zero_rate_curve, atm_fra):
                 atm_fra.get_monte_carlo_values(
                     alpha=hw.alpha,
                     sigma=hw.sigma,
-                    curve=flat_zero_rate_curve,
+                    initial_curve=flat_zero_rate_curve,
                     number_of_paths=number_of_paths,
                     number_of_time_steps=number_of_steps,
                     short_rate_tenor=hw.short_rate_tenor)

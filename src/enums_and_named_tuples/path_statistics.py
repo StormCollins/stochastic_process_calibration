@@ -1,5 +1,5 @@
 """
-A named tuple used to represent the path statistic results from a Monte Carlo simulation.
+Contains a named tuple used to represent the path statistic results from a Monte Carlo simulation.
 """
 from collections import namedtuple
 

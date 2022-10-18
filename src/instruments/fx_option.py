@@ -1,3 +1,6 @@
+"""
+Contains a class representing an FX (Foreign Exchange) option.
+"""
 import numpy as np
 from scipy.stats import norm
 from src.enums_and_named_tuples.call_or_put import CallOrPut
@@ -148,7 +151,7 @@ class FxOption:
                     sheet_name=volatility_excel_sheet_name,
                     initial_spot=self.initial_spot)
 
-        paths: np.ndarray = self.notional * gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
+        paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
             gbm.create_plots(paths, self.time_to_maturity)
@@ -158,7 +161,7 @@ class FxOption:
 
         if self.call_or_put == CallOrPut.CALL:
             payoffs = \
-                np.maximum(paths[:, -1] - self.notional * self.strike, 0) * \
+                self.notional * np.maximum(paths[:, -1] - self.strike, 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
             price: float = direction * np.average(payoffs)
@@ -167,7 +170,7 @@ class FxOption:
 
         elif self.call_or_put == CallOrPut.PUT:
             payoffs = \
-                np.maximum(self.notional * self.strike - paths[:, -1], 0) * \
+                self.notional * np.maximum(self.strike - paths[:, -1], 0) * \
                 np.exp(-1 * self.domestic_interest_rate * self.time_to_maturity)
 
             price: float = direction * np.average(payoffs)

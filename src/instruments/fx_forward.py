@@ -1,3 +1,6 @@
+"""
+Contains a class for representing an FX (Foreign Exchange) forward.
+"""
 import numpy as np
 from scipy.stats import norm
 from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
@@ -8,7 +11,7 @@ from src.gbm.time_independent_gbm import TimeIndependentGBM
 
 class FxForward:
     """
-    A class representing an FX (Foreign Exchange) Forward.
+    A class representing an FX (Foreign Exchange) forward.
     We follow the convention of quoting domestic (DOM) currency per foreign (FOR) currency i.e., FORDOM
     e.g., USDZAR = 17, means ZAR is the domestic currency, USD is the foreign currency, and it is 17 domestic (ZAR) to
     1 foreign (USD).

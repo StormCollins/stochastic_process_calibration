@@ -52,6 +52,7 @@ def fx_option_non_constant_vol():
     time_to_maturity: float = 0.5
     volatility: float = 0.154
     put: CallOrPut = CallOrPut.PUT
+    call: CallOrPut = CallOrPut.CALL
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
@@ -73,8 +74,12 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     an FX option using QuantLib.
     """
     actual_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
+
+    # QuantLib pricing.
     valuation_date: ql.Date = ql.Date(3, 1, 2022)
-    expiry_date: ql.Date = ql.Date(8, 1, 2022)
+    calendar: ql.Calendar = ql.NullCalendar()
+    period: ql.Period = ql.Period(f'{fx_option_constant_vol.time_to_maturity * 360}d')
+    expiry_date: ql.Date = calendar.advance(valuation_date, period)
     ql.Settings.instance().evaluationDate = valuation_date
     calendar: ql.Calendar = ql.NullCalendar()
     day_count_convention: ql.DayCounter = ql.Actual360()
@@ -93,13 +98,14 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     spot_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.initial_spot))
     gk_process = ql.GarmanKohlagenProcess(spot_handle, foreign_curve, domestic_curve, volatility)
     option.setPricingEngine(ql.AnalyticEuropeanEngine(gk_process))
-    expected_price: float = option.NPV()
+    expected_price: float = fx_option_constant_vol.notional * option.NPV()
     assert actual_price == pytest.approx(expected_price, 0.000001)
 
 
 def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_vol):
     number_of_paths: int = 100_000
-    number_of_time_steps: int = 100
+    number_of_time_steps: int = 10
+    np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, False, False)
     np.random.seed(999)
@@ -138,7 +144,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
 
 
 def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_option_non_constant_vol):
-    number_of_paths = 100_000
+    number_of_paths = 1_000_000
     number_of_time_steps = 100
     excel_file_path: str = r'tests/atm-volatility-surface.xlsx'
     np.random.seed(999)

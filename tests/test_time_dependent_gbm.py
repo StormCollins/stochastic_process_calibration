@@ -68,3 +68,4 @@ def test_distribution():
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
     assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=1.00)
+
