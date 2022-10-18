@@ -32,6 +32,9 @@ class TimeDependentGBM:
         self.drift: float = drift
         # Here 'variance' means 'sigma**2 * time'.
         self.variance_interpolator: interp1d = self.setup_variance_interpolator(excel_file_path, sheet_name)
+        self.bootstrapped_vol_interpolator: interp1d = \
+            self.setup_bootstrapped_variance_interpolator(excel_file_path, sheet_name)
+
         self.initial_spot: float = initial_spot
 
     def get_paths(self, number_of_paths: int, number_of_time_steps: int, time_to_maturity: float) -> np.ndarray:
@@ -67,32 +70,57 @@ class TimeDependentGBM:
         excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
         tenors: list[float] = list(map(float, excel_records_df.Tenors))
         vols: list[float] = list(map(float, excel_records_df.Quotes))
-        squared_vols: list[float] = list(map(lambda x: pow(x, 2), vols))
-        new_vols = []
+        variances = [v**2 * t for v, t in zip(vols, tenors)]
+        variance_interpolator: interp1d = interp1d(tenors, variances, kind='linear', fill_value='extrapolate')
 
-        for dt1, dt2 in zip(squared_vols, tenors):
-            new_vols.append(dt1 * dt2)
-
-        variance_interpolator: interp1d = interp1d(tenors, new_vols, kind='linear', fill_value='extrapolate')
         return variance_interpolator
 
-    def get_time_dependent_vol(self, tenor: float) -> float:
+    @staticmethod
+    def setup_bootstrapped_variance_interpolator(excel_file_path: str, sheet_name: str) -> interp1d:
+        """
+        Sets up the interpolator for the variance i.e., 'volatility**2 * time'.
+
+        :param excel_file_path: The path of the file. In other words, the file path where the Excel file is.
+        :param sheet_name: The sheet name in the Excel file housing the relevant data.
+        :return: Returns the time dependent variance interpolator.
+        """
+        excel_records = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+        excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
+        tenors: list[float] = list(map(float, excel_records_df.Tenors))
+        vols: list[float] = list(map(float, excel_records_df.Quotes))
+        vols = [v / 100 for v in vols]
+        variances = [v**2 * t for v, t in zip(vols, tenors)]
+        bootstrapped_variances = []
+        bootstrapped_vols = []
+        for i in range(0, len(variances)):
+            if i == 0 or i == 1:
+                b_v = vols[i]
+            else:
+                b_v = np.sqrt((variances[i] - bootstrapped_variances[i - 1])/(tenors[i] - tenors[i - 1]))
+            bootstrapped_vols.append(b_v)
+
+            if i == 0 or i == 1:
+                bootstrapped_variances.append(variances[i])
+            else:
+                bootstrapped_variances.append(bootstrapped_variances[i - 1] + b_v**2 * (tenors[i] - tenors[i - 1]))
+
+        bootstrapped_variance_interpolator: interp1d = \
+            interp1d(tenors, bootstrapped_vols, kind='previous', fill_value='extrapolate')
+
+        return bootstrapped_variance_interpolator
+
+    def get_time_dependent_vol(self, tenor: float, use_bootstrapped_variances=True) -> float:
         """
         Gets the time-dependent volatility at the given tenor.
 
         :param tenor: The tenor at which we want to extract the given volatility.
+        :param use_bootstrapped_variances: Toggles the use of bootstrapped variances.
         :return: The time-dependent volatility at the given tenor.
         """
-        return np.sqrt(self.variance_interpolator(tenor) / tenor) / 100
-
-    def get_time_dependent_vol(self, tenors: np.ndarray) -> np.ndarray:
-        """
-        Gets the time-dependent volatility at the given tenor.
-
-        :param tenors: The tenor at which we want to extract the given volatility.
-        :return: The time-dependent volatility at the given tenor.
-        """
-        return np.sqrt(self.variance_interpolator(tenors) / tenors) / 100
+        if use_bootstrapped_variances:
+            return self.bootstrapped_vol_interpolator(tenor)
+        else:
+            return float(np.sqrt(self.variance_interpolator(tenor) / tenor))
 
     def create_plots(self, paths: np.ndarray, time_to_maturity: float) -> None:
         """

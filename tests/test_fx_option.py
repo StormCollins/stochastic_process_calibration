@@ -110,8 +110,8 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
 
 
 def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_vol):
-    number_of_paths: int = 100_000
-    number_of_time_steps: int = 10
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 100
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_option_constant_vol.get_time_independent_monte_carlo_price(number_of_paths, number_of_time_steps, False, False)
@@ -155,11 +155,9 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
 
 
 def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_option_non_constant_vol):
-    number_of_paths = 100_000
+    number_of_paths = 10_000
     number_of_time_steps = 20
-    excel_file_path: str = r'tests/equity-atm-volatility-surface.xlsx'
-    # excel_vol = 14.9
-    # fx_option_vol = 14.9
+    excel_file_path: str = r'tests/fx-option-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     actual: MonteCarloPricingResults = \
@@ -173,32 +171,6 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
 
     expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
 
-    ConsoleUtils.print_monte_carlo_pricing_results(
-        title='FX Option Prices',
-        monte_carlo_price=actual.price,
-        monte_carlo_price_error=actual.error,
-        analytical_price=expected_price)
-
-    assert expected_price == pytest.approx(actual.price, abs=actual.error)
-
-
-# -----------------------------------------------------------------------------------
-# Consider later
-def test_xvalite_fx_option_get_time_dependent_monte_carlo_pricer(fx_option_non_constant_vol):
-    number_of_paths = 1_000_000
-    number_of_time_steps = 100
-    excel_file_path: str = r'tests/fx-option-atm-vol-surface.xlsx'
-    np.random.seed(999)
-    actual: MonteCarloPricingResults = \
-        fx_option_non_constant_vol.get_time_dependent_monte_carlo_price(
-            number_of_paths=number_of_paths,
-            number_of_time_steps=number_of_time_steps,
-            volatility_excel_path=excel_file_path,
-            volatility_excel_sheet_name='vol_surface',
-            plot_paths=TestsConfig.plots_on,
-            show_stats=True)
-
-    expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
     ConsoleUtils.print_monte_carlo_pricing_results(
         title='FX Option Prices',
         monte_carlo_price=actual.price,

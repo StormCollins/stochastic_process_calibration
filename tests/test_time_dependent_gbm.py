@@ -8,7 +8,7 @@ from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
 
 
-def test_get_time_dependent_volatility():
+def test_get_time_dependent_volatility_for_constant_vol():
     drift: float = 0.1
     volatility: float = 0.4
     excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
@@ -22,9 +22,28 @@ def test_get_time_dependent_volatility():
 
     np.random.seed(999)
     time_steps = np.arange(0, 10, 1) + 1
-    actual_vols = [gbm.get_time_dependent_vol(t) for t in time_steps]
+    actual_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
     expected_vols = list(np.repeat(volatility, 10))
-    assert actual_vols == expected_vols
+    assert actual_vols == pytest.approx(expected_vols, abs=0.00001)
+
+
+def test_get_time_dependent_volatility_for_non_constant_vol():
+    drift: float = 0.1
+    volatility: float = 0.4
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
+
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='constant_vol_surface',
+            initial_spot=0)
+
+    np.random.seed(999)
+    time_steps = np.arange(0, 10, 1) + 1
+    actual_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
+    expected_vols = list(np.repeat(volatility, 10))
+    assert actual_vols == pytest.approx(expected_vols, abs=0.00001)
 
 
 def test_get_time_dependent_gbm_paths_for_constant_vols():
@@ -71,3 +90,21 @@ def test_distribution():
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
     assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=1.00)
+
+
+def test_bootstrapped_vols_for_non_constant_vol_term_structure():
+    drift: float = 0.1
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='vol_surface',
+            initial_spot=0)
+
+    np.random.seed(999)
+    tenors = [0.0000, 0.0833, 0.1667, 0.2500, 0.5000, 0.7500, 1.0000, 2.0000, 3.0000, 5.0000, 7.0000, 10.0000]
+    tenors = [t - 0.0001 for t in tenors]
+    actual = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    expected = [0.12775, 0.13575, 0.14942, 0.15085, 0.15242, 0.15492, 0.16267, 0.15500, 0.16721, 0.16035, 0.12827, 0.14716]
+    assert actual == pytest.approx(expected, abs=0.00001)
