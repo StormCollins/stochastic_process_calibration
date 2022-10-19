@@ -156,7 +156,7 @@ def test_time_independent_vs_time_dependent_price(inputs):
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
             plot_paths=TestsConfig.plots_on,
-            show_stats=False)
+            show_stats=True)
 
     np.random.seed(999)
 
@@ -165,7 +165,7 @@ def test_time_independent_vs_time_dependent_price(inputs):
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
-            show_stats=False)
+            show_stats=True)
 
     print('\n\n')
     print(f'Time-dependent Monte Carlo price: {time_dependent.price:,.2f} ± {time_dependent.error:,.2f}')
