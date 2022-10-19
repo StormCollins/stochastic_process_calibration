@@ -20,8 +20,7 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
     initial_spot: float = 50
     strike: float = 52
     interest_rate: float = 0.1
-    # TODO: Create "proper" test to compare constant and non-constant vols.
-    volatility: float = 0.1545  # 0.4
+    volatility: float = 0.4  # 0.1545
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
     long: LongOrShort = LongOrShort.LONG
@@ -37,7 +36,6 @@ def inputs() -> EuropeanEquityOption:
     initial_spot: float = 50
     strike: float = 52
     interest_rate: float = 0.1
-    # TODO: Create "proper" test to compare constant and non-constant vols.
     volatility: float = 0.1545  # 0.4
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
@@ -176,4 +174,3 @@ def test_time_independent_vs_time_dependent_price(inputs):
     print(f'Time-independent Monte Carlo price: {actual_time_independent_price.price}')
 
     assert actual_time_independent_price.price == pytest.approx(actual_time_dependent_price.price, 0.1)
-

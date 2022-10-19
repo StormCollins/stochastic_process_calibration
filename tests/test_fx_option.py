@@ -24,7 +24,7 @@ def fx_option_constant_vol() -> FxOption:
     foreign_interest_rate: float = 0.01227
     volatility: float = 0.154
     time_to_maturity: float = 0.5
-    put: CallOrPut = CallOrPut.PUT
+    call: CallOrPut = CallOrPut.CALL
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
@@ -35,7 +35,7 @@ def fx_option_constant_vol() -> FxOption:
         foreign_interest_rate=foreign_interest_rate,
         volatility=volatility,
         time_to_maturity=time_to_maturity,
-        call_or_put=put,
+        call_or_put=call,
         long_or_short=long)
 
 
