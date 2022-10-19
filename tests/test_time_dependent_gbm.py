@@ -86,7 +86,7 @@ def test_distribution():
     time_to_maturity: float = 1.0
     gbm: TimeDependentGBM = \
         TimeDependentGBM(drift=0.0,
-                         excel_file_path='tests/atm-volatility-surface.xlsx',
+                         excel_file_path='tests/equity-atm-volatility-surface.xlsx',
                          sheet_name='constant_vol_surface',
                          initial_spot=100)
 
@@ -111,5 +111,5 @@ def test_bootstrapped_vols_for_non_constant_vol_term_structure():
     tenors = [0.0000, 0.0833, 0.1667, 0.2500, 0.5000, 0.7500, 1.0000, 2.0000, 3.0000, 5.0000, 7.0000, 10.0000]
     tenors = [t - 0.0001 for t in tenors]
     actual = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
-    expected = [0.12775, 0.13575, 0.14942, 0.15085, 0.15242, 0.15492, 0.16267, 0.15500, 0.16721, 0.16035, 0.12827, 0.14716]
+    expected = [0.12775, 0.12775, 0.13575, 0.14942, 0.15085, 0.15242, 0.15492, 0.16267, 0.15500, 0.16721, 0.16035, 0.14716]
     assert actual == pytest.approx(expected, abs=0.00001)

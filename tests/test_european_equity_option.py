@@ -118,7 +118,6 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
-# One of them
 def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
@@ -145,12 +144,12 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
 
 
 def test_time_independent_vs_time_dependent_price(inputs):
-    number_of_paths: int = 100_000
-    number_of_time_steps: int = 50
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 20
     excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
-    actual_time_dependent_price: MonteCarloPricingResults = \
+    time_dependent: MonteCarloPricingResults = \
         inputs.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
@@ -161,16 +160,14 @@ def test_time_independent_vs_time_dependent_price(inputs):
 
     np.random.seed(999)
 
-    actual_time_independent_price: MonteCarloPricingResults = \
+    time_independent: MonteCarloPricingResults = \
         inputs.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
             show_stats=False)
 
-    print()
-    print()
-    print(f'Time-dependent Monte Carlo price: {actual_time_dependent_price.price}')
-    print(f'Time-independent Monte Carlo price: {actual_time_independent_price.price}')
-
-    assert actual_time_independent_price.price == pytest.approx(actual_time_dependent_price.price, 0.1)
+    print('\n\n')
+    print(f'Time-dependent Monte Carlo price: {time_dependent.price:,.2f} ± {time_dependent.error:,.2f}')
+    print(f'Time-independent Monte Carlo price: {time_independent.price:,.2f} ± {time_independent.error:,.2f}')
+    assert time_independent.price == pytest.approx(time_dependent.price, 0.1)
