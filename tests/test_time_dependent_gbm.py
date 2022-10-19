@@ -72,10 +72,12 @@ def test_get_time_dependent_gbm_paths_for_constant_vols():
             time_to_maturity=time_to_maturity)
 
     time_independent_gbm: TimeIndependentGBM = \
-        TimeIndependentGBM(drift, volatility, initial_spot)
+        TimeIndependentGBM(drift=drift, volatility=volatility, initial_spot=initial_spot)
 
     np.random.seed(999)
-    expected_paths = time_independent_gbm.get_paths(number_of_paths, number_of_time_steps, time_to_maturity)
+    expected_paths = time_independent_gbm.get_paths(number_of_paths=number_of_paths,
+                                                    number_of_time_steps=number_of_time_steps,
+                                                    time_to_maturity=time_to_maturity)
     assert actual_paths == pytest.approx(expected_paths, abs=1.0)
 
 
@@ -83,7 +85,10 @@ def test_distribution():
     np.random.seed(999)
     time_to_maturity: float = 1.0
     gbm: TimeDependentGBM = \
-        TimeDependentGBM(0.0, 'tests/equity-atm-volatility-surface.xlsx', 'constant_vol_surface', 100)
+        TimeDependentGBM(drift=0.0,
+                         excel_file_path='tests/atm-volatility-surface.xlsx',
+                         sheet_name='constant_vol_surface',
+                         initial_spot=100)
 
     paths: np.ndarray = gbm.get_paths(10_000, 10, time_to_maturity)
     gbm.create_plots(paths, 1.0)

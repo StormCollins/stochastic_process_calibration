@@ -93,7 +93,7 @@ def test_theta_with_flat_zero_rate_curve(flat_zero_rate_curve, curve_tenors):
     """
     alpha = 2
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
     actual: list[float] = [hw.theta(t) for t in test_tenors]
     expected: list[float] = \
@@ -107,7 +107,7 @@ def test_theta_with_flat_zero_rate_curve_and_zero_vol(flat_zero_rate_curve):
     """
     alpha = 2
     sigma = 0
-    hw = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     actual: list[float] = [hw.theta(t) for t in [0.25, 0.375, 0.5, 0.625]]
     expected: list[float] = list(np.repeat(0.2, len(actual)))
     assert all([a == pytest.approx(b, 0.00001) for a, b in zip(actual, expected)])
@@ -119,7 +119,7 @@ def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, cu
     """
     alpha = 0.001
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
     actual: list[float] = [hw.theta(t) for t in test_tenors]
     expected: list[float] = list(np.zeros(len(actual)))
@@ -133,7 +133,7 @@ def test_theta_with_real_zero_rate_curve_and_time_tends_to_infinity(real_zero_ra
     """
     alpha: float = 1.0
     sigma: float = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=real_zero_rate_curve, short_rate_tenor=0.01)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=real_zero_rate_curve, short_rate_tenor=0.01)
     actual = hw.theta(50)
     expected = alpha * 0.07549556 + sigma**2
     print(expected)
@@ -156,7 +156,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
     """
     alpha = 1_000
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
     current_tenor = 0.25
     expected = \
@@ -173,7 +173,7 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
     """
     alpha = 0.25
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
     current_tenor = 0.25
     expected = \
@@ -196,7 +196,7 @@ def test_get_discount_factors_with_large_alpha_and_flat_curve(flat_zero_rate_cur
     """
     alpha = 1_000
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     curve = hw.get_discount_curve(short_rate=0.1, simulation_tenors=0.25)
     tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
     actual = curve.get_discount_factors(tenors)
@@ -214,7 +214,7 @@ def test_get_discount_factors_with_zero_vol(flat_zero_rate_curve):
     """
     alpha = 0.1
     sigma = 0.0
-    hw: HullWhite = HullWhite(alpha, sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     curve = hw.get_discount_curve(short_rate=0.1, simulation_tenors=0.25)
     tenors = np.array([0.250, 0.375, 0.500, 0.625, 0.700])
     actual = curve.get_discount_factors(tenors)
@@ -236,9 +236,14 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     number_of_time_steps: int = 100
     number_of_paths: int = 100_000
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
-    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
+    hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=short_rate_tenor)
     tenors, rates, stochastic_dfs = \
-        hw.simulate(maturity, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
+            plot_results=False)
 
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
@@ -266,7 +271,7 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     maturity: float = 5
     alpha: float = 0.00001
     sigma: float = 0.0
-    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.1)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.1)
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
@@ -284,7 +289,7 @@ def test_exponential_stochastic_integral_for_small_alpha(flat_zero_rate_curve):
     """
     alpha = 0.0001
     sigma = 0.1
-    hw = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.25)
+    hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     np.random.seed(999)
     time_step_size = 0.01
     x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
@@ -300,7 +305,7 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     alpha = 0.1
     sigma = 0.1
     np.random.seed(999)
-    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.9)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.9)
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
@@ -328,7 +333,7 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     alpha = 0.1
     sigma = 0.5
     np.random.seed(999)
-    hw: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.00001)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.00001)
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
@@ -353,7 +358,13 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
 def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
     alpha = 0.1
     sigma = 0.1
-    hw_short_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.0001)
-    hw_long_short_rate_tenor: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw_short_short_rate_tenor: HullWhite = HullWhite(alpha=alpha,
+                                                     sigma=sigma,
+                                                     initial_curve=flat_zero_rate_curve,
+                                                     short_rate_tenor=0.0001)
+    hw_long_short_rate_tenor: HullWhite = HullWhite(alpha=alpha,
+                                                    sigma=sigma,
+                                                    initial_curve=flat_zero_rate_curve,
+                                                    short_rate_tenor=0.25)
     assert hw_short_short_rate_tenor.initial_short_rate == \
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
