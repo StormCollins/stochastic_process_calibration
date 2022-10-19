@@ -29,6 +29,23 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
 
 
 @pytest.fixture
+def inputs() -> EuropeanEquityOption:
+    """
+    Option used for testing constant vol simulations.
+    """
+    notional: float = 1
+    initial_spot: float = 50
+    strike: float = 52
+    interest_rate: float = 0.1
+    # TODO: Create "proper" test to compare constant and non-constant vols.
+    volatility: float = 0.1545  # 0.4
+    time_to_maturity: float = 2
+    put: CallOrPut = CallOrPut.PUT
+    long: LongOrShort = LongOrShort.LONG
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, long)
+
+
+@pytest.fixture
 def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
     """
     Option used for testing non-constant vol simulations.
@@ -127,3 +144,36 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
         analytical_price=expected_price)
 
     assert expected_price == pytest.approx(actual.price, 0.1)
+
+
+def test_time_independent_vs_time_dependent_price(inputs):
+    number_of_paths: int = 100_000
+    number_of_time_steps: int = 50
+    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
+    np.random.seed(999)
+
+    actual_time_dependent_price: MonteCarloPricingResults = \
+        inputs.get_time_dependent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            volatility_excel_path=excel_file_path,
+            volatility_excel_sheet_name='vol_surface',
+            plot_paths=TestsConfig.plots_on,
+            show_stats=False)
+
+    np.random.seed(999)
+
+    actual_time_independent_price: MonteCarloPricingResults = \
+        inputs.get_time_independent_monte_carlo_price(
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            plot_paths=TestsConfig.plots_on,
+            show_stats=False)
+
+    print()
+    print()
+    print(f'Time-dependent Monte Carlo price: {actual_time_dependent_price.price}')
+    print(f'Time-independent Monte Carlo price: {actual_time_independent_price.price}')
+
+    assert actual_time_independent_price.price == pytest.approx(actual_time_dependent_price.price, 0.1)
+
