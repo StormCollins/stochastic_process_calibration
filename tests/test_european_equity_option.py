@@ -20,7 +20,8 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
     initial_spot: float = 50
     strike: float = 52
     interest_rate: float = 0.1
-    volatility: float = 0.4
+    # TODO: Create "proper" test to compare constant and non-constant vols.
+    volatility: float = 0.1545  # 0.4
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
     long: LongOrShort = LongOrShort.LONG
@@ -102,6 +103,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
+# One of them
 def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20

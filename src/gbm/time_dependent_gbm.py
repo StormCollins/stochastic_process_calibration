@@ -163,6 +163,9 @@ class TimeDependentGBM:
         """
         maturity_volatility: float = self.get_time_dependent_vol(time_to_maturity)
         log_returns: np.ndarray = np.log(paths[:, -1] / paths[:, 0])
+        log_returns_mean: float = np.average(log_returns)
+        log_returns_standard_deviation: float = float(np.std(log_returns))
+
         theoretical_mean: float = self.initial_spot * np.exp(self.drift * time_to_maturity)
         theoretical_standard_deviation: float = \
             theoretical_mean * np.sqrt((np.exp(maturity_volatility ** 2 * time_to_maturity) - 1))
@@ -175,11 +178,16 @@ class TimeDependentGBM:
                    norm.ppf(0.95) * maturity_volatility * np.sqrt(time_to_maturity))
 
         print('\n')
-        print(f' Time-Independent Statistics of GBM')
+        print(f' Time-Dependent Statistics of GBM')
         print(f' ----------------------------------')
+        print(f' Statistics of Underlying')
         print(f'  Mean: {theoretical_mean}')
         print(f'  Standard Deviation: {theoretical_standard_deviation}')
         print(f'  95% PFE: {pfe}')
+        print(f' Statistics of Returns')
+        print(f'  Mean: {log_returns_mean}')
+        print(f'  Standard Deviation: {log_returns_standard_deviation}')
+
         jarque_bera_test: [float, float] = jarque_bera(log_returns)
         print(f'  Jarque-Bera Test Results:')
         print(f'     p-value: {jarque_bera_test[0]}')
