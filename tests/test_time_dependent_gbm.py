@@ -110,7 +110,7 @@ def test_bootstrapped_vols_for_non_constant_vol_term_structure(excel_file_path):
 
     np.random.seed(999)
     tenors: list[float] = \
-        [0.0000,
+        [0.0100,
          0.0833,
          0.1667,
          0.2500,

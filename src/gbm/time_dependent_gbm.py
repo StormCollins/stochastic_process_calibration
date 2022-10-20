@@ -33,7 +33,7 @@ class TimeDependentGBM:
         # Here 'variance' means 'sigma**2 * time'.
         self.variance_interpolator: interp1d = self.setup_variance_interpolator(excel_file_path, sheet_name)
         self.bootstrapped_vol_interpolator: interp1d = \
-            self.setup_bootstrapped_variance_interpolator(excel_file_path, sheet_name)
+            self.setup_bootstrapped_volatility_interpolator(excel_file_path, sheet_name)
 
         self.initial_spot: float = initial_spot
 
@@ -76,7 +76,7 @@ class TimeDependentGBM:
         return variance_interpolator
 
     @staticmethod
-    def setup_bootstrapped_variance_interpolator(excel_file_path: str, sheet_name: str) -> interp1d:
+    def setup_bootstrapped_volatility_interpolator(excel_file_path: str, sheet_name: str) -> interp1d:
         """
         Sets up the interpolator for the variance i.e., 'volatility**2 * time'.
 
