@@ -12,6 +12,11 @@ from tests_config import TestsConfig
 
 
 @pytest.fixture
+def excel_file_path() -> str:
+    return r'tests/equity-atm-volatility-surface.xlsx'
+
+
+@pytest.fixture
 def option_for_constant_vol_tests() -> EuropeanEquityOption:
     """
     Option used for testing constant vol simulations.
@@ -94,11 +99,10 @@ def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
     assert expected_price == pytest.approx(actual.price, actual.error)
 
 
-def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_constant_vol_tests):
+def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_constant_vol_tests, excel_file_path):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
-
+    np.random.seed(999)
     actual: MonteCarloPricingResults = \
         option_for_constant_vol_tests.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
@@ -118,10 +122,9 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
-def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
+def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests, excel_file_path):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     actual: MonteCarloPricingResults = \
@@ -143,10 +146,9 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
     assert expected_price == pytest.approx(actual.price, 0.1)
 
 
-def test_time_independent_vs_time_dependent_price(inputs):
+def test_time_independent_vs_time_dependent_price(inputs, excel_file_path):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
-    excel_file_path = r'tests/equity-atm-volatility-surface.xlsx'
     np.random.seed(999)
 
     time_dependent: MonteCarloPricingResults = \
