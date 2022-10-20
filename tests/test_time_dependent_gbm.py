@@ -211,5 +211,28 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
          10.0000]
 
     tenors: list[float] = [t - 0.0001 for t in tenors]
-    bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
-    print(bootstrapped_vols)
+    extreme_bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    print(f'\n')
+    print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
+
+
+def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
+    drift: float = 0.1
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='extreme_vols',
+            initial_spot=50)
+
+    np.random.seed(999)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=100, time_to_maturity=7)
+    print(gbm_paths)
+    
+    # extreme_original_vols = [float(gbm.get_time_dependent_vol(t, False)) for t in time_steps]
+    # extreme_bootstrapped_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
+    # print(f'\n')
+    # print(f'Extreme Original Volatilities: {extreme_original_vols}')
+    # print(f'\n')
+    # print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
+
