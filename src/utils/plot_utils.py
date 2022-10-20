@@ -8,10 +8,17 @@ from scipy.stats import lognorm
 from scipy.stats import norm
 
 
+colors_green: str = '#86BC25'
+colors_light_green: str = '#E3E48D'
+colors_bright_green: str = '#C4D600'
+colors_teal: str = '#00A3E0'
+
+
 class PlotUtils:
     """
     A collection of static methods for plotting data such as histograms and
     """
+
     @staticmethod
     def plot_normal_histogram(
             data: np.ndarray,
@@ -36,13 +43,13 @@ class PlotUtils:
         ax.set_facecolor('white')
         ax.grid(False)
         (values, bins, _) = \
-            ax.hist(data.flatten(), bins=75, density=True, label=histogram_label, color='#86BC25')
+            ax.hist(data.flatten(), bins=75, density=True, label=histogram_label, color=colors_green)
 
         ax.annotate(
             f'{len(data):,} Sims',
             xy=(0.65, 0.5),
             xycoords='axes fraction',
-            bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
+            bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
@@ -50,7 +57,7 @@ class PlotUtils:
 
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = norm.pdf(x=bin_centers, loc=mean, scale=variance)
-        ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
+        ax.plot(bin_centers, pdf, label='Normal PDF', color=colors_teal, linewidth=2)
         ax.set_title(histogram_title)
         ax.set_xlabel('Return Value')
         ax.set_ylabel('Frequency')
@@ -81,13 +88,13 @@ class PlotUtils:
         ax.set_facecolor('white')
         ax.grid(True)
         (values, bins, _) = \
-            ax.hist(data.flatten(), bins=75, density=True, label=histogram_label, color='#86BC25')
+            ax.hist(data.flatten(), bins=75, density=True, label=histogram_label, color=colors_green)
 
         ax.annotate(
             f'{len(data):,} Sims',
             xy=(0.6, 0.5),
             xycoords='axes fraction',
-            bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
+            bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
@@ -95,7 +102,7 @@ class PlotUtils:
 
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = lognorm.pdf(x=bin_centers, s=variance, scale=np.exp(mean))
-        ax.plot(bin_centers, pdf, label='PDF', color='#00A3E0', linewidth=2)
+        ax.plot(bin_centers, pdf, label='Log-normal PDF', color=colors_teal, linewidth=2)
         ax.set_xlabel('Log-Return Value')
         ax.set_ylabel('Frequency')
         ax.set_title(histogram_title)
@@ -119,7 +126,7 @@ class PlotUtils:
         plt.rcParams['path.simplify_threshold'] = 1.0
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
         sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-        sns.set_palette(sns.dark_palette('#86BC25', n_colors=paths.shape[0], as_cmap=False))
+        sns.set_palette(sns.dark_palette(colors_green, n_colors=paths.shape[0], as_cmap=False))
         fig, ax = plt.subplots()
         ax.plot(time_steps, sorted_paths)
         empirical_path_means: np.ndarray = np.mean(paths, 0)
@@ -133,7 +140,7 @@ class PlotUtils:
                 label='Theoretical Path Average',
                 linestyle='solid',
                 linewidth='3',
-                color='#C4D600')
+                color=colors_bright_green)
 
         ax.plot(
             time_steps,
@@ -141,7 +148,7 @@ class PlotUtils:
             label='Empirical Path Average',
             linestyle='dashed',
             linewidth='1',
-            color='#00A3E0')
+            color=colors_teal)
 
         ax.grid(False)
         ax.set_facecolor('white')
@@ -153,7 +160,7 @@ class PlotUtils:
             f'{paths.shape[1] - 1:,} Time Steps',
             xy=(0.05, 0.75),
             xycoords='axes fraction',
-            bbox=dict(boxstyle='round,pad=0.3', fc='#E3E48D', lw=0))
+            bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
@@ -172,7 +179,7 @@ class PlotUtils:
         ax.set_facecolor('white')
         ax.set_title(title)
         ax.grid(False)
-        curve_colors: list[str] = ['#00A3E0', '#86BC25']
+        curve_colors: list[str] = [colors_teal, colors_green]
         y_min: float = np.min(curves[0][1])
         y_max: float = np.max(curves[0][1])
         for i, curve in enumerate(curves):

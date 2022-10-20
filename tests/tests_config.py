@@ -9,4 +9,4 @@ class TestsConfig:
     """
 
     # Toggles whether tests should output plots.
-    plots_on: bool = True
+    plots_on: bool = False
