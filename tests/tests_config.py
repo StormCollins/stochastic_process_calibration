@@ -8,5 +8,5 @@ class TestsConfig:
     Configurations for tests.
     """
 
-    # Toggles whether tests should output plots.
+    # Toggles plotting for tests.
     plots_on: bool = False

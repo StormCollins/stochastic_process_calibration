@@ -47,7 +47,7 @@ class PlotUtils:
 
         ax.annotate(
             f'{len(data):,} Sims',
-            xy=(0.65, 0.5),
+            xy=(0.75, 0.8),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
@@ -92,7 +92,7 @@ class PlotUtils:
 
         ax.annotate(
             f'{len(data):,} Sims',
-            xy=(0.6, 0.5),
+            xy=(0.75, 0.8),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 

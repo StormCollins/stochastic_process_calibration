@@ -118,7 +118,7 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
         fx_option_constant_vol.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            plot_paths=False,
+            plot_paths=TestsConfig.plots_on,
             show_stats=False)
 
     np.random.seed(999)

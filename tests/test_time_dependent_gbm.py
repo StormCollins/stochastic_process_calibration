@@ -8,7 +8,7 @@ from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
 from scipy.interpolate import interp1d
-from scipy.interpolate import make_interp_spline
+from tests_config import TestsConfig
 
 
 @pytest.fixture
@@ -96,7 +96,9 @@ def test_distribution(excel_file_path):
                          initial_spot=100)
 
     paths: np.ndarray = gbm.get_paths(10_000, 10, time_to_maturity)
-    gbm.create_plots(paths, 1.0)
+    if TestsConfig.plots_on:
+        gbm.create_plots(paths, 1.0)
+
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
     assert path_stats.EmpiricalStandardDeviation == pytest.approx(path_stats.TheoreticalStandardDeviation, abs=1.00)
