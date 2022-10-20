@@ -120,7 +120,7 @@ class TimeDependentGBM:
         if use_bootstrapped_variances:
             return self.bootstrapped_vol_interpolator(tenor)
         else:
-            return float(np.sqrt(self.variance_interpolator(tenor) / tenor))
+            return float(np.sqrt(self.variance_interpolator(tenor) / tenor)/100)
 
     def create_plots(self, paths: np.ndarray, time_to_maturity: float, additional_annotation: str = None) -> None:
         """
