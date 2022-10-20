@@ -182,6 +182,34 @@ def test_bootstrap_volatility_vs_original_volatility_plot(excel_file_path):
     lns = plot_1 + plot_2
     labels = [l.get_label() for l in lns]
     plt.legend(lns, labels, loc='lower center')
-    plt.title('Bootstrapped volatilities vs original volatilities')
-    print(original_volatilities)
+    plt.title('Bootstrapped volatilities vs Original volatilities')
     plt.show()
+
+
+def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
+    drift: float = 0.1
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='extreme_vols',
+            initial_spot=0)
+
+    np.random.seed(999)
+    tenors: list[float] = \
+        [0.0100,
+         0.0833,
+         0.1667,
+         0.2500,
+         0.5000,
+         0.7500,
+         1.0000,
+         2.0000,
+         3.0000,
+         5.0000,
+         7.0000,
+         10.0000]
+
+    tenors: list[float] = [t - 0.0001 for t in tenors]
+    bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    print(bootstrapped_vols)
