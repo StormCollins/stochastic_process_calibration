@@ -25,7 +25,8 @@ class PlotUtils:
             histogram_title: str,
             histogram_label: str,
             mean: float,
-            variance: float) -> None:
+            variance: float,
+            additional_annotation: str = None) -> None:
         """
         Plots a histogram of the given data as well as overlaying a PDF of a normal distribution for the given mean
         and volatility.
@@ -35,6 +36,7 @@ class PlotUtils:
         :param histogram_label: Histogram label.
         :param mean: The mean of the normal distribution PDF.
         :param variance: The volatility of the normal distribution PDF.
+        :param additional_annotation: Any additional annotation to add to the plot. Default = None.
         :return: None.
         """
         plt.style.use(['ggplot', 'fast'])
@@ -50,6 +52,13 @@ class PlotUtils:
             xy=(0.75, 0.8),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
+
+        if additional_annotation is not None:
+            ax.annotate(
+                f'{additional_annotation}',
+                xy=(0.05, 0.05),
+                xycoords='axes fraction',
+                bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
@@ -70,7 +79,8 @@ class PlotUtils:
             histogram_title: str,
             histogram_label: str,
             mean: float,
-            variance: float) -> None:
+            variance: float,
+            additional_annotation: str = None) -> None:
         """
         Plots a histogram of the given data as well as overlaying a PDF of a log-normal distribution for the given mean
         and volatility .
@@ -80,6 +90,7 @@ class PlotUtils:
         :param histogram_label: Histogram label.
         :param mean: The mean of the log-normal distribution PDF.
         :param variance: The volatility of the log-normal distribution PDF.
+        :param additional_annotation: Any additional annotation to add to the plot. Default = None.
         :return: None.
         """
         plt.style.use(['ggplot', 'fast'])
@@ -96,6 +107,13 @@ class PlotUtils:
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
+        if additional_annotation is not None:
+            ax.annotate(
+                f'{additional_annotation}',
+                xy=(0.05, 0.05),
+                xycoords='axes fraction',
+                bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
+
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
             ax.spines[axis].set_color('black')
@@ -110,7 +128,12 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_monte_carlo_paths(time_steps: np.ndarray, paths: np.ndarray, title: str, drift: float = None) -> None:
+    def plot_monte_carlo_paths(
+            time_steps: np.ndarray,
+            paths: np.ndarray,
+            title: str,
+            drift: float = None,
+            additional_annotation: str = None) -> None:
         """
         Used to plot Monte Carlo paths.
 
@@ -119,7 +142,8 @@ class PlotUtils:
         :param title: The title of the plot.
         :param drift: The (constant) drift, if applicable, of the process. This just corresponds to the standard drift
         in GBM. Currently, Hull-White is not supported.
-        :return: 
+        :param additional_annotation: Any additional annotation to add to the plot. Default = None.
+        :return:
         """
         plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
@@ -162,6 +186,13 @@ class PlotUtils:
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
+        if additional_annotation is not None:
+            ax.annotate(
+                f'{additional_annotation}',
+                xy=(0.05, 0.05),
+                xycoords='axes fraction',
+                bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
+
         for axis in ['top', 'bottom', 'left', 'right']:
             ax.spines[axis].set_linewidth(0.5)
             ax.spines[axis].set_color('black')
@@ -171,7 +202,20 @@ class PlotUtils:
         plt.show(block=False)
 
     @staticmethod
-    def plot_curves(title: str, time_steps: np.ndarray, curves: list[tuple[str, np.ndarray]]) -> None:
+    def plot_curves(
+            title: str,
+            time_steps: np.ndarray,
+            curves: list[tuple[str, np.ndarray]],
+            additional_annotation: str = None) -> None:
+        """
+        Plots curves that have been passed as a tuple of ['legend label', 'data'] and which have the same time_steps.
+
+        :param title: Title of the plot.
+        :param time_steps: Time steps.
+        :param curves: The curves to plot consisting of tuples of the form ['legend label', 'data'].
+        :param additional_annotation: Any additional annotation to add to the plot. Default = None.
+        :return:
+        """
         plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
         plt.rcParams['path.simplify_threshold'] = 1.0
@@ -186,6 +230,13 @@ class PlotUtils:
             ax.plot(time_steps, curve[1], color=curve_colors[i], label=curve[0])
             y_min = np.min([y_min, np.min(curve[1])])
             y_max = np.max([y_max, np.max(curve[1])])
+
+        if additional_annotation is not None:
+            ax.annotate(
+                f'{additional_annotation}',
+                xy=(0.05, 0.05),
+                xycoords='axes fraction',
+                bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
 
         ax.set_xlabel('$t$ (years)')
         ax.set_ylabel('$P(0, t)$')

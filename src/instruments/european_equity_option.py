@@ -83,6 +83,7 @@ class EuropeanEquityOption:
             number_of_paths: int,
             number_of_time_steps: int,
             plot_paths: bool = False,
+            additional_annotation_for_plot: str = None,
             show_stats: bool = False) -> MonteCarloPricingResults:
         """
         Returns the price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
@@ -91,6 +92,7 @@ class EuropeanEquityOption:
         :param number_of_paths: Number of paths in the Monte Carlo simulation.
         :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
         :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
+        :param additional_annotation_for_plot: Any aaditional annotation for the plot. Default = None.
         :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False.
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
@@ -111,7 +113,7 @@ class EuropeanEquityOption:
                 time_to_maturity=self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation=additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)
@@ -141,6 +143,7 @@ class EuropeanEquityOption:
             volatility_excel_path: str,
             volatility_excel_sheet_name: str,
             plot_paths: bool = False,
+            additional_annotation_for_plot: str = None,
             show_stats: bool = False):
         """
         Returns the price for a 'CALL' or 'PUT' european equity option using Monte Carlo simulations where the
@@ -151,6 +154,7 @@ class EuropeanEquityOption:
         :param volatility_excel_path: Specifies the path where the Excel file of volatilities is stored.
         :param volatility_excel_sheet_name: Specifies the name of the Excel sheet where the volatilities are stored.
         :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
+        :param additional_annotation_for_plot: Any additional annotation for the plot. Default = None.
         :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-dependent.
@@ -169,7 +173,7 @@ class EuropeanEquityOption:
             gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)

@@ -30,7 +30,7 @@ def test_distribution():
             time_to_maturity=time_to_maturity)
 
     if TestsConfig.plots_on:
-        gbm.create_plots(paths, time_to_maturity)
+        gbm.create_plots(paths, time_to_maturity, f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}')
 
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)

@@ -46,7 +46,7 @@ class TimeIndependentGBM:
         paths = np.insert(paths, 0, np.tile(self.initial_spot, number_of_paths), axis=1)
         return paths
 
-    def create_plots(self, paths: np.ndarray, time_to_maturity: float) -> None:
+    def create_plots(self, paths: np.ndarray, time_to_maturity: float, additional_annotation: str = None) -> None:
         """
         Plots different figures such as:
 
@@ -65,7 +65,8 @@ class TimeIndependentGBM:
             histogram_title='Time-Independent GBM Log-Returns vs. Normal PDF',
             histogram_label='Log-returns histogram',
             mean=mu,
-            variance=sigma)
+            variance=sigma,
+            additional_annotation=additional_annotation)
 
         returns: np.ndarray = paths[:, -1] / paths[:, 0]
         mu: float = (self.drift - 0.5 * self.volatility ** 2) * time_to_maturity
@@ -75,7 +76,8 @@ class TimeIndependentGBM:
             histogram_title='Time-Independent GBM Returns vs. Log-Normal PDF',
             histogram_label='Returns Histogram',
             mean=mu,
-            variance=sigma)
+            variance=sigma,
+            additional_annotation=additional_annotation)
 
     def get_path_statistics(self, paths: np.ndarray, time_to_maturity: float) -> PathStatistics:  # dict[str, float]:
         """

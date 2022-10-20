@@ -122,7 +122,7 @@ class TimeDependentGBM:
         else:
             return float(np.sqrt(self.variance_interpolator(tenor) / tenor))
 
-    def create_plots(self, paths: np.ndarray, time_to_maturity: float) -> None:
+    def create_plots(self, paths: np.ndarray, time_to_maturity: float, additional_annotation: str = None) -> None:
         """
         Plots different figures such as:
 
@@ -132,8 +132,10 @@ class TimeDependentGBM:
         """
         time_steps = np.linspace(0, time_to_maturity, paths.shape[1])
         maturity_volatility: float = self.get_time_dependent_vol(time_to_maturity)
-        PlotUtils.plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths', self.drift)
-        log_returns = np.log(paths[:, -1] / paths[:, 0])
+        PlotUtils.\
+            plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths', self.drift, additional_annotation)
+
+        log_returns: np.ndarray = np.log(paths[:, -1] / paths[:, 0])
         mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * time_to_maturity
         sigma: float = maturity_volatility * np.sqrt(time_to_maturity)
         PlotUtils.plot_normal_histogram(
@@ -141,7 +143,8 @@ class TimeDependentGBM:
             histogram_title='Time-Dependent GBM Log-Returns vs. Normal PDF',
             histogram_label='Log-returns histogram',
             mean=mu,
-            variance=sigma)
+            variance=sigma,
+            additional_annotation=additional_annotation)
 
         returns: np.ndarray = paths[:, -1] / paths[:, 0]
         mu: float = (self.drift - 0.5 * maturity_volatility ** 2) * time_to_maturity
@@ -151,7 +154,8 @@ class TimeDependentGBM:
             histogram_title='Time-Dependent GBM Returns vs. Log-Normal PDF',
             histogram_label='Returns Histogram',
             mean=mu,
-            variance=sigma)
+            variance=sigma,
+            additional_annotation=additional_annotation)
 
     def get_path_statistics(self, paths: np.ndarray, time_to_maturity: float) -> PathStatistics:
         """

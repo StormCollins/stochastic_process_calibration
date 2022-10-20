@@ -1,7 +1,9 @@
 """
 Time-dependent GBM unit tests.
 """
+import inspect
 import numpy as np
+import os.path
 import pytest
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
@@ -95,7 +97,7 @@ def test_distribution(excel_file_path):
 
     paths: np.ndarray = gbm.get_paths(10_000, 10, time_to_maturity)
     if TestsConfig.plots_on:
-        gbm.create_plots(paths, 1.0)
+        gbm.create_plots(paths, 1.0, f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}')
 
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
