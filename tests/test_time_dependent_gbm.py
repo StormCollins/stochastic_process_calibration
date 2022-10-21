@@ -174,7 +174,7 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
 
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.step(tenors, bootstrapped_volatilities, where='post', label='Bootstrapped vols')
+    ax.step(tenors, bootstrapped_volatilities, color='#00A3E0', where='post', label='Bootstrapped vols')
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
 
     # original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in np.linspace(0.01, 10, 500)]
@@ -185,7 +185,7 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     smooth_tenors = np.linspace(0, 10, 500)
     smoothed_variances = [model(t) for t in smooth_tenors]
     smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
-    ax.plot(smooth_tenors, smoothed_original_vols, 'g', label='Original vols')
+    ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
     ax.set_xlabel('Tenor')
     ax.set_ylabel('Bootstrapped volatilities')
     ax.set_title('Bootstrapped volatilities vs. Original volatilities')
