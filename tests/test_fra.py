@@ -1,9 +1,12 @@
 """
 FRA Unit tests.
 """
-from src.instruments.fra import *
-from tests_config import TestsConfig
+import inspect
+import os
 import pytest
+from src.instruments.fra import *
+from test_config import TestsConfig
+from test_utils import file_and_test_annotation
 
 
 @pytest.fixture
@@ -94,7 +97,8 @@ def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hull_white_proces
 
     df = \
         hull_white_process.a_function(atm_fra.start_tenor, np.array([atm_fra.end_tenor])) * \
-        np.exp(-1 * short_rates[:, -1] * hull_white_process.b_function(atm_fra.start_tenor, np.array([atm_fra.end_tenor])))
+        np.exp(
+            -1 * short_rates[:, -1] * hull_white_process.b_function(atm_fra.start_tenor, np.array([atm_fra.end_tenor])))
 
     forward_rates = (1/(atm_fra.end_tenor - atm_fra.start_tenor)) * ((1/df) - 1)
 
@@ -119,6 +123,7 @@ def test_get_monte_carlo_value_compared_to_analytical(flat_zero_rate_curve, atm_
             number_of_paths=10_000,
             number_of_time_steps=20,
             short_rate_tenor=hull_white_process.short_rate_tenor,
+            additional_annotation_for_plot=file_and_test_annotation(),
             plot_paths=TestsConfig.plots_on)
 
     # Note the large error value of 550 is due to the large notional of 1_000_000.

@@ -7,7 +7,7 @@ import os
 import pytest
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
-from tests_config import TestsConfig
+from test_config import TestsConfig
 
 
 def test_distribution():
@@ -31,11 +31,17 @@ def test_distribution():
             number_of_time_steps=20,
             time_to_maturity=time_to_maturity)
 
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+        if TestsConfig.show_test_location \
+        else None
+
     if TestsConfig.plots_on:
         gbm.create_plots(
             paths=paths,
             time_to_maturity=time_to_maturity,
-            additional_annotation=f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}')
+            additional_annotation=additional_annotation)
 
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)

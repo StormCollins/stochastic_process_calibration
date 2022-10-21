@@ -117,7 +117,7 @@ class TimeDependentGBM:
 
         return bootstrapped_variance_interpolator
 
-    def get_time_dependent_vol(self, tenor: float, use_bootstrapped_variances=True) -> float:
+    def get_time_dependent_vol(self, tenor: float | np.ndarray, use_bootstrapped_variances=True) -> float | np.ndarray:
         """
         Gets the time-dependent volatility at the given tenor.
 
@@ -128,7 +128,10 @@ class TimeDependentGBM:
         if use_bootstrapped_variances:
             return self.bootstrapped_vol_interpolator(tenor)
         else:
-            return float(np.sqrt(self.linear_variance_interpolator(tenor) / tenor))
+            if type(tenor) == float:
+                return float(np.sqrt(self.linear_variance_interpolator(tenor) / tenor))
+            else:
+                return np.sqrt(self.linear_variance_interpolator(tenor) / tenor)
 
     def create_plots(self, paths: np.ndarray, time_to_maturity: float, additional_annotation: str = None) -> None:
         """

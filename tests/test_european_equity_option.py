@@ -1,9 +1,6 @@
 """
 Unit tests for European equity options.
 """
-import inspect
-import os.path
-
 import numpy as np
 import pytest
 from src.enums_and_named_tuples.call_or_put import CallOrPut
@@ -11,11 +8,15 @@ from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
 from src.instruments.european_equity_option import EuropeanEquityOption
 from src.utils.console_utils import ConsoleUtils
-from tests_config import TestsConfig
+from test_config import TestsConfig
+from test_utils import file_and_test_annotation
 
 
 @pytest.fixture
 def excel_file_path() -> str:
+    """
+    The path to the Excel file containing the ATM (at-the-money) equity volatility term structure.
+    """
     return r'tests/equity-atm-volatility-surface.xlsx'
 
 
@@ -90,7 +91,7 @@ def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
-            additional_annotation_for_plot=f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}',
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
@@ -114,7 +115,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_for_constant_vol(option_for_const
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
             plot_paths=TestsConfig.plots_on,
-            additional_annotation_for_plot=f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}',
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
@@ -139,6 +140,7 @@ def test_time_dependent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
             plot_paths=TestsConfig.plots_on,
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     expected_price: float = option_for_non_constant_vol_tests.get_black_scholes_price()
@@ -155,7 +157,6 @@ def test_time_independent_vs_time_dependent_price(inputs, excel_file_path):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
     np.random.seed(999)
-
     time_dependent: MonteCarloPricingResults = \
         inputs.get_time_dependent_monte_carlo_price(
             number_of_paths=number_of_paths,
@@ -163,7 +164,7 @@ def test_time_independent_vs_time_dependent_price(inputs, excel_file_path):
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
             plot_paths=TestsConfig.plots_on,
-            additional_annotation_for_plot=f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}',
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     np.random.seed(999)
@@ -173,7 +174,7 @@ def test_time_independent_vs_time_dependent_price(inputs, excel_file_path):
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
-            additional_annotation_for_plot=f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}',
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     print('\n\n')

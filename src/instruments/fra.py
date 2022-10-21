@@ -33,7 +33,8 @@ class Fra:
             number_of_paths: int,
             number_of_time_steps: int,
             short_rate_tenor: float = 0.01,
-            plot_paths: bool = False) -> [np.ndarray, np.ndarray]:
+            plot_paths: bool = False,
+            additional_annotation_for_plot: str = None) -> [np.ndarray, np.ndarray]:
         """
         Gets the Monte Carlo values of the FRA at the various simulation time steps.
 
@@ -44,6 +45,7 @@ class Fra:
         :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
         :param short_rate_tenor: The tenor of the underlying short rate to simulate.
         :param plot_paths: Plot the values of the FRA paths. Default = False.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :return: Monte Carlo (mean) values and error (standard deviation) per time step.
         """
         hw: HullWhite = HullWhite(alpha, sigma, initial_curve, short_rate_tenor)
@@ -68,7 +70,11 @@ class Fra:
             self.notional * (forward_rates - self.strike) * (self.end_tenor - self.start_tenor) * stochastic_dfs
 
         if plot_paths:
-            PlotUtils.plot_monte_carlo_paths(simulation_tenors, values, "Simulated FRA Values")
+            PlotUtils.plot_monte_carlo_paths(
+                time_steps=simulation_tenors,
+                paths=values,
+                title='Simulated FRA Values',
+                additional_annotation=additional_annotation_for_plot)
 
         return np.mean(values, 0), np.sqrt(np.var(values, 0) / number_of_paths)
 

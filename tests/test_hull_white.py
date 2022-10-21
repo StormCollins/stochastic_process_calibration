@@ -1,13 +1,15 @@
 """
 Hull-White unit tests.
 """
+import inspect
+import os
 import pytest
 import scipy
-import scipy.stats
 import scipy.integrate
+import scipy.stats
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
-from tests_config import TestsConfig
+from test_config import TestsConfig
 
 
 @pytest.fixture
@@ -256,12 +258,19 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
         np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
 
     initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+        if TestsConfig.show_test_location \
+        else None
+
     if TestsConfig.plots_on:
         PlotUtils.plot_curves(
             title='Mean Stochastic Discount Factors vs. Initial Discount Factors',
             time_steps=time_steps,
             curves=[('Initial Curve Discount Factors', initial_curve_discount_factors),
-                    ('Stochastic Discount Factors', stochastic_discount_factors)])
+                    ('Stochastic Discount Factors', stochastic_discount_factors)],
+            additional_annotation=additional_annotation)
 
     assert all([a == pytest.approx(b, 0.05)
                 for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
@@ -281,7 +290,8 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
             maturity=maturity,
             number_of_paths=2,
             number_of_time_steps=5,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
+            )
 
     for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)

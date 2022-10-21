@@ -79,14 +79,16 @@ class FxOption:
             number_of_paths: int,
             number_of_time_steps: int,
             plot_paths: bool = True,
-            show_stats: bool = False) -> MonteCarloPricingResults:
+            show_stats: bool = True,
+            additional_annotation_for_plot: str = None) -> MonteCarloPricingResults:
         """
         Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations.
 
-        :param show_stats: If set to TruDisplays the mean, standard deviation, 95% PFE and normality test.
+        :param show_stats: If set to True displays the mean, standard deviation, 95% PFE and normality test.
         :param number_of_paths: Number of current_value for the FX option.
         :param number_of_time_steps: Number of time steps for the FX option.
         :param plot_paths: If set to True plots the current_value.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :return: Monte Carlo price for an FX Option.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
@@ -97,7 +99,7 @@ class FxOption:
         paths: np.ndarray = self.notional * gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)
@@ -127,7 +129,8 @@ class FxOption:
             volatility_excel_path: str,
             volatility_excel_sheet_name: str,
             plot_paths: bool = False,
-            show_stats: bool = False):
+            show_stats: bool = False,
+            additional_annotation_for_plot: str = None) -> MonteCarloPricingResults:
         """
         Returns the price for a 'CALL' or 'PUT' FX option using monte carlo simulations.
 
@@ -137,24 +140,22 @@ class FxOption:
         :param volatility_excel_sheet_name: Specifies the name of the Excel sheet where the volatilities are stored.
         :param plot_paths: If set to True plots the current_value.
         :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :return: Monte Carlo price for an FX Option.
-
         """
-
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
         direction: float = 1 if self.long_or_short == LongOrShort.LONG else -1
-
         gbm: TimeDependentGBM = \
             TimeDependentGBM(
-                    drift=drift,
-                    excel_file_path=volatility_excel_path,
-                    sheet_name=volatility_excel_sheet_name,
-                    initial_spot=self.initial_spot)
+                drift=drift,
+                excel_file_path=volatility_excel_path,
+                sheet_name=volatility_excel_sheet_name,
+                initial_spot=self.initial_spot)
 
         paths: np.ndarray = gbm.get_paths(number_of_paths, number_of_time_steps, self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)
