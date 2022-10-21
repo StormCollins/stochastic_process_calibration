@@ -31,7 +31,8 @@ class TimeDependentGBM:
         """
         self.drift: float = drift
         # Here 'variance' means 'sigma**2 * time'.
-        self.variance_interpolator: interp1d = self.setup_variance_interpolator(excel_file_path, sheet_name)
+        self.vol_tenors, self.vols = self.get_vols_from_file(excel_file_path, sheet_name)
+        self.linear_variance_interpolator: interp1d = self.setup_linear_variance_interpolator(excel_file_path, sheet_name)
         self.bootstrapped_vol_interpolator: interp1d = \
             self.setup_bootstrapped_volatility_interpolator(excel_file_path, sheet_name)
 
@@ -58,21 +59,32 @@ class TimeDependentGBM:
         return paths
 
     @staticmethod
-    def setup_variance_interpolator(excel_file_path: str, sheet_name: str) -> interp1d:
+    def get_vols_from_file(excel_file_path: str, sheet_name: str) -> [list[float], list[float]]:
         """
-        Sets up the interpolator for the variance i.e., 'volatility**2 * time'.
+        Gets the tenors and corresponding volatilities for some term structure in the given Excel file.
+
+        :param excel_file_path: The path of the file. In other words, the file path where the Excel file is.
+        :param sheet_name: The sheet name in the Excel file housing the relevant data.
+        :return: Tenors and vols for term structure.
+        """
+        excel_records = pd.read_excel(excel_file_path, sheet_name=sheet_name)
+        excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
+        tenors: list[float] = list(map(float, excel_records_df.Tenors))
+        vols: list[float] = [v / 100 for v in list(map(float, excel_records_df.Quotes))]
+        return tenors, vols
+
+    @staticmethod
+    def setup_linear_variance_interpolator(excel_file_path: str, sheet_name: str) -> interp1d:
+        """
+        Sets up the linear interpolator for the variance i.e., 'volatility**2 * time'.
 
         :param excel_file_path: The path of the file. In other words, the file path where the Excel file is.
         :param sheet_name: The sheet name in the Excel file housing the relevant data.
         :return: Returns the time dependent variance interpolator.
         """
-        excel_records = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-        excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
-        tenors: list[float] = list(map(float, excel_records_df.Tenors))
-        vols: list[float] = list(map(float, excel_records_df.Quotes))
+        tenors, vols = TimeDependentGBM.get_vols_from_file(excel_file_path, sheet_name)
         variances = [v**2 * t for v, t in zip(vols, tenors)]
         variance_interpolator: interp1d = interp1d(tenors, variances, kind='linear', fill_value='extrapolate')
-
         return variance_interpolator
 
     @staticmethod
@@ -84,11 +96,7 @@ class TimeDependentGBM:
         :param sheet_name: The sheet name in the Excel file housing the relevant data.
         :return: Returns the time dependent variance interpolator.
         """
-        excel_records = pd.read_excel(excel_file_path, sheet_name=sheet_name)
-        excel_records_df = excel_records.loc[:, ~excel_records.columns.str.contains('^Unnamed')]
-        tenors: list[float] = list(map(float, excel_records_df.Tenors))
-        vols: list[float] = list(map(float, excel_records_df.Quotes))
-        vols = [v / 100 for v in vols]
+        tenors, vols = TimeDependentGBM.get_vols_from_file(excel_file_path, sheet_name)  # = [v / 100 for v in vols]
         variances = [v**2 * t for v, t in zip(vols, tenors)]
         bootstrapped_variances = []
         bootstrapped_vols = []
@@ -120,7 +128,7 @@ class TimeDependentGBM:
         if use_bootstrapped_variances:
             return self.bootstrapped_vol_interpolator(tenor)
         else:
-            return float(np.sqrt(self.variance_interpolator(tenor) / tenor)/100)
+            return float(np.sqrt(self.linear_variance_interpolator(tenor) / tenor))
 
     def create_plots(self, paths: np.ndarray, time_to_maturity: float, additional_annotation: str = None) -> None:
         """

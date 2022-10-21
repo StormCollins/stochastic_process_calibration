@@ -18,7 +18,7 @@ def excel_file_path() -> str:
     return r'tests/equity-atm-volatility-surface.xlsx'
 
 
-def test_get_time_dependent_volatility_for_constant_vol(excel_file_path):
+def test_get_time_dependent_volatility_for_constant_vol_term_structure(excel_file_path):
     drift: float = 0.1
     volatility: float = 0.4
     gbm: TimeDependentGBM = \
@@ -35,7 +35,7 @@ def test_get_time_dependent_volatility_for_constant_vol(excel_file_path):
     assert actual_vols == pytest.approx(expected_vols, abs=0.00001)
 
 
-def test_get_time_dependent_volatility_for_non_constant_vol(excel_file_path):
+def test_get_time_dependent_volatility_for_non_constant_vol_term_structure(excel_file_path):
     drift: float = 0.1
     volatility: float = 0.4
     gbm: TimeDependentGBM = \
@@ -52,7 +52,7 @@ def test_get_time_dependent_volatility_for_non_constant_vol(excel_file_path):
     assert actual_vols == pytest.approx(expected_vols, abs=0.00001)
 
 
-def test_get_time_dependent_gbm_paths_for_constant_vols(excel_file_path):
+def test_get_time_dependent_gbm_paths_for_constant_vol_term_structure(excel_file_path):
     drift: float = 0.1
     volatility: float = 0.4
     number_of_paths: int = 10
@@ -117,7 +117,7 @@ def test_bootstrapped_vols_for_non_constant_vol_term_structure(excel_file_path):
 
     np.random.seed(999)
     tenors: list[float] = \
-        [0.0100,
+        [0.0001,
          0.0833,
          0.1667,
          0.2500,
@@ -149,7 +149,7 @@ def test_bootstrapped_vols_for_non_constant_vol_term_structure(excel_file_path):
     assert actual == pytest.approx(expected, abs=0.001)
 
 
-def test_bootstrap_volatility_vs_original_volatility_plot(excel_file_path):
+def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     drift: float = 0.1
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
@@ -157,8 +157,9 @@ def test_bootstrap_volatility_vs_original_volatility_plot(excel_file_path):
             excel_file_path=excel_file_path,
             sheet_name='vol_surface',
             initial_spot=0)
+
     tenors: list[float] = \
-        [0.0100,
+        [0.0000,
          0.0833,
          0.1667,
          0.2500,
@@ -167,26 +168,28 @@ def test_bootstrap_volatility_vs_original_volatility_plot(excel_file_path):
          1.0000,
          2.0000,
          3.0000,
-         6.0000,
+         5.0000,
          7.0000,
          10.0000]
-    # tenors: list[float] = [t - 0.0001 for t in tenors]
 
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
-    plot_1 = plt.step(tenors, bootstrapped_volatilities, where='post', label='Bootstrapped volatilities')
-    plt.xlabel('Tenor')
-    plt.ylabel('Bootstrapped volatilities')
-    plt.twinx()
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    ax.step(tenors, bootstrapped_volatilities, where='post', label='Bootstrapped vols')
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
-    model = interp1d(tenors, original_volatilities, 'linear', fill_value='extrapolate')
-    # model = make_interp_spline(tenors, original_volatilities, k=1)
+
+    # original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in np.linspace(0.01, 10, 500)]
+    original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
+
+    # model = interp1d(tenors, original_volatilities, 'linear', fill_value='extrapolate')
+    model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
     smooth_tenors = np.linspace(0, 10, 500)
-    plot_2 = plt.plot(smooth_tenors, model(smooth_tenors), 'g', label='Original volatilities')
-    plt.ylabel('Original volatilities')
-    lns = plot_1 + plot_2
-    labels = [l.get_label() for l in lns]
-    plt.legend(lns, labels, loc='lower center')
-    plt.title('Bootstrapped volatilities vs Original volatilities')
+    smoothed_variances = [model(t) for t in smooth_tenors]
+    smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
+    ax.plot(smooth_tenors, smoothed_original_vols, 'g', label='Original vols')
+    ax.set_xlabel('Tenor')
+    ax.set_ylabel('Bootstrapped volatilities')
+    ax.set_title('Bootstrapped volatilities vs. Original volatilities')
+    ax.legend()
     plt.show()
 
 
@@ -232,7 +235,7 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     np.random.seed(999)
     gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=100, time_to_maturity=7)
     print(gbm_paths)
-    
+
     # extreme_original_vols = [float(gbm.get_time_dependent_vol(t, False)) for t in time_steps]
     # extreme_bootstrapped_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
     # print(f'\n')
@@ -240,3 +243,69 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     # print(f'\n')
     # print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
 
+
+def test_get_vols_from_file(excel_file_path):
+    actual_tenors, actual_vols = TimeDependentGBM.get_vols_from_file(excel_file_path, 'vol_surface')
+    expected_tenors: list[float] = \
+        [0.0, 0.0833, 0.1667, 0.25, 0.5, 0.75, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0]
+
+    expected_vols: list[float] = \
+        [0.12775, 0.13575, 0.14275, 0.14550, 0.14900, 0.15100, 0.15400, 0.15450, 0.15885, 0.15945, 0.15120, 0.15000]
+
+    assert actual_tenors == pytest.approx(expected_tenors, abs=0.001)
+    assert actual_vols == pytest.approx(expected_vols, abs=0.001)
+
+
+def test_linear_variance_interpolator(excel_file_path):
+    gbm: TimeDependentGBM = TimeDependentGBM(0.0, excel_file_path, 'vol_surface', 100)
+    tenors: list[float] = \
+        [0.04167,
+         0.08333,
+         0.12500,
+         0.16667,
+         0.20833,
+         0.25000,
+         0.37500,
+         0.50000,
+         0.62500,
+         0.75000,
+         0.87500,
+         1.00000,
+         1.50000,
+         2.00000,
+         2.50000,
+         3.00000,
+         4.00000,
+         5.00000,
+         6.00000,
+         7.00000,
+         8.50000,
+         10.00000]
+
+    expected_vols: list[float] = \
+        [0.13575,
+         0.13575,
+         0.14046,
+         0.14275,
+         0.14441,
+         0.14550,
+         0.14784,
+         0.14900,
+         0.15020,
+         0.15100,
+         0.15272,
+         0.15400,
+         0.15433,
+         0.15450,
+         0.15712,
+         0.15885,
+         0.15923,
+         0.15945,
+         0.15469,
+         0.15120,
+         0.15050,
+         0.15000]
+
+    actual_vols = [gbm.get_time_dependent_vol(t, False) for t in tenors]
+
+    assert actual_vols == pytest.approx(expected_vols, abs=0.0001)
