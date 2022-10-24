@@ -225,12 +225,13 @@ class HullWhite:
 
     # TODO: Check if this function is used.
     @staticmethod
-    def plot_paths(time_steps, paths) -> None:
+    def plot_paths(time_steps, paths, plot_annotation: str = None) -> None:
         """
         Plots the paths from Monte Carlo simulation vs. the time steps.
 
         :param time_steps: The time steps.
         :param paths: The output paths from the simulation.
+        :param plot_annotation: Additional annotation to add to the plot. Default = None.
         :return: None
         """
         indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))

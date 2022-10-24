@@ -1,20 +1,21 @@
 """
 Time-dependent GBM unit tests.
 """
-import inspect
-import numpy as np
-import os.path
 import pytest
-import matplotlib.pyplot as plt
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
 from scipy.interpolate import interp1d
-from tests_config import TestsConfig
+from src.utils.plot_utils import *
+from test_config import TestsConfig
+from test_utils import file_and_test_annotation
 
 
 @pytest.fixture
 def excel_file_path() -> str:
+    """
+    Path to the Excel file containing the equity ATM (at-the-money) volatility term-structure.
+    """
     return r'tests/equity-atm-volatility-surface.xlsx'
 
 
@@ -92,14 +93,15 @@ def test_distribution(excel_file_path):
     np.random.seed(999)
     time_to_maturity: float = 1.0
     gbm: TimeDependentGBM = \
-        TimeDependentGBM(drift=0.0,
-                         excel_file_path=excel_file_path,
-                         sheet_name='constant_vol_surface',
-                         initial_spot=100)
+        TimeDependentGBM(
+            drift=0.0,
+            excel_file_path=excel_file_path,
+            sheet_name='constant_vol_surface',
+            initial_spot=100)
 
     paths: np.ndarray = gbm.get_paths(10_000, 10, time_to_maturity)
     if TestsConfig.plots_on:
-        gbm.create_plots(paths, 1.0, f'{os.path.basename(__file__)} : {inspect.currentframe().f_code.co_name}')
+        gbm.create_plots(paths, 1.0, file_and_test_annotation())
 
     path_stats: PathStatistics = gbm.get_path_statistics(paths, time_to_maturity)
     assert path_stats.EmpiricalMean == pytest.approx(path_stats.TheoreticalMean, abs=1.00)
@@ -307,5 +309,46 @@ def test_linear_variance_interpolator(excel_file_path):
          0.15000]
 
     actual_vols = [gbm.get_time_dependent_vol(t, False) for t in tenors]
-
     assert actual_vols == pytest.approx(expected_vols, abs=0.0001)
+
+
+def test_bootstrapped_volatility_distribution2():
+    np.random.seed(999)
+    number_of_samples = 100_000
+    z = np.random.normal(0, 1, number_of_samples) * np.sqrt(2)
+    y1 = np.random.normal(0, 1, number_of_samples) * np.sqrt(1)
+    y2 = np.random.normal(0, 1, number_of_samples) * np.sqrt(1)
+    y = y1 + y2
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    ax.hist(z, bins=75, density=True, label='Single Variable', color=colors_green)
+    ax.hist(y, bins=75, density=True, label='Sum of Variables', color=colors_green)
+    plt.show()
+
+
+def test_bootstrapped_volatility_distribution():
+    number_of_samples = 10_000
+    sigma_5 = 0.1490  # 0.142750  # 0.13575
+
+    bootstrapped_sigma_1 = 0.12775
+    bootstrapped_sigma_2 = 0.13575
+    bootstrapped_sigma_3 = 0.14942
+    bootstrapped_sigma_4 = 0.15085
+    bootstrapped_sigma_5 = 0.15242
+
+    np.random.seed(999)
+    z = sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(180/360)
+
+    np.random.seed(999)
+    y1 = bootstrapped_sigma_1 * np.random.normal(0, 1, number_of_samples) * np.sqrt(0/360)
+    y2 = bootstrapped_sigma_2 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
+    y3 = bootstrapped_sigma_3 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
+    y4 = bootstrapped_sigma_4 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
+    y5 = bootstrapped_sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(90/360)
+    y = y1 + y2 + y3 + y4 + y5
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    sns.histplot(z, bins=75, stat='density', element='step', legend=True, color=colors_teal)
+    values, bins = np.histogram(z, bins=75, density=True)
+    # y_dataframe = pd.DataFrame({'Summed Random Variables': y})
+    sns.histplot(y, bins=75, stat='density', element='step', legend=True, color=colors_green)
+    ax.legend(labels=['Z', 'Y'])
+    plt.show()

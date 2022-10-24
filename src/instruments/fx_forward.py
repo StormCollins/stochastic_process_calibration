@@ -68,7 +68,8 @@ class FxForward:
             number_of_time_steps: int,
             volatility: float,
             plot_paths: bool = True,
-            show_stats: bool = True) -> [MonteCarloPricingResults | str]:
+            show_stats: bool = True,
+            additional_annotation_for_plot: str = None) -> [MonteCarloPricingResults | str]:
         """
         Returns the price (in domestic currency) for an FX (Foreign Exchange) forward using time-independent GBM
         simulations.
@@ -78,6 +79,7 @@ class FxForward:
         :param number_of_paths: Number of Monte Carlo simulation paths.
         :param number_of_time_steps: Number of time steps for the Monte Carlo simulation.
         :param plot_paths: If set to True plots the current_value.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :return: Monte Carlo price for an FX forward in the domestic currency.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
@@ -91,7 +93,7 @@ class FxForward:
                 time_to_maturity=self.time_to_maturity)
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)
@@ -111,7 +113,8 @@ class FxForward:
             volatility_excel_path: str,
             volatility_excel_sheet_name: str,
             plot_paths: bool = False,
-            show_stats: bool = False):
+            show_stats: bool = False,
+            additional_annotation_for_plot: str = None):
         """
         Returns the price (in domestic currency) for an FX (Foreign Exchange) forward using time-dependent GBM
         simulations.
@@ -122,6 +125,7 @@ class FxForward:
         :param volatility_excel_sheet_name: Specifies the name of the Excel sheet where the volatilities are stored.
         :param plot_paths: If set to True plots the current_value.
         :param show_stats: Displays the mean, standard deviation, 95% PFE and normality test.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :return: Monte Carlo price for an FX forward in the domestic currency.
         """
         drift: float = self.domestic_interest_rate - self.foreign_interest_rate
@@ -143,7 +147,7 @@ class FxForward:
         paths = paths * self.notional
 
         if plot_paths:
-            gbm.create_plots(paths, self.time_to_maturity)
+            gbm.create_plots(paths, self.time_to_maturity, additional_annotation_for_plot)
 
         if show_stats:
             gbm.get_path_statistics(paths, self.time_to_maturity)

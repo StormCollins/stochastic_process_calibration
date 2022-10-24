@@ -1,15 +1,18 @@
 """
 FX option unit tests.
 """
-import pytest
+import inspect
 import numpy as np
+import os
 import QuantLib as ql
+import pytest
 from src.enums_and_named_tuples.call_or_put import CallOrPut
 from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.monte_carlo_pricing_results import MonteCarloPricingResults
 from src.instruments.fx_option import FxOption
 from src.utils.console_utils import ConsoleUtils
-from tests_config import TestsConfig
+from test_config import TestsConfig
+from test_utils import file_and_test_annotation
 
 
 @pytest.fixture
@@ -103,6 +106,7 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     vol_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.volatility))
     volatility = ql.BlackVolTermStructureHandle(
         ql.BlackConstantVol(valuation_date, calendar, vol_handle, day_count_convention))
+
     spot_handle = ql.QuoteHandle(ql.SimpleQuote(fx_option_constant_vol.initial_spot))
     gk_process = ql.GarmanKohlagenProcess(spot_handle, foreign_curve, domestic_curve, volatility)
     option.setPricingEngine(ql.AnalyticEuropeanEngine(gk_process))
@@ -119,15 +123,11 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
-            show_stats=False)
+            show_stats=False,
+            additional_annotation_for_plot=file_and_test_annotation())
 
     np.random.seed(999)
-    print()
-    print(f' FX Option Prices')
-    print(f' -----------------------------')
-    print(f'  Monte Carlo Price: {actual.price:,.2f} ± {actual.error:,.2f}')
     expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
-
     ConsoleUtils.print_monte_carlo_pricing_results(
         title='FX Option Prices',
         monte_carlo_price=actual.price,
@@ -137,8 +137,8 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
     assert expected_price == pytest.approx(actual.price, abs=actual.error)
 
 
-@pytest.mark.skip(reason="changed volatility from 0.4 to 0.154. Test only wokrs for 0.4,"
-                         "since the constant vol-surface is 0.4.")
+@pytest.mark.skip(reason='Changed volatility from 0.4 to 0.154. Test only works for 0.4,'
+                         'since the constant vol-surface is 0.4.')
 def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_vol):
     number_of_paths: int = 100_000
     number_of_time_steps: int = 100
@@ -151,6 +151,7 @@ def test_time_dependent_gbm_monte_carlo_pricer_constant_vol(fx_option_constant_v
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='constant_vol_surface',
             plot_paths=TestsConfig.plots_on,
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
@@ -169,6 +170,11 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
     number_of_time_steps = 20
     excel_file_path: str = r'tests/fx-option-atm-volatility-surface.xlsx'
     np.random.seed(999)
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+        if TestsConfig.show_test_location \
+        else None
 
     actual: MonteCarloPricingResults = \
         fx_option_non_constant_vol.get_time_dependent_monte_carlo_price(
@@ -177,6 +183,7 @@ def test_fx_option_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_opt
             volatility_excel_path=excel_file_path,
             volatility_excel_sheet_name='vol_surface',
             plot_paths=TestsConfig.plots_on,
+            additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
     expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()

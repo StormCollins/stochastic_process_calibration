@@ -9,8 +9,8 @@ from scipy.stats import norm
 
 
 colors_green: str = '#86BC25'
-colors_light_green: str = '#E3E48D'
 colors_bright_green: str = '#C4D600'
+colors_light_green: str = '#E3E48D'
 colors_teal: str = '#00A3E0'
 
 
@@ -49,6 +49,7 @@ class PlotUtils:
 
         ax.annotate(
             f'{len(data):,} Sims',
+            fontsize=8,
             xy=(0.75, 0.8),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -56,6 +57,7 @@ class PlotUtils:
         if additional_annotation is not None:
             ax.annotate(
                 f'{additional_annotation}',
+                fontsize=8,
                 xy=(0.05, 0.05),
                 xycoords='axes fraction',
                 bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -68,6 +70,7 @@ class PlotUtils:
         pdf = norm.pdf(x=bin_centers, loc=mean, scale=variance)
         ax.plot(bin_centers, pdf, label='Normal PDF', color=colors_teal, linewidth=2)
         ax.set_title(histogram_title)
+        ax.set_xlim([bins[0], bins[-1]])
         ax.set_xlabel('Return Value')
         ax.set_ylabel('Frequency')
         ax.legend()
@@ -103,6 +106,7 @@ class PlotUtils:
 
         ax.annotate(
             f'{len(data):,} Sims',
+            fontsize=8,
             xy=(0.75, 0.8),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -110,6 +114,7 @@ class PlotUtils:
         if additional_annotation is not None:
             ax.annotate(
                 f'{additional_annotation}',
+                fontsize=8,
                 xy=(0.05, 0.05),
                 xycoords='axes fraction',
                 bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -121,6 +126,7 @@ class PlotUtils:
         bin_centers = 0.5 * (bins[1:] + bins[:-1])
         pdf = lognorm.pdf(x=bin_centers, s=variance, scale=np.exp(mean))
         ax.plot(bin_centers, pdf, label='Log-normal PDF', color=colors_teal, linewidth=2)
+        ax.set_xlim([bins[0], bins[-1]])
         ax.set_xlabel('Log-Return Value')
         ax.set_ylabel('Frequency')
         ax.set_title(histogram_title)
@@ -182,6 +188,7 @@ class PlotUtils:
         ax.annotate(
             f'{paths.shape[0]:,} Sims\n'
             f'{paths.shape[1] - 1:,} Time Steps',
+            fontsize=8,
             xy=(0.05, 0.75),
             xycoords='axes fraction',
             bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -189,6 +196,7 @@ class PlotUtils:
         if additional_annotation is not None:
             ax.annotate(
                 f'{additional_annotation}',
+                fontsize=8,
                 xy=(0.05, 0.05),
                 xycoords='axes fraction',
                 bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -234,6 +242,7 @@ class PlotUtils:
         if additional_annotation is not None:
             ax.annotate(
                 f'{additional_annotation}',
+                fontsize=8,
                 xy=(0.05, 0.05),
                 xycoords='axes fraction',
                 bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
@@ -249,5 +258,3 @@ class PlotUtils:
             ax.spines[axis].set_color('black')
 
         plt.show()
-
-

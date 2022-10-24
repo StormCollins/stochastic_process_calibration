@@ -92,7 +92,7 @@ class EuropeanEquityOption:
         :param number_of_paths: Number of paths in the Monte Carlo simulation.
         :param number_of_time_steps: Number of time steps in the Monte Carlo simulation.
         :param plot_paths: Plot the simulated paths from the Monte Carlo simulation. Default = False.
-        :param additional_annotation_for_plot: Any aaditional annotation for the plot. Default = None.
+        :param additional_annotation_for_plot: Additional annotation for the plot. Default = None.
         :param show_stats: Show statistics for the simulated paths from the Monte Carlo simulation. Default = False.
         :return: The price for a 'CALL' or 'PUT' equity european option using monte carlo simulations where the
         volatility is time-independent.
