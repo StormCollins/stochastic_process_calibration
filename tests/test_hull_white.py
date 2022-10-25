@@ -250,6 +250,8 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
             maturity=maturity,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
+            alpha=alpha,
+            sigma=sigma,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 
@@ -293,6 +295,8 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
             maturity=maturity,
             number_of_paths=2,
             number_of_time_steps=5,
+            alpha=alpha,
+            sigma=sigma,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
         )
 
@@ -328,6 +332,8 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=1,
+            alpha=alpha,
+            sigma=sigma,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 
@@ -358,6 +364,8 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=100,
+            alpha=alpha,
+            sigma=sigma,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results=False)
 

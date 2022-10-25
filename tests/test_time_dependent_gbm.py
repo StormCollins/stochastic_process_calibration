@@ -236,7 +236,7 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
 
 
 def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
-    drift: float = 10
+    drift: float = 0.1
     time_to_maturity = 11
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
