@@ -178,11 +178,7 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     fig, ax = plt.subplots(nrows=1, ncols=1)
     ax.step(tenors, bootstrapped_volatilities, color='#00A3E0', where='post', label='Bootstrapped vols')
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
-
-    # original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in np.linspace(0.01, 10, 500)]
     original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
-
-    # model = interp1d(tenors, original_volatilities, 'linear', fill_value='extrapolate')
     model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
     smooth_tenors = np.linspace(0, 10, 500)
     smoothed_variances = [model(t) for t in smooth_tenors]
@@ -223,20 +219,86 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
     extreme_bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     print(f'\n')
     print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    ax.step(tenors, extreme_bootstrapped_vols, color='#00A3E0', where='pre', label='Bootstrapped vols')
+    original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
+    original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
+    model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
+    smooth_tenors = np.linspace(0, 10, 500)
+    smoothed_variances = [model(t) for t in smooth_tenors]
+    smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
+    ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
+    ax.set_xlabel('Tenor')
+    ax.set_ylabel('Bootstrapped volatilities')
+    ax.set_title('Bootstrapped volatilities vs. Extreme volatilities')
+    ax.legend()
+    plt.show()
 
 
 def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     drift: float = 0.1
+    time_to_maturity = 7
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
             drift=drift,
             excel_file_path=excel_file_path,
             sheet_name='extreme_vols',
             initial_spot=50)
-
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=100, time_to_maturity=7)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=100, time_to_maturity=time_to_maturity)
+    time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
     print(gbm_paths)
+
+    plt.style.use(['ggplot', 'fast'])
+    plt.rcParams['font.family'] = 'calibri'
+    plt.rcParams['path.simplify_threshold'] = 1.0
+    indices_sorted_by_path_averages = np.argsort(np.average(gbm_paths, 1))
+    sorted_paths = np.transpose(gbm_paths[indices_sorted_by_path_averages])
+    sns.set_palette(sns.dark_palette(colors_green, n_colors=gbm_paths.shape[0], as_cmap=False))
+    fig, ax = plt.subplots()
+    ax.plot(time_steps, sorted_paths)
+    empirical_path_means: np.ndarray = np.mean(gbm_paths, 0)
+    initial_spot: float = sorted_paths[0, 0]
+
+    if drift is not None:
+        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
+        ax.plot(
+            time_steps,
+            theoretical_path_means,
+            label='Theoretical Path Average',
+            linestyle='solid',
+            linewidth='3',
+            color=colors_bright_green)
+
+    ax.plot(
+        time_steps,
+        empirical_path_means,
+        label='Empirical Path Average',
+        linestyle='dashed',
+        linewidth='1',
+        color=colors_teal)
+
+    ax.grid(False)
+    ax.set_facecolor('white')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Value')
+    ax.set_xlim([0, time_steps[-1]])
+    # ax.set_ylim([0, 1000])
+    ax.annotate(
+        f'{gbm_paths.shape[0]:,} Sims\n'
+        f'{gbm_paths.shape[1] - 1:,} Time Steps',
+        fontsize=8,
+        xy=(0.05, 0.75),
+        xycoords='axes fraction',
+        bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
+
+    for axis in ['top', 'bottom', 'left', 'right']:
+        ax.spines[axis].set_linewidth(0.5)
+        ax.spines[axis].set_color('black')
+
+    ax.legend()
+    ax.set_title('Extreme GBM Paths')
+    plt.show(block=False)
 
     # extreme_original_vols = [float(gbm.get_time_dependent_vol(t, False)) for t in time_steps]
     # extreme_bootstrapped_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
@@ -326,7 +388,7 @@ def test_bootstrapped_volatility_distribution2():
 
 
 def test_bootstrapped_volatility_distribution():
-    number_of_samples = 10_000
+    number_of_samples = 1_000_000
     sigma_5 = 0.1490  # 0.142750  # 0.13575
 
     bootstrapped_sigma_1 = 0.12775
@@ -336,14 +398,14 @@ def test_bootstrapped_volatility_distribution():
     bootstrapped_sigma_5 = 0.15242
 
     np.random.seed(999)
-    z = sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(180/360)
+    z = sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(180 / 360)
 
     np.random.seed(999)
-    y1 = bootstrapped_sigma_1 * np.random.normal(0, 1, number_of_samples) * np.sqrt(0/360)
-    y2 = bootstrapped_sigma_2 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
-    y3 = bootstrapped_sigma_3 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
-    y4 = bootstrapped_sigma_4 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30/360)
-    y5 = bootstrapped_sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(90/360)
+    y1 = bootstrapped_sigma_1 * np.random.normal(0, 1, number_of_samples) * np.sqrt(0 / 360)
+    y2 = bootstrapped_sigma_2 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30 / 360)
+    y3 = bootstrapped_sigma_3 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30 / 360)
+    y4 = bootstrapped_sigma_4 * np.random.normal(0, 1, number_of_samples) * np.sqrt(30 / 360)
+    y5 = bootstrapped_sigma_5 * np.random.normal(0, 1, number_of_samples) * np.sqrt(90 / 360)
     y = y1 + y2 + y3 + y4 + y5
     fig, ax = plt.subplots(nrows=1, ncols=1)
     sns.histplot(z, bins=75, stat='density', element='step', legend=True, color=colors_teal)
