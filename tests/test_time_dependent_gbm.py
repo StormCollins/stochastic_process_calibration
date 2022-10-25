@@ -236,8 +236,8 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
 
 
 def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
-    drift: float = 0.1
-    time_to_maturity = 7
+    drift: float = 10
+    time_to_maturity = 11
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
             drift=drift,
@@ -258,7 +258,7 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     fig, ax = plt.subplots()
     ax.plot(time_steps, sorted_paths)
     empirical_path_means: np.ndarray = np.mean(gbm_paths, 0)
-    initial_spot: float = sorted_paths[0, 0]
+    initial_spot: float = gbm_paths[0, 0]
 
     if drift is not None:
         theoretical_path_means = initial_spot * np.exp(drift * time_steps)
