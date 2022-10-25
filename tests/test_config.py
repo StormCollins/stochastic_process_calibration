@@ -12,4 +12,4 @@ class TestsConfig:
     plots_on: bool = True
 
     # If set to True, will display which file and test generated the plot.
-    show_test_location: bool = True
+    show_test_location: bool = False

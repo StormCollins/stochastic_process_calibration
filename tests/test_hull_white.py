@@ -392,3 +392,18 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
 
     assert hw_short_short_rate_tenor.initial_short_rate == \
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
+
+
+def test_get_fixings(flat_zero_rate_curve):
+    start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+    end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+    forward_rates: np.ndarray = \
+        flat_zero_rate_curve.get_forward_rates(
+            start_tenors=start_tenors,
+            end_tenors=end_tenors,
+            compounding_convention=CompoundingConvention.NACQ)
+
+    expected_forward_rate: float = 0.10126048209771543
+    print(forward_rates)
+
+    hull_white_process: HullWhite = HullWhite(0.0, 0.2, flat_zero_rate_curve, 0.01)

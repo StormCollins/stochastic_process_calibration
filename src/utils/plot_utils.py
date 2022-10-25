@@ -16,7 +16,7 @@ colors_teal: str = '#00A3E0'
 
 class PlotUtils:
     """
-    A collection of static methods for plotting data such as histograms and
+    A collection of static methods for plotting data such as histograms and Monte Carlo paths.
     """
 
     @staticmethod
