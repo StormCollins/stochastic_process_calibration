@@ -277,5 +277,3 @@ class HullWhite:
 
         fixings: np.ndarray = (1 / (fixing_end_tenors - fixing_end_tenors)) * (forward_discount_factors - 1)
         return fixings
-
-
