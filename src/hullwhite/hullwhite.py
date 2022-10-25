@@ -78,6 +78,8 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
+            alpha,
+            sigma,
             method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
             plot_results: bool = False) -> [np.ndarray, np.ndarray]:
         """
@@ -130,7 +132,7 @@ class HullWhite:
             short_rates = deterministic_part + stochastic_part
 
         if plot_results:
-            self.plot_paths(time_steps, short_rates)
+            self.plot_paths(time_steps, short_rates, alpha, sigma)
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
@@ -225,7 +227,7 @@ class HullWhite:
 
     # TODO: Check if this function is used.
     @staticmethod
-    def plot_paths(time_steps, paths, plot_annotation: str = None) -> None:
+    def plot_paths(time_steps, paths, alpha, sigma, plot_annotation: str = None) -> None:
         """
         Plots the paths from Monte Carlo simulation vs. the time steps.
 
@@ -243,6 +245,7 @@ class HullWhite:
         ax.set_facecolor('#AAAAAA')
         ax.set_xlabel('Time')
         ax.set_ylabel('$r(t)$')
+        ax.set_title(f'$\\alpha$ = {alpha} & $\\sigma$ = {sigma}')
         ax.set_xlim([0, time_steps[-1]])
         plt.show()
 

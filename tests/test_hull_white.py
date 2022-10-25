@@ -413,22 +413,9 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
 
 
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
-    alphas = np.arange(0, 2, 0.1) + 0.1
-    sigmas = np.arange(0, 0.2, 0.01) + 0.01
-    for sigma in sigmas:
-        print(f'Current sigma: {sigma}')
-        for alpha in alphas:
-            print(f'Current alpha: {alpha}')
-            hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.01)
-            np.random.seed(999)
-            fig, ax = plt.subplots()
-            ax.set_title(f'$\\sigma$ vs. $\\alpha$ \n( $\\sigma$ = {sigma} & $\\alpha$ = {alpha})')
-            ax.plot(hw.simulate(
-                maturity=2, number_of_paths=1000, number_of_time_steps=20, plot_results=True), color='#0D8390')
-            ax.grid(True)
-            ax.set_facecolor('#AAAAAA')
-            ax.set_xlabel('$\\alpha$')
-            ax.set_ylabel('$\\sigma$')
-            ax.set_xlim([0, alphas[-1]])
-            ax.legend()
-            plt.show()
+    alpha = 0.5
+    sigma = 0.1
+    hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.2)
+    np.random.seed(999)
+    hw.simulate(maturity=2, number_of_paths=10_000, number_of_time_steps=100, alpha=alpha, sigma=sigma, plot_results=True)
+
