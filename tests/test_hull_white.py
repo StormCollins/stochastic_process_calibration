@@ -3,10 +3,13 @@ Hull-White unit tests.
 """
 import inspect
 import os
+
+import numpy as np
 import pytest
 import scipy
 import scipy.integrate
 import scipy.stats
+import matplotlib as plt
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 from test_config import TestsConfig
@@ -124,7 +127,7 @@ def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, cu
     """
     alpha = 0.001
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     test_tenors: list[float] = [0.25, 0.375, 0.5, 0.625]
     actual: list[float] = [hw.theta(t) for t in test_tenors]
     expected: list[float] = list(np.zeros(len(actual)))
@@ -140,7 +143,7 @@ def test_theta_with_real_zero_rate_curve_and_time_tends_to_infinity(real_zero_ra
     sigma: float = 0.1
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=real_zero_rate_curve, short_rate_tenor=0.01)
     actual = hw.theta(50)
-    expected = alpha * 0.07549556 + sigma**2
+    expected = alpha * 0.07549556 + sigma ** 2
     print(expected)
 
 
@@ -161,7 +164,7 @@ def test_a_function_with_large_alpha_and_flat_curve(flat_zero_rate_curve):
     """
     alpha = 1_000
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
     current_tenor = 0.25
     expected = \
@@ -178,7 +181,7 @@ def test_a_function_with_flat_curve(flat_zero_rate_curve):
     """
     alpha = 0.25
     sigma = 0.1
-    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma,  initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
+    hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     simulation_tenors = np.array([0.325, 0.500, 0.625, 0.750])
     current_tenor = 0.25
     expected = \
@@ -261,8 +264,8 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     additional_annotation: str = \
         f'File: {os.path.basename(__file__)}\n' \
         f'Test: {inspect.currentframe().f_code.co_name}' \
-        if TestsConfig.show_test_location \
-        else None
+            if TestsConfig.show_test_location \
+            else None
 
     if TestsConfig.plots_on:
         PlotUtils.plot_curves(
@@ -291,7 +294,7 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
             number_of_paths=2,
             number_of_time_steps=5,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
-            )
+        )
 
     for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
@@ -394,16 +397,38 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
-def test_get_fixings(flat_zero_rate_curve):
-    start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
-    end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
-    forward_rates: np.ndarray = \
-        flat_zero_rate_curve.get_forward_rates(
-            start_tenors=start_tenors,
-            end_tenors=end_tenors,
-            compounding_convention=CompoundingConvention.NACQ)
+# def test_get_fixings(flat_zero_rate_curve):
+#     start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+#     end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+#     forward_rates: np.ndarray = \
+#         flat_zero_rate_curve.get_forward_rates(
+#             start_tenors=start_tenors,
+#             end_tenors=end_tenors,
+#             compounding_convention=CompoundingConvention.NACQ)
+#
+#     expected_forward_rate: float = 0.10126048209771543
+#     print(forward_rates)
+#
+#     hull_white_process: HullWhite = HullWhite(0.0, 0.2, flat_zero_rate_curve, 0.01)
 
-    expected_forward_rate: float = 0.10126048209771543
-    print(forward_rates)
 
-    hull_white_process: HullWhite = HullWhite(0.0, 0.2, flat_zero_rate_curve, 0.01)
+def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
+    alphas = np.arange(0, 2, 0.1) + 0.1
+    sigmas = np.arange(0, 0.2, 0.01) + 0.01
+    for sigma in sigmas:
+        print(f'Current sigma: {sigma}')
+        for alpha in alphas:
+            print(f'Current alpha: {alpha}')
+            hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.01)
+            np.random.seed(999)
+            fig, ax = plt.subplots()
+            ax.set_title(f'$\\sigma$ vs. $\\alpha$ \n( $\\sigma$ = {sigma} & $\\alpha$ = {alpha})')
+            ax.plot(hw.simulate(
+                maturity=2, number_of_paths=1000, number_of_time_steps=20, plot_results=True), color='#0D8390')
+            ax.grid(True)
+            ax.set_facecolor('#AAAAAA')
+            ax.set_xlabel('$\\alpha$')
+            ax.set_ylabel('$\\sigma$')
+            ax.set_xlim([0, alphas[-1]])
+            ax.legend()
+            plt.show()
