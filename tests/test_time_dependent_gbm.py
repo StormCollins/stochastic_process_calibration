@@ -175,20 +175,10 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
          10.0000]
 
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.step(tenors, bootstrapped_volatilities, color='#00A3E0', where='post', label='Bootstrapped vols')
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
-    original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
-    model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
-    smooth_tenors = np.linspace(0, 10, 500)
-    smoothed_variances = [model(t) for t in smooth_tenors]
-    smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
-    ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
-    ax.set_xlabel('Tenor')
-    ax.set_ylabel('Bootstrapped volatilities')
-    ax.set_title('Bootstrapped volatilities vs. Original volatilities')
-    ax.legend()
-    plt.show()
+
+    PlotUtils.plot_bootstrap_volatilities(
+        tenors, original_volatilities, bootstrapped_volatilities, 'Bootstrapped volatilities vs. Original volatilities')
 
 
 def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
@@ -217,22 +207,13 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
 
     tenors: list[float] = [t - 0.0001 for t in tenors]
     extreme_bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
+
+    PlotUtils.plot_bootstrap_volatilities(
+        tenors, original_volatilities, extreme_bootstrapped_vols, 'Bootstrapped volatilities vs. Original volatilities')
+
     print(f'\n')
     print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
-    fig, ax = plt.subplots(nrows=1, ncols=1)
-    ax.step(tenors, extreme_bootstrapped_vols, color='#00A3E0', where='pre', label='Bootstrapped vols')
-    original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
-    original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
-    model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
-    smooth_tenors = np.linspace(0, 10, 500)
-    smoothed_variances = [model(t) for t in smooth_tenors]
-    smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
-    ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
-    ax.set_xlabel('Tenor')
-    ax.set_ylabel('Bootstrapped volatilities')
-    ax.set_title('Bootstrapped volatilities vs. Extreme volatilities')
-    ax.legend()
-    plt.show()
 
 
 def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
@@ -249,63 +230,7 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
     print(gbm_paths)
 
-    plt.style.use(['ggplot', 'fast'])
-    plt.rcParams['font.family'] = 'calibri'
-    plt.rcParams['path.simplify_threshold'] = 1.0
-    indices_sorted_by_path_averages = np.argsort(np.average(gbm_paths, 1))
-    sorted_paths = np.transpose(gbm_paths[indices_sorted_by_path_averages])
-    sns.set_palette(sns.dark_palette(colors_green, n_colors=gbm_paths.shape[0], as_cmap=False))
-    fig, ax = plt.subplots()
-    ax.plot(time_steps, sorted_paths)
-    empirical_path_means: np.ndarray = np.mean(gbm_paths, 0)
-    initial_spot: float = gbm_paths[0, 0]
-
-    if drift is not None:
-        theoretical_path_means = initial_spot * np.exp(drift * time_steps)
-        ax.plot(
-            time_steps,
-            theoretical_path_means,
-            label='Theoretical Path Average',
-            linestyle='solid',
-            linewidth='3',
-            color=colors_bright_green)
-
-    ax.plot(
-        time_steps,
-        empirical_path_means,
-        label='Empirical Path Average',
-        linestyle='dashed',
-        linewidth='1',
-        color=colors_teal)
-
-    ax.grid(False)
-    ax.set_facecolor('white')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Value')
-    ax.set_xlim([0, time_steps[-1]])
-    # ax.set_ylim([0, 1000])
-    ax.annotate(
-        f'{gbm_paths.shape[0]:,} Sims\n'
-        f'{gbm_paths.shape[1] - 1:,} Time Steps',
-        fontsize=8,
-        xy=(0.05, 0.75),
-        xycoords='axes fraction',
-        bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
-
-    for axis in ['top', 'bottom', 'left', 'right']:
-        ax.spines[axis].set_linewidth(0.5)
-        ax.spines[axis].set_color('black')
-
-    ax.legend()
-    ax.set_title('Extreme GBM Paths')
-    plt.show(block=False)
-
-    # extreme_original_vols = [float(gbm.get_time_dependent_vol(t, False)) for t in time_steps]
-    # extreme_bootstrapped_vols = [float(gbm.get_time_dependent_vol(t)) for t in time_steps]
-    # print(f'\n')
-    # print(f'Extreme Original Volatilities: {extreme_original_vols}')
-    # print(f'\n')
-    # print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
+    PlotUtils.plot_monte_carlo_paths(time_steps, gbm_paths, 'Extreme GBM Paths', drift)
 
 
 def test_get_vols_from_file(excel_file_path):
