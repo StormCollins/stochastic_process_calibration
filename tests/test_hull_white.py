@@ -248,6 +248,7 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     tenors, rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
+            drift=0.1,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL)
@@ -290,6 +291,7 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
+            drift=0.1,
             number_of_paths=2,
             number_of_time_steps=5,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
@@ -325,6 +327,7 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
+            drift=0.1,
             number_of_paths=100_000,
             number_of_time_steps=1,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL)
@@ -354,6 +357,7 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     tenors, short_rates, stochastic_dfs = \
         hw.simulate(
             maturity=maturity,
+            drift=0.1,
             number_of_paths=100_000,
             number_of_time_steps=100,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL)
@@ -414,11 +418,7 @@ def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
     sigma = 2
     drift = 0.1
     maturity = 2
-    number_of_paths = 100
-    number_of_time_steps = 20
+    number_of_paths = 10_000
+    number_of_time_steps = 100
     hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.1)
-    paths = hw.simulate(maturity, number_of_paths, number_of_time_steps)
-    time_steps = np.linspace(0, maturity, paths.shape[1])
-    np.random.seed(999)
-    PlotUtils.plot_monte_carlo_paths(
-        time_steps, paths, f'$\\alpha$ = {alpha} & $\\sigma$ = {sigma}', drift)
+    hw.simulate(maturity, drift, number_of_paths, number_of_time_steps, plot_results=True)

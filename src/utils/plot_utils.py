@@ -7,7 +7,6 @@ import seaborn as sns
 from scipy.stats import lognorm
 from scipy.stats import norm
 from scipy.interpolate import interp1d
-from src.hullwhite.hullwhite import *
 
 colors_green: str = '#86BC25'
 colors_bright_green: str = '#C4D600'

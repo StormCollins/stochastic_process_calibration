@@ -7,6 +7,7 @@ import scipy.integrate
 import seaborn as sns
 from scipy.stats import norm
 from src.curves.curve import *
+from src.utils.plot_utils import PlotUtils
 from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 
 
@@ -73,15 +74,24 @@ class HullWhite:
         """
         return np.exp(self.theta_interpolator(tenor))
 
+    def plot_paths(self, paths, maturity, drift):
+        time_steps = np.linspace(0, maturity, paths.shape[1])
+        PlotUtils. \
+            plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths', drift)
+
     def simulate(
             self,
             maturity: float,
+            drift: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL) -> [np.ndarray, np.ndarray]:
+            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
+            plot_results: bool = False) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
+        :param drift:
+        :param plot_results:
         :param maturity: The maturity of the simulation.
         :param number_of_paths: The number of paths.
         :param number_of_time_steps: The number of time steps.
@@ -126,6 +136,9 @@ class HullWhite:
                     self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
 
             short_rates = deterministic_part + stochastic_part
+
+        if plot_results:
+            self.plot_paths(short_rates, maturity, drift)
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors

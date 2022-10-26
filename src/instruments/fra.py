@@ -52,7 +52,7 @@ class Fra:
 
         simulation_tenors, short_rates, stochastic_dfs = \
             hw.simulate(
-                self.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+                self.start_tenor, 0.1, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
         start_discount_factors: np.ndarray = \
             hw.a_function(simulation_tenors, self.start_tenor) * \
