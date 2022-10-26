@@ -90,7 +90,7 @@ def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hull_white_proces
     np.random.seed(999)
     tenors, short_rates, stochastic_dfs = \
         hull_white_process.simulate(
-            atm_fra.start_tenor, number_of_paths, number_of_time_steps, alpha, sigma, HullWhiteSimulationMethod.SLOWANALYTICAL)
+            atm_fra.start_tenor, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     dt = atm_fra.start_tenor / number_of_time_steps
     stochastic_discount_factors = np.prod(np.exp(-1 * short_rates * dt), 1)

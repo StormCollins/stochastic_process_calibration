@@ -250,10 +250,7 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
             maturity=maturity,
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
-            alpha=alpha,
-            sigma=sigma,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
-            plot_results=False)
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
@@ -295,8 +292,6 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
             maturity=maturity,
             number_of_paths=2,
             number_of_time_steps=5,
-            alpha=alpha,
-            sigma=sigma,
             method=HullWhiteSimulationMethod.SLOWANALYTICAL,
         )
 
@@ -332,10 +327,7 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=1,
-            alpha=alpha,
-            sigma=sigma,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
-            plot_results=False)
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -364,10 +356,7 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
             maturity=maturity,
             number_of_paths=100_000,
             number_of_time_steps=100,
-            alpha=alpha,
-            sigma=sigma,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
-            plot_results=False)
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -423,8 +412,13 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
     alpha = 0.01
     sigma = 2
+    drift = 0.1
+    maturity = 2
+    number_of_paths = 100
+    number_of_time_steps = 20
     hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.1)
+    paths = hw.simulate(maturity, number_of_paths, number_of_time_steps)
+    time_steps = np.linspace(0, maturity, paths.shape[1])
     np.random.seed(999)
-    hw.simulate(
-        maturity=2, number_of_paths=10_000, number_of_time_steps=100, alpha=alpha, sigma=sigma, plot_results=True)
-
+    PlotUtils.plot_monte_carlo_paths(
+        time_steps, paths, f'$\\alpha$ = {alpha} & $\\sigma$ = {sigma}', drift)

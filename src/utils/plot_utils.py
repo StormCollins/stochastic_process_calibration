@@ -7,7 +7,7 @@ import seaborn as sns
 from scipy.stats import lognorm
 from scipy.stats import norm
 from scipy.interpolate import interp1d
-
+from src.hullwhite.hullwhite import *
 
 colors_green: str = '#86BC25'
 colors_bright_green: str = '#C4D600'
@@ -261,7 +261,7 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_bootstrap_volatilities(tenors: list[float], original_volatilities, extreme_bootstrapped_vols , title: str):
+    def plot_bootstrap_volatilities(tenors: list[float], original_volatilities, extreme_bootstrapped_vols, title: str):
         fig, ax = plt.subplots(nrows=1, ncols=1)
         ax.step(tenors, extreme_bootstrapped_vols, color='#00A3E0', where='post', label='Bootstrapped vols')
         original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
@@ -275,3 +275,5 @@ class PlotUtils:
         ax.set_title(title)
         ax.legend()
         plt.show()
+
+

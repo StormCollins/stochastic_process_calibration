@@ -78,10 +78,7 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            alpha,
-            sigma,
-            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
-            plot_results: bool = False) -> [np.ndarray, np.ndarray]:
+            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL) -> [np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
@@ -90,7 +87,6 @@ class HullWhite:
         :param number_of_time_steps: The number of time steps.
         :param method: Use the approximate, discretized Hull-White simulation method rather than the more
             accurate semi-analytical method. Default = False
-        :param plot_results: Plot short rate paths vs. time steps.
         :return:
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
@@ -130,9 +126,6 @@ class HullWhite:
                     self.exponential_stochastic_integral(j * dt, dt, number_of_paths)
 
             short_rates = deterministic_part + stochastic_part
-
-        if plot_results:
-            self.plot_paths(time_steps, short_rates, alpha, sigma)
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
@@ -224,30 +217,6 @@ class HullWhite:
         :return:
         """
         return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)
-
-    # TODO: Check if this function is used.
-    @staticmethod
-    def plot_paths(time_steps, paths, alpha, sigma, plot_annotation: str = None) -> None:
-        """
-        Plots the paths from Monte Carlo simulation vs. the time steps.
-
-        :param time_steps: The time steps.
-        :param paths: The output paths from the simulation.
-        :param plot_annotation: Additional annotation to add to the plot. Default = None.
-        :return: None
-        """
-        indices_sorted_by_path_averages = np.argsort(np.average(paths, 1))
-        sorted_paths = np.transpose(paths[indices_sorted_by_path_averages])
-        sns.set_palette(sns.color_palette('dark:purple', paths.shape[0]))
-        fig, ax = plt.subplots()
-        ax.plot(time_steps, sorted_paths)
-        ax.grid(True)
-        ax.set_facecolor('#AAAAAA')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('$r(t)$')
-        ax.set_title(f'$\\alpha$ = {alpha} & $\\sigma$ = {sigma}')
-        ax.set_xlim([0, time_steps[-1]])
-        plt.show()
 
     def get_forward_discount_factors(self, start_tenors, end_tenors, short_rates):
         return self.a_function(start_tenors, end_tenors) * \
