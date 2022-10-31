@@ -86,7 +86,7 @@ class HullWhite:
             number_of_paths: int,
             number_of_time_steps: int,
             method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
-            plot_results: bool = False) -> [np.ndarray, np.ndarray]:
+            plot_results: bool = False) -> [np.ndarray, np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
@@ -97,7 +97,7 @@ class HullWhite:
         :param number_of_time_steps: The number of time steps.
         :param method: Use the approximate, discretized Hull-White simulation method rather than the more
             accurate semi-analytical method. Default = False
-        :return:
+        :return: Tuple of 3 arrays. Simulation tenors, short rates and stochastic discount factors.
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
         short_rates[:, 0] = self.initial_short_rate
@@ -239,26 +239,31 @@ class HullWhite:
             self,
             simulation_tenors: np.ndarray,
             simulated_short_rates: np.ndarray,
-            fixing_start_tenors: np.ndarray,
-            fixing_end_tenors: np.ndarray):
+            fixing_period_start_tenors: np.ndarray,
+            fixing_period_end_tenors: np.ndarray) -> np.ndarray:
         """
-        Gets the simulated fixings (i.e., the reset rates) between the given start and end tenors.
+        Gets the simulated fixings (i.e., the reset rates) between the given start and end fixing tenors.
 
-        :param simulation_tenors: The simulat
-        :param simulated_short_rates:
-        :param fixing_start_tenors:
-        :param fixing_end_tenors:
-        :return:
+        :param simulation_tenors: The tenors at which the short rate was simulated.
+        :param simulated_short_rates: The simulated short rates.
+        :param fixing_period_start_tenors: The start tenors of the fixing periods.
+        :param fixing_period_end_tenors: The end tenors of the fixing periods.
+        :return: The fixings for the given paths (rows) and start and end tenors (columns).
         """
+        fixing_start_tenor_indices = np.in1d(simulation_tenors, fixing_period_start_tenors)
+        fixing_start_tenor_indices = \
+            np.tile(fixing_start_tenor_indices, (simulated_short_rates.shape[0], 1))
 
-        # Get discount factors between fixing_start_tenors and fixing_end_tenors.
-        # The points in the simulation tenors which correspond to the start tenors of the fixing periods.
-        fixing_start_tenor_indices = np.in1d(fixing_start_tenors, simulation_tenors)
-        fixing_start_tenor_short_rates = simulated_short_rates[fixing_start_tenor_indices]
+        fixing_start_tenor_short_rates: np.ndarray = simulated_short_rates[fixing_start_tenor_indices]
+        fixing_start_tenor_short_rates = \
+            fixing_start_tenor_short_rates.reshape(fixing_start_tenor_indices.shape[0], len(fixing_period_start_tenors))
 
         forward_discount_factors: np.ndarray = \
-            self.a_function(fixing_start_tenors, fixing_end_tenors) * \
-            np.exp(-1 * fixing_start_tenor_short_rates * self.b_function(fixing_start_tenors, fixing_end_tenors))
+            self.a_function(fixing_period_start_tenors, fixing_period_end_tenors) * \
+            np.exp(-1 * fixing_start_tenor_short_rates *
+                   self.b_function(fixing_period_start_tenors, fixing_period_end_tenors))
 
-        fixings: np.ndarray = (1 / (fixing_end_tenors - fixing_end_tenors)) * (forward_discount_factors - 1)
+        fixings: np.ndarray = \
+            (1 / (fixing_period_end_tenors - fixing_period_start_tenors)) * ((1 / forward_discount_factors) - 1)
+
         return fixings

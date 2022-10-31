@@ -398,19 +398,49 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
-# def test_get_fixings(flat_zero_rate_curve):
-#     start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
-#     end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
-#     forward_rates: np.ndarray = \
-#         flat_zero_rate_curve.get_forward_rates(
-#             start_tenors=start_tenors,
-#             end_tenors=end_tenors,
-#             compounding_convention=CompoundingConvention.NACQ)
-#
-#     expected_forward_rate: float = 0.10126048209771543
-#     print(forward_rates)
-#
-#     hull_white_process: HullWhite = HullWhite(0.0, 0.2, flat_zero_rate_curve, 0.01)
+def test_get_fixings_with_flat_curve_and_zero_vol_and_zero_alpha(flat_zero_rate_curve):
+    start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+    end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+    forward_rates: np.ndarray = \
+        flat_zero_rate_curve.get_forward_rates(
+            start_tenors=start_tenors,
+            end_tenors=end_tenors,
+            compounding_convention=CompoundingConvention.NACQ)
+
+    expected_forward_rate: float = 0.10126048209771543
+    print(forward_rates)
+
+    alpha: float = 0.001
+    sigma: float = 0.0
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    # TODO: Allow drift to be None.
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 0.1, 1_000, 100)
+    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
+    averaged_fixings: np.ndarray = np.average(fixings, 0)
+    assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.00001)
+
+
+def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_rate_curve):
+    fixing_period_start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+    fixing_period_end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+    forward_rates: np.ndarray = \
+        flat_zero_rate_curve.get_forward_rates(
+            start_tenors=fixing_period_start_tenors,
+            end_tenors=fixing_period_end_tenors,
+            compounding_convention=CompoundingConvention.NACQ)
+
+    expected_forward_rate: float = 0.10126048209771543
+    print(forward_rates)
+
+    alpha: float = 0.001
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    # TODO: Allow drift to be None.
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 0.1, 1_000_000, 100)
+    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, fixing_period_start_tenors, fixing_period_end_tenors)
+    averaged_fixings: np.ndarray = np.average(fixings, 0)
+    assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.005)
 
 
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
