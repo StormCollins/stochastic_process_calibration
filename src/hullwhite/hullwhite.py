@@ -254,19 +254,11 @@ class HullWhite:
         """
         Gets the simulated fixings (i.e., the reset rates) between the given start and end fixing tenors.
 
-<<<<<<< HEAD
-        :param simulation_tenors: The simulation tenors.
-        :param simulated_short_rates: Simulated short rates.
-        :param fixing_start_tenors: Fixing start tenors.
-        :param fixing_end_tenors: Fixing end tenors.
-        :return:
-=======
         :param simulation_tenors: The tenors at which the short rate was simulated.
         :param simulated_short_rates: The simulated short rates.
         :param fixing_period_start_tenors: The start tenors of the fixing periods.
         :param fixing_period_end_tenors: The end tenors of the fixing periods.
         :return: The fixings for the given paths (rows) and start and end tenors (columns).
->>>>>>> be10d8f610c7cafaf63ea99ad9e6cdde413f4a53
         """
         fixing_start_tenor_indices = np.in1d(simulation_tenors, fixing_period_start_tenors)
         fixing_start_tenor_indices = \

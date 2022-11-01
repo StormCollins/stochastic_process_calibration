@@ -4,12 +4,10 @@ Hull-White unit tests.
 import inspect
 import os
 
-import numpy as np
 import pytest
 import scipy
-import scipy.integrate
-import scipy.stats
-import matplotlib as plt
+from scipy.integrate import quad
+from scipy.stats import normaltest
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 from test_config import TestsConfig
@@ -264,8 +262,8 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     additional_annotation: str = \
         f'File: {os.path.basename(__file__)}\n' \
         f'Test: {inspect.currentframe().f_code.co_name}' \
-            if TestsConfig.show_test_location \
-            else None
+        if TestsConfig.show_test_location \
+        else None
 
     if TestsConfig.plots_on:
         PlotUtils.plot_curves(
@@ -335,13 +333,13 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
-        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+        quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
 
     std: float = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
     if TestsConfig.plots_on:
         PlotUtils.plot_normal_histogram(rates, 'Hull-White $r(t)$ vs. Normal PDF', '$r(t)$', mean, std)
 
-    statistic, p_value = scipy.stats.normaltest(rates)
+    statistic, p_value = normaltest(rates)
     # Null hypothesis (that rates are normal) cannot be rejected.
     assert p_value > 1e-3
     assert rates.mean() == pytest.approx(mean, abs=0.01)
@@ -365,13 +363,13 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
         np.exp(-1 * alpha * maturity) * hw.initial_short_rate + \
-        scipy.integrate.quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
+        quad(lambda s: np.exp(alpha * (s - maturity)) * hw.theta(s), 0, maturity)[0]
 
     std: float = np.sqrt(((sigma ** 2) / (2 * alpha)) * (1 - np.exp(-2 * alpha * maturity)))
     if TestsConfig.plots_on:
         PlotUtils.plot_normal_histogram(rates, 'Hull-White $r(t)$ vs. Normal PDF', '$r(t)$', mean, std)
 
-    statistic, pvalue = scipy.stats.normaltest(rates)
+    statistic, pvalue = normaltest(rates)
     assert pvalue > 1e-3
     assert rates.mean() == pytest.approx(mean, abs=0.05)
     assert np.sqrt(rates.var()) == pytest.approx(std, abs=0.05)
@@ -438,11 +436,13 @@ def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_ra
     # TODO: Allow drift to be None.
     np.random.seed(999)
     simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 0.1, 1_000_000, 100)
-    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, fixing_period_start_tenors, fixing_period_end_tenors)
+    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, fixing_period_start_tenors,
+                                                         fixing_period_end_tenors)
     averaged_fixings: np.ndarray = np.average(fixings, 0)
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.005)
 
 
+@pytest.mark.skip(reason='Long running.')
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
     alpha = 0.1
     sigma = 0.1

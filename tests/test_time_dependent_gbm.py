@@ -5,7 +5,6 @@ import pytest
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
-from scipy.interpolate import interp1d
 from src.utils.plot_utils import *
 from test_config import TestsConfig
 from test_utils import file_and_test_annotation

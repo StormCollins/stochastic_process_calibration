@@ -63,7 +63,6 @@ def fx_option_non_constant_vol() -> FxOption:
     time_to_maturity: float = 0.5
     volatility: float = 0.154
     put: CallOrPut = CallOrPut.PUT
-    call: CallOrPut = CallOrPut.CALL
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
