@@ -146,8 +146,7 @@ class PlotUtils:
         :param time_steps: The time steps of the Monte Carlo simulation.
         :param paths: The paths simulated during the Monte Carlo run.
         :param title: The title of the plot.
-        :param drift: The (constant) drift, if applicable, of the process. This just corresponds to the standard drift
-        in GBM. Currently, Hull-White is not supported.
+        :param drift: The (constant) drift, if applicable, of the process.
         :param additional_annotation: Any additional annotation to add to the plot. Default = None.
         :return:
         """
@@ -260,9 +259,20 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_bootstrap_volatilities(tenors: list[float], original_volatilities, extreme_bootstrapped_vols, title: str):
+    def plot_bootstrap_volatilities(tenors: list[float], original_volatilities, bootstrapped_vols, title: str):
+        """
+        Used to plot the bootstrapped volatilities.
+
+        :param tenors: Volatility tenors.
+        :param original_volatilities: Original volatilities from the Excel file
+                                      (i.e. the volatilities before they are bootstrappped)
+        :param bootstrapped_vols: The bootstrapped volatilities.
+        :param title: Title of the grpah.
+        :return:
+        """
+
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        ax.step(tenors, extreme_bootstrapped_vols, color='#00A3E0', where='post', label='Bootstrapped vols')
+        ax.step(tenors, bootstrapped_vols, color='#00A3E0', where='post', label='Bootstrapped vols')
         original_variances: list[float] = [v ** 2 * t for t, v in zip(tenors, original_volatilities)]
         model = interp1d(tenors, original_variances, 'linear', fill_value='extrapolate')
         smooth_tenors = np.linspace(0, 10, 500)

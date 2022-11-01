@@ -75,9 +75,19 @@ class HullWhite:
         return np.exp(self.theta_interpolator(tenor))
 
     def plot_paths(self, paths, maturity, drift):
+        """
+        Plots the monte carlo paths of Hull-White.
+
+        :param paths: Short rate paths.
+        :param maturity: Time to maturity.
+        :param drift: Drift.
+        :return:
+
+        """
+
         time_steps = np.linspace(0, maturity, paths.shape[1])
         PlotUtils. \
-            plot_monte_carlo_paths(time_steps, paths, 'Time-Dependent GBM Paths', drift)
+            plot_monte_carlo_paths(time_steps, paths, f'$\\alpha$ = {self.alpha} & $\\sigma$ = {self.sigma}', drift)
 
     def simulate(
             self,
@@ -226,7 +236,7 @@ class HullWhite:
         """
         Gets the discount factors
 
-        :param tenors:
+        :param tenors: Tenors.
         :return:
         """
         return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)
@@ -244,10 +254,10 @@ class HullWhite:
         """
         Gets the simulated fixings (i.e., the reset rates) between the given start and end tenors.
 
-        :param simulation_tenors: The simulat
-        :param simulated_short_rates:
-        :param fixing_start_tenors:
-        :param fixing_end_tenors:
+        :param simulation_tenors: The simulation tenors.
+        :param simulated_short_rates: Simulated short rates.
+        :param fixing_start_tenors: Fixing start tenors.
+        :param fixing_end_tenors: Fixing end tenors.
         :return:
         """
 

@@ -39,7 +39,8 @@ def option_for_constant_vol_tests() -> EuropeanEquityOption:
 @pytest.fixture
 def inputs() -> EuropeanEquityOption:
     """
-    Option used for testing constant vol simulations.
+    Inputs used to test the time-dependent price vs the time-independent price.
+
     """
     notional: float = 1
     initial_spot: float = 50
@@ -47,9 +48,9 @@ def inputs() -> EuropeanEquityOption:
     interest_rate: float = 0.1
     volatility: float = 0.1545  # 0.4
     time_to_maturity: float = 2
-    put: CallOrPut = CallOrPut.PUT
+    call: CallOrPut = CallOrPut.CALL
     long: LongOrShort = LongOrShort.LONG
-    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, long)
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, call, long)
 
 
 @pytest.fixture
@@ -64,8 +65,8 @@ def option_for_non_constant_vol_tests() -> EuropeanEquityOption:
     volatility: float = 0.1545
     time_to_maturity: float = 2
     put: CallOrPut = CallOrPut.PUT
-    short: LongOrShort = LongOrShort.SHORT
-    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, short)
+    long: LongOrShort = LongOrShort.LONG
+    return EuropeanEquityOption(notional, initial_spot, strike, interest_rate, volatility, time_to_maturity, put, long)
 
 
 def test_get_black_scholes_price(option_for_constant_vol_tests):
@@ -82,19 +83,19 @@ def test_get_black_scholes_price(option_for_constant_vol_tests):
     assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
 
-def test_time_independent_gbm_monte_carlo_pricer(option_for_constant_vol_tests):
+def test_time_independent_gbm_monte_carlo_pricer(option_for_non_constant_vol_tests):
     number_of_paths: int = 10_000
     number_of_time_steps: int = 20
 
     actual: MonteCarloPricingResults = \
-        option_for_constant_vol_tests.get_time_independent_monte_carlo_price(
+        option_for_non_constant_vol_tests.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
             additional_annotation_for_plot=file_and_test_annotation(),
             show_stats=True)
 
-    expected_price: float = option_for_constant_vol_tests.get_black_scholes_price()
+    expected_price: float = option_for_non_constant_vol_tests.get_black_scholes_price()
     ConsoleUtils.print_monte_carlo_pricing_results(
         title='European Equity Option Prices',
         monte_carlo_price=actual.price,

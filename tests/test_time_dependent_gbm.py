@@ -181,6 +181,67 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
         tenors, original_volatilities, bootstrapped_volatilities, 'Bootstrapped volatilities vs. Original volatilities')
 
 
+def test_annual_bootstrapped_vs_original_volatilities_plot(excel_file_path):
+    drift: float = 0.1
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='vol_surface',
+            initial_spot=0)
+
+    tenors: list[float] = \
+        [0.0000,
+         1.0000,
+         2.0000,
+         3.0000,
+         4.0000,
+         5.0000,
+         6.0000,
+         7.0000,
+         8.0000,
+         9.0000,
+         10.0000]
+
+    bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
+
+    PlotUtils.plot_bootstrap_volatilities(
+        tenors,
+        original_volatilities,
+        bootstrapped_volatilities,
+        'Annual Bootstrapped volatilities vs. Annual Original volatilities')
+
+
+def test_period_bootstrapped_vs_original_volatilities_plot(excel_file_path):
+    drift: float = 0.1
+    gbm: TimeDependentGBM = \
+        TimeDependentGBM(
+            drift=drift,
+            excel_file_path=excel_file_path,
+            sheet_name='vol_surface',
+            initial_spot=0)
+
+    tenors: list[float] = \
+        [0.0000,
+         0.1,
+         0.2,
+         0.3,
+         0.4,
+         0.5,
+         0.6,
+         0.7,
+         0.8,
+         0.9,
+         1.0]
+
+    bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
+    original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
+
+    PlotUtils.plot_bootstrap_volatilities(
+        tenors, original_volatilities, bootstrapped_volatilities, 'Bootstrapped volatilities vs. Original volatilities')
+
+
 def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
     drift: float = 0.1
     gbm: TimeDependentGBM = \
@@ -218,7 +279,7 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
 
 def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     drift: float = 0.1
-    time_to_maturity = 1
+    time_to_maturity = 4
     gbm: TimeDependentGBM = \
         TimeDependentGBM(
             drift=drift,
@@ -226,7 +287,7 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
             sheet_name='extreme_vols',
             initial_spot=50)
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=100, time_to_maturity=time_to_maturity)
+    gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=100, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
     print(gbm_paths)
 

@@ -414,11 +414,11 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
 
 
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
-    alpha = 0.01
-    sigma = 2
+    alpha = 0.1
+    sigma = 0.1
     drift = 0.1
     maturity = 2
-    number_of_paths = 10_000
+    number_of_paths = 100_000
     number_of_time_steps = 100
     hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.1)
     hw.simulate(maturity, drift, number_of_paths, number_of_time_steps, plot_results=True)
