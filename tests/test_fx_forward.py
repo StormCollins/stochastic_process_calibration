@@ -82,7 +82,7 @@ def fx_forward_xvalite():
     domestic_interest_rate: float = 0.061339421
     foreign_interest_rate: float = 0.020564138
     time_to_maturity: float = 1
-    long: LongOrShort = LongOrShort.LONG
+    short: LongOrShort = LongOrShort.SHORT
     return FxForward(
         notional=notional,
         initial_spot=initial_spot,
@@ -90,7 +90,7 @@ def fx_forward_xvalite():
         domestic_interest_rate=domestic_interest_rate,
         foreign_interest_rate=foreign_interest_rate,
         time_to_maturity=time_to_maturity,
-        long_or_short=long)
+        long_or_short=short)
 
 
 def test_fx_forward_get_analytical_price(fx_forward_constant_vol):

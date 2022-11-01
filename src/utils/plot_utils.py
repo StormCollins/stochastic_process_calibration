@@ -280,7 +280,7 @@ class PlotUtils:
         smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
         ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
         ax.set_xlabel('Tenor')
-        ax.set_ylabel('Bootstrapped volatilities')
+        ax.set_ylabel('Volatilities')
         ax.set_title(title)
         ax.legend()
         plt.show()
