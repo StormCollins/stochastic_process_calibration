@@ -259,7 +259,11 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_bootstrap_volatilities(tenors: list[float], original_volatilities, bootstrapped_vols, title: str):
+    def plot_bootstrap_volatilities(tenors: list[float],
+                                    original_volatilities,
+                                    bootstrapped_vols,
+                                    title: str,
+                                    additional_annotation: str = None):
         """
         Used to plot the bootstrapped volatilities.
 
@@ -279,9 +283,19 @@ class PlotUtils:
         smoothed_variances = [model(t) for t in smooth_tenors]
         smoothed_original_vols = [np.sqrt(v / t) for v, t in zip(smoothed_variances, smooth_tenors)]
         ax.plot(smooth_tenors, smoothed_original_vols, color='#C4D600', label='Original vols')
+        ax.set_xlim(0, 10)
         ax.set_xlabel('Tenor')
-        ax.set_ylabel('Bootstrapped volatilities')
+        ax.set_ylabel('Volatilities')
         ax.set_title(title)
+
+        if additional_annotation is not None:
+            ax.annotate(
+                f'{additional_annotation}',
+                fontsize=8,
+                xy=(0.05, 0.05),
+                xycoords='axes fraction',
+                bbox=dict(boxstyle='round,pad=0.3', fc=colors_light_green, lw=0))
+
         ax.legend()
         plt.show()
 

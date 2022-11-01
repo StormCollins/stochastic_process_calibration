@@ -76,7 +76,7 @@ def fx_forward_xvalite():
         domestic_interest_rate - Discount Curves
         foreign_interest_rate - Discount Curves
     """
-    notional: float = 1
+    notional: float = 1_000_000
     initial_spot: float = 14.6038
     strike: float = 17
     domestic_interest_rate: float = 0.061339421
@@ -99,13 +99,13 @@ def test_fx_forward_get_analytical_price(fx_forward_constant_vol):
     assert actual_price == pytest.approx(expected_price, 0.000000000001)
 
 
-def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forward_constant_vol):
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 20
-    volatility: float = 0.4
+def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forward_xvalite):
+    number_of_paths: int = 1_000_000
+    number_of_time_steps: int = 50
+    volatility: float = 0.154
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
-        fx_forward_constant_vol.get_time_independent_monte_carlo_price(
+        fx_forward_xvalite.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             volatility=volatility,
@@ -113,7 +113,7 @@ def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forw
             show_stats=True,
             additional_annotation_for_plot=file_and_test_annotation())
 
-    expected: float = fx_forward_constant_vol.get_analytical_price()
+    expected: float = fx_forward_xvalite.get_analytical_price()
     ConsoleUtils.print_monte_carlo_pricing_results(
         title='FX Forward Prices',
         monte_carlo_price=actual.price,
@@ -172,8 +172,8 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
 
 
 def test_xvalite_fx_forward_get_time_dependent_monte_carlo_pricer(fx_forward_xvalite, excel_file_path):
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 20
+    number_of_paths: int = 1_000_000
+    number_of_time_steps: int = 50
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_forward_xvalite.get_time_dependent_monte_carlo_price(
