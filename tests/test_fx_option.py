@@ -63,7 +63,6 @@ def fx_option_non_constant_vol() -> FxOption:
     time_to_maturity: float = 0.5
     volatility: float = 0.154
     put: CallOrPut = CallOrPut.PUT
-    call: CallOrPut = CallOrPut.CALL
     long: LongOrShort = LongOrShort.LONG
 
     return FxOption(
@@ -114,12 +113,12 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
     assert actual_price == pytest.approx(expected_price, 0.000001)
 
 
-def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_vol):
-    number_of_paths: int = 10_000
-    number_of_time_steps: int = 100
+def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_non_constant_vol):
+    number_of_paths: int = 1_000_000
+    number_of_time_steps: int = 50
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
-        fx_option_constant_vol.get_time_independent_monte_carlo_price(
+        fx_option_non_constant_vol.get_time_independent_monte_carlo_price(
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_paths=TestsConfig.plots_on,
@@ -127,7 +126,7 @@ def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_constant_
             additional_annotation_for_plot=file_and_test_annotation())
 
     np.random.seed(999)
-    expected_price: float = fx_option_constant_vol.get_garman_kohlhagen_price()
+    expected_price: float = fx_option_non_constant_vol.get_garman_kohlhagen_price()
     ConsoleUtils.print_monte_carlo_pricing_results(
         title='FX Option Prices',
         monte_carlo_price=actual.price,

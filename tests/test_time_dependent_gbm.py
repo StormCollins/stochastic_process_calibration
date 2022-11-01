@@ -2,6 +2,9 @@
 Time-dependent GBM unit tests.
 """
 import pytest
+import inspect
+import os
+from test_config import TestsConfig
 from src.gbm.time_dependent_gbm import TimeDependentGBM
 from src.gbm.time_independent_gbm import TimeIndependentGBM
 from src.enums_and_named_tuples.path_statistics import PathStatistics
@@ -177,8 +180,17 @@ def test_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
 
-    PlotUtils.plot_bootstrap_volatilities(
-        tenors, original_volatilities, bootstrapped_volatilities, 'Bootstrapped volatilities vs. Original volatilities')
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
+    PlotUtils.plot_bootstrap_volatilities(tenors,
+                                          original_volatilities,
+                                          bootstrapped_volatilities,
+                                          'Bootstrapped volatilities vs. Original volatilities',
+                                          additional_annotation)
 
 
 def test_annual_bootstrapped_vs_original_volatilities_plot(excel_file_path):
@@ -206,11 +218,18 @@ def test_annual_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
 
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
     PlotUtils.plot_bootstrap_volatilities(
         tenors,
         original_volatilities,
         bootstrapped_volatilities,
-        'Annual Bootstrapped volatilities vs. Annual Original volatilities')
+        'Annual Bootstrapped volatilities vs. Annual Original volatilities',
+        additional_annotation)
 
 
 def test_simulate_time_dependent_gbm_with_annual_vols(excel_file_path):
@@ -223,10 +242,20 @@ def test_simulate_time_dependent_gbm_with_annual_vols(excel_file_path):
             sheet_name='annual_vols',
             initial_spot=50)
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=50, time_to_maturity=time_to_maturity)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=50, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
 
-    PlotUtils.plot_monte_carlo_paths(time_steps, gbm_paths, 'GBM Paths for annual volatilities stepping up at 0.1', drift)
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
+    PlotUtils.plot_monte_carlo_paths(time_steps,
+                                     gbm_paths,
+                                     'GBM Paths for annual volatilities stepping up at 0.1',
+                                     drift,
+                                     additional_annotation)
 
 
 def test_period_bootstrapped_vs_original_volatilities_plot(excel_file_path):
@@ -254,11 +283,18 @@ def test_period_bootstrapped_vs_original_volatilities_plot(excel_file_path):
     bootstrapped_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
 
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
     PlotUtils.plot_bootstrap_volatilities(
         tenors,
         original_volatilities,
         bootstrapped_volatilities,
-        'Bootstrapped volatilities vs. Original volatilities stepping up at 0.1')
+        'Bootstrapped volatilities vs. Original volatilities stepping up at 0.1',
+        additional_annotation)
 
 
 def test_simulate_time_dependent_gbm_with_periodic_vols(excel_file_path):
@@ -274,8 +310,17 @@ def test_simulate_time_dependent_gbm_with_periodic_vols(excel_file_path):
     gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=50, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
 
-    PlotUtils.plot_monte_carlo_paths(
-        time_steps, gbm_paths, 'GBM Paths for stepwise volatilities stepping up at 0.1', drift)
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
+    PlotUtils.plot_monte_carlo_paths(time_steps,
+                                     gbm_paths,
+                                     'GBM Paths for stepwise volatilities stepping up at 0.1',
+                                     drift,
+                                     additional_annotation)
 
 
 def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
@@ -306,8 +351,17 @@ def test_bootstrapped_vols_for_extreme_original_vols(excel_file_path):
     extreme_bootstrapped_vols: list[float] = [float(gbm.get_time_dependent_vol(t)) for t in tenors]
     original_volatilities: list[float] = [float(gbm.get_time_dependent_vol(t, False)) for t in tenors]
 
-    PlotUtils.plot_bootstrap_volatilities(
-        tenors, original_volatilities, extreme_bootstrapped_vols, 'Bootstrapped volatilities vs. Original volatilities')
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
+    PlotUtils.plot_bootstrap_volatilities(tenors,
+                                          original_volatilities,
+                                          extreme_bootstrapped_vols,
+                                          'Extreme Bootstrapped volatilities vs. Extreme Original volatilities',
+                                          additional_annotation)
 
     print(f'\n')
     print(f'Extreme Bootstrapped Volatilities: {extreme_bootstrapped_vols}')
@@ -325,9 +379,18 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
     np.random.seed(999)
     gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=100, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
-    print(gbm_paths)
 
-    PlotUtils.plot_monte_carlo_paths(time_steps, gbm_paths, 'Extreme GBM Paths', drift)
+    additional_annotation: str = \
+        f'File: {os.path.basename(__file__)}\n' \
+        f'Test: {inspect.currentframe().f_code.co_name}' \
+            if TestsConfig.show_test_location \
+            else None
+
+    PlotUtils.plot_monte_carlo_paths(time_steps,
+                                     gbm_paths,
+                                     'Extreme GBM Paths',
+                                     drift,
+                                     additional_annotation)
 
 
 def test_get_vols_from_file(excel_file_path):
