@@ -241,8 +241,11 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
     hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=short_rate_tenor)
     tenors, rates, stochastic_dfs = \
-        hw.simulate(maturity=maturity, number_of_paths=number_of_paths, number_of_time_steps=number_of_time_steps,
-                    theoretical_drift=0.1, method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=number_of_paths,
+            number_of_time_steps=number_of_time_steps,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
@@ -280,8 +283,11 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     sigma: float = 0.0
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.1)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(maturity=maturity, number_of_paths=2, number_of_time_steps=5, theoretical_drift=0.1,
-                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=2,
+            number_of_time_steps=5,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
@@ -311,8 +317,11 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.9)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(maturity=maturity, number_of_paths=100_000, number_of_time_steps=1, theoretical_drift=0.1,
-                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=100_000,
+            number_of_time_steps=1,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -337,8 +346,11 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.00001)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(maturity=maturity, number_of_paths=100_000, number_of_time_steps=100, theoretical_drift=0.1,
-                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(
+            maturity=maturity,
+            number_of_paths=100_000,
+            number_of_time_steps=100,
+            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -392,7 +404,7 @@ def test_get_fixings_with_flat_curve_and_zero_vol_and_zero_alpha(flat_zero_rate_
     sigma: float = 0.0
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
     # TODO: Allow drift to be None.
-    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000, 100, 0.1)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000, 100)
     fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
     averaged_fixings: np.ndarray = np.average(fixings, 0)
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.00001)
@@ -433,7 +445,6 @@ def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
         paths=short_rates,
         title='Hull-White Simulation',
         additional_annotation=file_and_test_annotation())
-
 
 
 @pytest.mark.skip(reason='Long running.')

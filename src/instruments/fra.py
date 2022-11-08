@@ -1,7 +1,6 @@
 """
 Contains a class for representing and pricing a FRA (Forward Rate Agreement).
 """
-import numpy as np
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 
@@ -51,8 +50,11 @@ class Fra:
         hw: HullWhite = HullWhite(alpha, sigma, initial_curve, short_rate_tenor)
 
         simulation_tenors, short_rates, stochastic_dfs = \
-            hw.simulate(self.start_tenor, number_of_paths, number_of_time_steps, 0.1,
-                        HullWhiteSimulationMethod.SLOWANALYTICAL)
+            hw.simulate(
+                maturity=self.start_tenor,
+                number_of_paths=number_of_paths,
+                number_of_time_steps=number_of_time_steps,
+                method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
         start_discount_factors: np.ndarray = \
             hw.a_function(simulation_tenors, self.start_tenor) * \

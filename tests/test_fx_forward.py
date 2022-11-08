@@ -100,8 +100,8 @@ def test_fx_forward_get_analytical_price(fx_forward_constant_vol):
 
 
 def test_fx_forward_get_time_independent_monte_carlo_pricer_constant_vol(fx_forward_xvalite):
-    number_of_paths: int = 1_000_000
-    number_of_time_steps: int = 50
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 20
     volatility: float = 0.154
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
@@ -172,8 +172,8 @@ def test_fx_forward_get_time_dependent_monte_carlo_pricer_non_constant_vol(fx_fo
 
 
 def test_xvalite_fx_forward_get_time_dependent_monte_carlo_pricer(fx_forward_xvalite, excel_file_path):
-    number_of_paths: int = 1_000_000
-    number_of_time_steps: int = 50
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 20
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_forward_xvalite.get_time_dependent_monte_carlo_price(
