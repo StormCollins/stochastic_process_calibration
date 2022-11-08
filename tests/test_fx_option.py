@@ -114,8 +114,8 @@ def test_get_garman_kohlhagen_price(fx_option_constant_vol):
 
 
 def test_get_time_independent_monte_carlo_price_constant_vol(fx_option_non_constant_vol):
-    number_of_paths: int = 1_000_000
-    number_of_time_steps: int = 50
+    number_of_paths: int = 10_000
+    number_of_time_steps: int = 20
     np.random.seed(999)
     actual: MonteCarloPricingResults = \
         fx_option_non_constant_vol.get_time_independent_monte_carlo_price(

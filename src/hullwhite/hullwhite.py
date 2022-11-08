@@ -1,10 +1,7 @@
 """
 Contains a class representing a Hull-White stochastic process.
 """
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.integrate
-import seaborn as sns
+from scipy.integrate import quad
 from scipy.stats import norm
 from src.curves.curve import *
 from src.utils.plot_utils import PlotUtils
@@ -92,7 +89,6 @@ class HullWhite:
     def simulate(
             self,
             maturity: float,
-            drift: float,
             number_of_paths: int,
             number_of_time_steps: int,
             method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
@@ -100,19 +96,17 @@ class HullWhite:
         """
         Generates simulated short rates for the given Hull-White parameters.
 
-        :param drift:
-        :param plot_results:
-        :param maturity: The maturity of the simulation.
-        :param number_of_paths: The number of paths.
-        :param number_of_time_steps: The number of time steps.
+        :param maturity: The maturity tenor of the simulation.
+        :param number_of_paths: The number of paths for the simulation.
+        :param number_of_time_steps: The number of time steps for the simulation.
         :param method: Use the approximate, discretized Hull-White simulation method rather than the more
-            accurate semi-analytical method. Default = False
+            accurate semi-analytical method. Default = False.
+        :param plot_results: Plot the simulation results. Default = False.
         :return: Tuple of 3 arrays. Simulation tenors, short rates and stochastic discount factors.
         """
         short_rates: np.ndarray = np.zeros((number_of_paths, number_of_time_steps + 1))
         short_rates[:, 0] = self.initial_short_rate
         dt: float = maturity / number_of_time_steps
-        # time_steps: np.ndarray = np.tile(np.linspace(0, maturity, short_rates.shape[1]), (number_of_paths, 1))
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
         if method == HullWhiteSimulationMethod.SLOWAPPROXIMATE:
@@ -125,8 +119,7 @@ class HullWhite:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * dt) * short_rates[:, j] + \
-                    scipy.integrate.quad(
-                        lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
+                    quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
                     self.sigma * np.exp(-1 * self.alpha * dt) * \
                     np.ndarray.flatten(self.exponential_stochastic_integral(j * dt, dt, number_of_paths))
         else:
@@ -138,8 +131,7 @@ class HullWhite:
 
             for j in range(0, number_of_time_steps):
                 deterministic_part[j + 1] += \
-                    scipy.integrate.quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, (j + 1) * dt)[
-                        0]
+                    quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), 0, (j + 1) * dt)[0]
 
                 stochastic_part[:, j + 1] += \
                     self.sigma * np.exp(-1 * self.alpha * j * dt) * \
@@ -148,7 +140,7 @@ class HullWhite:
             short_rates = deterministic_part + stochastic_part
 
         if plot_results:
-            self.plot_paths(short_rates, maturity, drift)
+            self.plot_paths(short_rates, maturity, drift=None)
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors

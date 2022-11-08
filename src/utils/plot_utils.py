@@ -146,7 +146,7 @@ class PlotUtils:
         :param time_steps: The time steps of the Monte Carlo simulation.
         :param paths: The paths simulated during the Monte Carlo run.
         :param title: The title of the plot.
-        :param drift: The (constant) drift, if applicable, of the process.
+        :param drift: The (constant) drift, if applicable, of the process. Applying this to Hull-White is not trivial.
         :param additional_annotation: Any additional annotation to add to the plot. Default = None.
         :return:
         """
@@ -259,19 +259,20 @@ class PlotUtils:
         plt.show()
 
     @staticmethod
-    def plot_bootstrap_volatilities(tenors: list[float],
-                                    original_volatilities,
-                                    bootstrapped_vols,
-                                    title: str,
-                                    additional_annotation: str = None):
+    def plot_bootstrap_volatilities(
+            tenors: list[float],
+            original_volatilities,
+            bootstrapped_vols,
+            title: str,
+            additional_annotation: str = None):
         """
         Used to plot the bootstrapped volatilities.
 
         :param tenors: Volatility tenors.
         :param original_volatilities: Original volatilities from the Excel file
-                                      (i.e. the volatilities before they are bootstrappped)
+                                      (i.e., the volatilities before they are bootstrapped).
         :param bootstrapped_vols: The bootstrapped volatilities.
-        :param title: Title of the grpah.
+        :param title: Title of the graph.
         :return:
         """
 
@@ -298,5 +299,3 @@ class PlotUtils:
 
         ax.legend()
         plt.show()
-
-

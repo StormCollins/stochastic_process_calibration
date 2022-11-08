@@ -1,20 +1,16 @@
 """
 Hull-White unit tests.
 """
-import inspect
-import os
-
 import pytest
-import scipy
-from scipy.integrate import quad
 from scipy.stats import normaltest
 from src.hullwhite.hullwhite import *
 from src.utils.plot_utils import PlotUtils
 from test_config import TestsConfig
+from test_utils import file_and_test_annotation
 
 
 @pytest.fixture
-def curve_tenors():
+def flat_zero_rate_curve_tenors():
     """
     Curve tenors.
     """
@@ -22,13 +18,13 @@ def curve_tenors():
 
 
 @pytest.fixture
-def flat_zero_rate_curve(curve_tenors):
+def flat_zero_rate_curve(flat_zero_rate_curve_tenors):
     """
     Example flat zero rate curve (rate = 10%).
     """
     rate = 0.1
-    discount_factors: np.ndarray = np.array([np.exp(-rate * t) for t in curve_tenors])
-    return Curve(curve_tenors, discount_factors)
+    discount_factors: np.ndarray = np.array([np.exp(-rate * t) for t in flat_zero_rate_curve_tenors])
+    return Curve(flat_zero_rate_curve_tenors, discount_factors)
 
 
 @pytest.fixture
@@ -93,7 +89,7 @@ def real_zero_rate_curve():
     return Curve(tenors, discount_factors)
 
 
-def test_theta_with_flat_zero_rate_curve(flat_zero_rate_curve, curve_tenors):
+def test_theta_with_flat_zero_rate_curve(flat_zero_rate_curve, flat_zero_rate_curve_tenors):
     """
     See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#theta_t
     """
@@ -104,6 +100,7 @@ def test_theta_with_flat_zero_rate_curve(flat_zero_rate_curve, curve_tenors):
     actual: list[float] = [hw.theta(t) for t in test_tenors]
     expected: list[float] = \
         [alpha * 0.1 + (sigma ** 2) / (2 * alpha) * (1 - np.exp(-2 * alpha * t)) for t in test_tenors]
+
     assert all([a == pytest.approx(b, 0.001) for a, b in zip(actual, expected)])
 
 
@@ -119,7 +116,7 @@ def test_theta_with_flat_zero_rate_curve_and_zero_vol(flat_zero_rate_curve):
     assert all([a == pytest.approx(b, 0.00001) for a, b in zip(actual, expected)])
 
 
-def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, curve_tenors):
+def test_theta_with_constant_zero_rates_and_small_alpha(flat_zero_rate_curve, flat_zero_rate_curve_tenors):
     """
     See https://wiki.fsa-aks.deloitte.co.za/doku.php?id=valuations:methodology:models:hull_white#theta_t
     """
@@ -244,12 +241,8 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
     hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=short_rate_tenor)
     tenors, rates, stochastic_dfs = \
-        hw.simulate(
-            maturity=maturity,
-            drift=0.1,
-            number_of_paths=number_of_paths,
-            number_of_time_steps=number_of_time_steps,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(maturity=maturity, number_of_paths=number_of_paths, number_of_time_steps=number_of_time_steps,
+                    theoretical_drift=0.1, method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     stochastic_discount_factors: np.ndarray = \
         np.mean(np.cumprod(np.exp(-1 * rates * (maturity / (number_of_time_steps + 1))), 1), 0)
@@ -259,11 +252,11 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
         np.arange(0, maturity * (1 + 2 / number_of_time_steps), maturity / number_of_time_steps)
 
     initial_curve_discount_factors: np.ndarray = flat_zero_rate_curve.get_discount_factors(time_steps)
-    additional_annotation: str = \
-        f'File: {os.path.basename(__file__)}\n' \
-        f'Test: {inspect.currentframe().f_code.co_name}' \
-        if TestsConfig.show_test_location \
-        else None
+    # additional_annotation: str = \
+    #     f'File: {os.path.basename(__file__)}\n' \
+    #     f'Test: {inspect.currentframe().f_code.co_name}' \
+    #     if TestsConfig.show_test_location \
+    #     else None
 
     if TestsConfig.plots_on:
         PlotUtils.plot_curves(
@@ -271,7 +264,7 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
             time_steps=time_steps,
             curves=[('Initial Curve Discount Factors', initial_curve_discount_factors),
                     ('Stochastic Discount Factors', stochastic_discount_factors)],
-            additional_annotation=additional_annotation)
+            additional_annotation=file_and_test_annotation())
 
     assert all([a == pytest.approx(b, 0.05)
                 for a, b in zip(stochastic_discount_factors, initial_curve_discount_factors)])
@@ -287,13 +280,8 @@ def test_simulate_with_flat_curve_and_small_alpha_and_small_sigma(flat_zero_rate
     sigma: float = 0.0
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.1)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(
-            maturity=maturity,
-            drift=0.1,
-            number_of_paths=2,
-            number_of_time_steps=5,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL,
-        )
+        hw.simulate(maturity=maturity, number_of_paths=2, number_of_time_steps=5, theoretical_drift=0.1,
+                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     for value in short_rates[0]:
         assert value == pytest.approx(hw.initial_short_rate, abs=0.00001)
@@ -323,12 +311,8 @@ def test_simulated_distribution_with_flat_curve_and_small_alpha(flat_zero_rate_c
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.9)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(
-            maturity=maturity,
-            drift=0.1,
-            number_of_paths=100_000,
-            number_of_time_steps=1,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(maturity=maturity, number_of_paths=100_000, number_of_time_steps=1, theoretical_drift=0.1,
+                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -353,12 +337,8 @@ def test_simulated_distribution_with_flat_curve(flat_zero_rate_curve):
     np.random.seed(999)
     hw: HullWhite = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.00001)
     tenors, short_rates, stochastic_dfs = \
-        hw.simulate(
-            maturity=maturity,
-            drift=0.1,
-            number_of_paths=100_000,
-            number_of_time_steps=100,
-            method=HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hw.simulate(maturity=maturity, number_of_paths=100_000, number_of_time_steps=100, theoretical_drift=0.1,
+                    method=HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     rates: np.ndarray = short_rates[:, -1]
     mean: float = \
@@ -412,7 +392,7 @@ def test_get_fixings_with_flat_curve_and_zero_vol_and_zero_alpha(flat_zero_rate_
     sigma: float = 0.0
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
     # TODO: Allow drift to be None.
-    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 0.1, 1_000, 100)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000, 100, 0.1)
     fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
     averaged_fixings: np.ndarray = np.average(fixings, 0)
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.00001)
@@ -435,20 +415,33 @@ def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_ra
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
     # TODO: Allow drift to be None.
     np.random.seed(999)
-    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 0.1, 1_000_000, 100)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000_000, 100)
     fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, fixing_period_start_tenors,
                                                          fixing_period_end_tenors)
     averaged_fixings: np.ndarray = np.average(fixings, 0)
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.005)
 
 
+def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
+    alpha: float = 0.8
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 10_000, 20)
+    PlotUtils.plot_monte_carlo_paths(
+        time_steps=simulation_tenors,
+        paths=short_rates,
+        title='Hull-White Simulation',
+        additional_annotation=file_and_test_annotation())
+
+
+
 @pytest.mark.skip(reason='Long running.')
 def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
     alpha = 0.1
     sigma = 0.1
-    drift = 0.1
     maturity = 2
     number_of_paths = 100_000
     number_of_time_steps = 100
     hw: HullWhite = HullWhite(alpha, sigma, real_zero_rate_curve, 0.1)
-    hw.simulate(maturity, drift, number_of_paths, number_of_time_steps, plot_results=True)
+    hw.simulate(maturity, number_of_paths, number_of_time_steps, plot_results=True)

@@ -1,8 +1,6 @@
 """
 FRA Unit tests.
 """
-import inspect
-import os
 import pytest
 from src.instruments.fra import *
 from test_config import TestsConfig
@@ -89,8 +87,8 @@ def test_get_monte_carlo_values(flat_zero_rate_curve, atm_fra, hull_white_proces
 
     np.random.seed(999)
     tenors, short_rates, stochastic_dfs = \
-        hull_white_process.simulate(
-            atm_fra.start_tenor, 0.1, number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+        hull_white_process.simulate(atm_fra.start_tenor, number_of_paths, number_of_time_steps, 0.1,
+                                    HullWhiteSimulationMethod.SLOWANALYTICAL)
 
     dt = atm_fra.start_tenor / number_of_time_steps
     stochastic_discount_factors = np.prod(np.exp(-1 * short_rates * dt), 1)
