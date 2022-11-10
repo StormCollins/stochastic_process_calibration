@@ -241,14 +241,14 @@ def test_simulate_time_dependent_gbm_with_annual_vols(excel_file_path):
             sheet_name='annual_vols',
             initial_spot=50)
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=50, time_to_maturity=time_to_maturity)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=20, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
 
     additional_annotation: str = \
         f'File: {os.path.basename(__file__)}\n' \
         f'Test: {inspect.currentframe().f_code.co_name}' \
-            if TestsConfig.show_test_location \
-            else None
+        if TestsConfig.show_test_location \
+        else None
 
     PlotUtils.plot_monte_carlo_paths(time_steps,
                                      gbm_paths,
@@ -306,7 +306,7 @@ def test_simulate_time_dependent_gbm_with_periodic_vols(excel_file_path):
             sheet_name='stepwise_vols',
             initial_spot=50)
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=50, time_to_maturity=time_to_maturity)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=20, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
 
     additional_annotation: str = \
@@ -376,7 +376,7 @@ def test_simulate_time_dependent_gbm_with_extreme_vols(excel_file_path):
             sheet_name='extreme_vols',
             initial_spot=50)
     np.random.seed(999)
-    gbm_paths = gbm.get_paths(number_of_paths=100_000, number_of_time_steps=100, time_to_maturity=time_to_maturity)
+    gbm_paths = gbm.get_paths(number_of_paths=10_000, number_of_time_steps=20, time_to_maturity=time_to_maturity)
     time_steps = np.linspace(0, time_to_maturity, gbm_paths.shape[1])
 
     additional_annotation: str = \

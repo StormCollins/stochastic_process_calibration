@@ -1,6 +1,7 @@
 """
 Contains a class representing a Hull-White stochastic process.
 """
+import numpy as np
 from scipy.integrate import quad
 from scipy.stats import norm
 from src.curves.curve import *
@@ -144,6 +145,28 @@ class HullWhite:
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
+
+    def convert_simulated_short_rates_to_curves(
+            self,
+            simulation_tenors: np.ndarray,
+            short_rates: np.ndarray) -> dict[float, Curve]:
+        curve_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75, 1.00])
+        curves: dict[float, Curve] = dict()
+
+        for t in simulation_tenors:
+            a_values = \
+                np.tile(self.a_function(simulation_tenors[0], simulation_tenors[0] + curve_tenors), (short_rates.shape[0], 1))
+
+            b_values = \
+                np.tile(self.b_function(simulation_tenors[0], simulation_tenors[0] + curve_tenors), (short_rates.shape[0], 1))
+
+            current_time_step_short_rates: np.ndarray = np.transpose(np.tile(short_rates[:, 0], (len(curve_tenors), 1)))
+            discount_factors: np.ndarray = a_values * np.exp(-1 * current_time_step_short_rates * b_values)
+
+            current_time_step_curves: Curve = Curve(curve_tenors, discount_factors)
+            curves[t] = current_time_step_curves
+
+        return curves
 
     def exponential_stochastic_integral(
             self,

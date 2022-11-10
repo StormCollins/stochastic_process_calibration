@@ -388,7 +388,7 @@ def test_initial_short_rate_for_flat_curve(flat_zero_rate_curve):
            pytest.approx(hw_long_short_rate_tenor.initial_short_rate, abs=0.0001)
 
 
-def test_get_fixings_with_flat_curve_and_zero_vol_and_zero_alpha(flat_zero_rate_curve):
+def test_get_fixings_with_flat_curve_and_zero_alpha_and_zero_vol(flat_zero_rate_curve):
     start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
     end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
     forward_rates: np.ndarray = \
@@ -400,14 +400,59 @@ def test_get_fixings_with_flat_curve_and_zero_vol_and_zero_alpha(flat_zero_rate_
     expected_forward_rate: float = 0.10126048209771543
     print(forward_rates)
 
+    # alpha can't actually be set to zero since we divide by alpha in some expressions.
     alpha: float = 0.001
     sigma: float = 0.0
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
-    # TODO: Allow drift to be None.
+    np.random.seed(999)
     simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000, 100)
     fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
     averaged_fixings: np.ndarray = np.average(fixings, 0)
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.00001)
+
+
+def test_get_fixings_with_flat_curve_and_nonzero_alpha_and_zero_vol(flat_zero_rate_curve):
+    start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+    end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+    forward_rates: np.ndarray = \
+        flat_zero_rate_curve.get_forward_rates(
+            start_tenors=start_tenors,
+            end_tenors=end_tenors,
+            compounding_convention=CompoundingConvention.NACQ)
+
+    expected_forward_rate: float = 0.10126048209771543
+    print(forward_rates)
+
+    alpha: float = 0.1
+    sigma: float = 0.0
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000, 100)
+    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
+    averaged_fixings: np.ndarray = np.average(fixings, 0)
+    assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.00001)
+
+
+def test_get_fixings_with_flat_curve_and_nonzero_alpha_and_nonzero_vol(flat_zero_rate_curve):
+    start_tenors: np.ndarray = np.array([0.00, 0.25, 0.50, 0.75])
+    end_tenors: np.ndarray = np.array([0.25, 0.50, 0.75, 1.00])
+    forward_rates: np.ndarray = \
+        flat_zero_rate_curve.get_forward_rates(
+            start_tenors=start_tenors,
+            end_tenors=end_tenors,
+            compounding_convention=CompoundingConvention.NACQ)
+
+    expected_forward_rate: float = 0.10126048209771543
+    print(forward_rates)
+
+    alpha: float = 0.1
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 20_000, 100)
+    fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, start_tenors, end_tenors)
+    averaged_fixings: np.ndarray = np.average(fixings, 0)
+    assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.005)
 
 
 def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_rate_curve):
@@ -445,6 +490,23 @@ def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
         paths=short_rates,
         title='Hull-White Simulation',
         additional_annotation=file_and_test_annotation())
+
+
+def test_convert_simulated_short_rates_to_curves(flat_zero_rate_curve):
+    alpha: float = 0.1
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 10, 20)
+
+    curves: dict[float, Curve] = \
+        hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
+
+    # At simulation time 0 no randomness has been introduced yet, hence all discount factors, at simulation time 0, for
+    # all tenors, should be identical.
+    discount_factors: np.ndarray = curves[simulation_tenors[0]].get_discount_factors(0.9)
+    for i in range(0, len(discount_factors) - 1):
+        assert discount_factors[i] == discount_factors[i + 1]
 
 
 @pytest.mark.skip(reason='Long running.')

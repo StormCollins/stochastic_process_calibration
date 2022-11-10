@@ -7,6 +7,7 @@ from src.curves.curve import Curve
 from src.enums_and_named_tuples.long_or_short import LongOrShort
 from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 from src.instruments.irs import Irs
+from src.hullwhite.hullwhite import HullWhite
 
 
 @pytest.fixture
@@ -70,6 +71,16 @@ def test_irs_fixed_rate(flat_curve):
     expected: float = irs.get_par_swap_rate(flat_curve)
     actual: float = irs.fixed_rate
     assert actual == pytest.approx(expected, abs=0.01)
+
+
+def test_get_fair_value_using_monte_carlo(example_irs, flat_curve):
+    alpha: float = 0.01
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_curve, short_rate_tenor=0.01)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1, 10, 10)
+    curves: Curve = hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
+    value = example_irs.get_floating_leg_fair_value(simulation_tenors[0], curves)
+    print(value)
 
 
 @pytest.mark.skip(reason="Fails due to simulating fixing intricacies which need to be resolved.")

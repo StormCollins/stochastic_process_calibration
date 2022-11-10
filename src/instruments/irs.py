@@ -1,5 +1,5 @@
 """
-Contains a class for representing an Interest Rate Swap (IRS).
+Contains a class for representing and pricing an Interest Rate Swap (IRS).
 """
 from src.curves.curve import *
 from src.enums_and_named_tuples.long_or_short import LongOrShort
@@ -25,7 +25,7 @@ class Irs:
         :param notional: Notional.
         :param start_tenor: Start tenor. For a forwarding starting swap > 0.
         :param end_tenor: End tenor.
-        :param frequency: The frequency of the pay and receive tenors, e.g., 3m = 0.25.
+        :param frequency: The frequency of the pay and receive tenors, e.g., 0.25 = 3m.
         :param long_or_short: The IRS is 'long' if we pay fixed and receive floating and vice versa for 'short'.
         :param fixed_rate: (Optional) Fixed rate. If set to 'None' and curve is not 'None', then the par swap rate is
             calculated and used as the fixed rate.
@@ -39,6 +39,7 @@ class Irs:
         self.fixed_leg_reset_start_tenors: np.ndarray = np.arange(self.start_tenor, self.end_tenor, self.frequency)
         self.fixed_leg_reset_end_tenors: np.ndarray = \
             np.arange(self.start_tenor, self.end_tenor, self.frequency) + self.frequency
+
         self.floating_leg_reset_start_tenors: np.ndarray = self.fixed_leg_reset_start_tenors
         self.floating_leg_reset_end_tenors: np.ndarray = self.fixed_leg_reset_end_tenors
 
@@ -69,9 +70,15 @@ class Irs:
 
     def get_floating_leg_fair_value(self, current_time_step: float, curve: Curve) -> float:
         # Calculate the forward rates (whose end tenors are > current_time_step) using curve.
-        reset_end_tenors = self.floating_leg_reset_end_tenors[self.floating_leg_reset_end_tenors > current_time_step]
-        forward_rates = Curve.get_forward_rates(curve, reset_end_tenors[:-1], reset_end_tenors, CompoundingConvention.NACQ)
-        day_count_fractions: np.ndarray = self.floating_leg_reset_end_tenors - self.floating_leg_reset_start_tenors
+        reset_end_tenors: np.ndarray = \
+            self.floating_leg_reset_end_tenors[self.floating_leg_reset_end_tenors > current_time_step]
+
+        forward_rates: np.ndarray = \
+            Curve.get_forward_rates(curve, reset_end_tenors[:-1], reset_end_tenors, CompoundingConvention.NACQ)
+
+        day_count_fractions: np.ndarray = \
+            self.floating_leg_reset_end_tenors - self.floating_leg_reset_start_tenors
+
         # Calculate forward rates * day count fractions * discount factors
         discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in reset_end_tenors])
         floating_leg = self.notional * forward_rates * day_count_fractions * discount_factors
@@ -84,6 +91,7 @@ class Irs:
         discount_factors: np.ndarray = np.array([curve.get_discount_factors(t) for t in reset_end_tenors[1:]])
         fixed_leg = self.notional * self.fixed_rate * day_count_fractions * discount_factors
         return fixed_leg
+
 
     def get_monte_carlo_fair_values(
             self,):

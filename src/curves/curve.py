@@ -1,9 +1,12 @@
 """
-Contains a class for representing a discount curve.
+Contains a class for representing a single discount curve or a set of discount curves.
+
+In the case of a set of discount factors they are constructed using the same tenors but different discount factors for 
+those tenors - this is useful in representing a curve being simulated during Monte Carlo.
 """
 import numpy as np
-from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 from scipy.interpolate import interp1d
+from src.enums_and_named_tuples.compounding_convention import CompoundingConvention
 
 
 class Curve:
@@ -17,7 +20,7 @@ class Curve:
 
     def __init__(self, tenors: np.ndarray, discount_factors: np.ndarray):
         """
-        Curve constructor. Uses cubic-spline interpolation.
+        Curve constructor. Uses linear interpolation on the log of discount factors.
 
         :param tenors: Tenors.
         :param discount_factors: Discount factors.
