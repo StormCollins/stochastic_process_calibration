@@ -1,6 +1,7 @@
 """
 Hull-White unit tests.
 """
+import numpy as np
 import pytest
 from scipy.stats import normaltest
 from src.hullwhite.hullwhite import *
@@ -492,7 +493,7 @@ def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
         additional_annotation=file_and_test_annotation())
 
 
-def test_convert_simulated_short_rates_to_curves(flat_zero_rate_curve):
+def test_convert_simulated_short_rates_to_curves_at_simulation_time_zero(flat_zero_rate_curve):
     alpha: float = 0.1
     sigma: float = 0.1
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
@@ -507,6 +508,54 @@ def test_convert_simulated_short_rates_to_curves(flat_zero_rate_curve):
     discount_factors: np.ndarray = curves[simulation_tenors[0]].get_discount_factors(0.9)
     for i in range(0, len(discount_factors) - 1):
         assert discount_factors[i] == discount_factors[i + 1]
+
+
+def test_expected_curves(flat_zero_rate_curve):
+    alpha: float = 0.1
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000_000, 20)
+
+    curves: dict[float, Curve] = \
+        hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
+
+    actual_discount_factor_t2: float = \
+        np.average(curves[simulation_tenors[1]].get_discount_factors(simulation_tenors[2]))
+
+    actual_discount_factor_t3: float = \
+        np.average(curves[simulation_tenors[2]].get_discount_factors(simulation_tenors[3]))
+
+    actual_discount_factor_t4: float = \
+        np.average(curves[simulation_tenors[3]].get_discount_factors(simulation_tenors[4]))
+
+    expected_discount_factor_t2: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[2])
+    expected_discount_factor_t3: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[3])
+    expected_discount_factor_t4: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[4])
+    assert actual_discount_factor_t2 == pytest.approx(expected_discount_factor_t2, abs=0.000001)
+    assert actual_discount_factor_t3 == pytest.approx(expected_discount_factor_t3, abs=0.000001)
+    assert actual_discount_factor_t4 == pytest.approx(expected_discount_factor_t4, abs=0.000001)
+
+
+def test_expected_curves_with_zero_vol(flat_zero_rate_curve):
+    alpha: float = 0.1
+    sigma: float = 0.0
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1, 20)
+
+    curves: dict[float, Curve] = \
+        hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
+
+    actual_discount_factor_t2: float = curves[simulation_tenors[1]].get_discount_factors(simulation_tenors[2])[0]
+    actual_discount_factor_t3: float = curves[simulation_tenors[2]].get_discount_factors(simulation_tenors[3])[0]
+    actual_discount_factor_t4: float = curves[simulation_tenors[3]].get_discount_factors(simulation_tenors[4])[0]
+    expected_discount_factor_t2: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[2])
+    expected_discount_factor_t3: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[3])
+    expected_discount_factor_t4: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[4])
+    assert actual_discount_factor_t2 == pytest.approx(expected_discount_factor_t2, abs=0.000001)
+    assert actual_discount_factor_t3 == pytest.approx(expected_discount_factor_t3, abs=0.000001)
+    assert actual_discount_factor_t4 == pytest.approx(expected_discount_factor_t4, abs=0.000001)
 
 
 @pytest.mark.skip(reason='Long running.')

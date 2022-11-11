@@ -1,7 +1,6 @@
 """
 Contains a class representing a Hull-White stochastic process.
 """
-import numpy as np
 from scipy.integrate import quad
 from scipy.stats import norm
 from src.curves.curve import *
