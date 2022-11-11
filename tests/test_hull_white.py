@@ -471,7 +471,6 @@ def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_ra
     alpha: float = 0.001
     sigma: float = 0.1
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
-    # TODO: Allow drift to be None.
     np.random.seed(999)
     simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 1_000_000, 100)
     fixings: np.ndarray = hull_white_process.get_fixings(simulation_tenors, short_rates, fixing_period_start_tenors,
@@ -500,12 +499,12 @@ def test_convert_simulated_short_rates_to_curves_at_simulation_time_zero(flat_ze
     np.random.seed(999)
     simulation_tenors, short_rates, stochastic_discount_factors = hull_white_process.simulate(1.00, 10, 20)
 
-    curves: dict[float, Curve] = \
+    curves: SimulatedCurves = \
         hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
 
     # At simulation time 0 no randomness has been introduced yet, hence all discount factors, at simulation time 0, for
     # all tenors, should be identical.
-    discount_factors: np.ndarray = curves[simulation_tenors[0]].get_discount_factors(0.9)
+    discount_factors: np.ndarray = curves.get_discount_factors(simulation_tenors[0], 0.9)
     for i in range(0, len(discount_factors) - 1):
         assert discount_factors[i] == discount_factors[i + 1]
 
@@ -547,15 +546,15 @@ def test_expected_curves_with_zero_vol(flat_zero_rate_curve):
     curves: SimulatedCurves = \
         hull_white_process.convert_simulated_short_rates_to_curves(simulation_tenors, short_rates)
 
-    actual_discount_factor_t2: float = curves.get_discount_factors(simulation_tenors[1], simulation_tenors[2])[0]
-    actual_discount_factor_t3: float = curves.get_discount_factors(simulation_tenors[2], simulation_tenors[3])[0]
-    actual_discount_factor_t4: float = curves.get_discount_factors(simulation_tenors[3], simulation_tenors[4])[0]
+    actual_discount_factor_t2: np.ndarray = curves.get_discount_factors(simulation_tenors[1], simulation_tenors[2])[0]
+    actual_discount_factor_t3: np.ndarray = curves.get_discount_factors(simulation_tenors[2], simulation_tenors[3])[0]
+    actual_discount_factor_t4: np.ndarray = curves.get_discount_factors(simulation_tenors[3], simulation_tenors[4])[0]
     expected_discount_factor_t2: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[2])
     expected_discount_factor_t3: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[3])
     expected_discount_factor_t4: float = flat_zero_rate_curve.get_discount_factors(simulation_tenors[4])
-    assert actual_discount_factor_t2 == pytest.approx(expected_discount_factor_t2, abs=0.000001)
-    assert actual_discount_factor_t3 == pytest.approx(expected_discount_factor_t3, abs=0.000001)
-    assert actual_discount_factor_t4 == pytest.approx(expected_discount_factor_t4, abs=0.000001)
+    assert actual_discount_factor_t2[0][0] == pytest.approx(expected_discount_factor_t2, abs=0.00001)
+    assert actual_discount_factor_t3[0][0] == pytest.approx(expected_discount_factor_t3, abs=0.00001)
+    assert actual_discount_factor_t4[0][0] == pytest.approx(expected_discount_factor_t4, abs=0.00001)
 
 
 @pytest.mark.skip(reason='Long running.')
