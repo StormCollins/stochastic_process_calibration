@@ -1,6 +1,7 @@
 """
 Contains a class representing a Hull-White stochastic process.
 """
+import numpy as np
 from scipy.integrate import quad
 from scipy.stats import norm
 from src.curves.curve import *
@@ -54,11 +55,17 @@ class HullWhite:
         thetas: np.ndarray = \
             (zero_rates - offset_zero_rates) / self.numerical_derivative_step_size + \
             self.alpha * zero_rates + \
-            self.sigma ** 2 / (2 * self.alpha) * (1 - np.exp(-2 * self.alpha * theta_times))
-        # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
-        # TODO: Check extrapolation.
+            ((self.sigma ** 2) / (2 * self.alpha)) * (1 - np.exp(-2 * self.alpha * theta_times))
+
+        # forward_rates =\
+        #     (-1 / (theta_times[1:] - theta_times[0:-1])) * np.log(discount_factors[1:]/discount_factors[0:-1])
+        # forward_rates = np.concatenate(forward_rates[0], forward_rates)
+        #
+        # thetas = (forward_rates[1:] - forward_rates[0:-1])/(theta_times[1:] - theta_times[0:-1]) + self.alpha * forward_rates[0:-1] + self.sigma**2 /(2*self.alpha) * (1 - np.exp(-2*self.alpha * theta_times[0:-1]))
+        # # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
+        # # TODO: Check extrapolation.
         theta_interpolator: interp1d = \
-            interp1d(theta_times, np.log(thetas), kind='linear', fill_value='extrapolate')
+            interp1d(theta_times, thetas, kind='linear', fill_value='extrapolate')
 
         return theta_interpolator
 
@@ -69,7 +76,8 @@ class HullWhite:
         :param tenor: The volatility_tenor for which to calculate theta.
         :return: Theta for the given volatility_tenor.
         """
-        return np.exp(self.theta_interpolator(tenor))
+        # return np.exp(self.theta_interpolator(tenor))
+        return self.theta_interpolator(tenor)
 
     def plot_paths(self, paths, maturity, drift):
         """
@@ -170,8 +178,8 @@ class HullWhite:
         dt = time_step_size
         random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
         # TODO: Storm vs. Massi's approach - add toggle to switch between the two.
-        # return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
-        return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
+        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
+        # return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
 
     def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: float | np.ndarray) -> float | np.ndarray:
         """
