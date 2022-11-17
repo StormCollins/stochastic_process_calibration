@@ -63,7 +63,7 @@ def multiple_curves(multiple_curve_tenors, multiple_curve_discount_factors):
 
 
 @pytest.fixture
-def curve_tenors():
+def flat_zero_rate_curve_tenors():
     """
     Tenors for a curve.
     """
@@ -71,13 +71,13 @@ def curve_tenors():
 
 
 @pytest.fixture
-def flat_zero_rate_curve(curve_tenors):
+def flat_zero_rate_curve(flat_zero_rate_curve_tenors):
     """
     A curve with a flat/constant zero rate of 10%.
     """
     rate = 0.1
-    discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in curve_tenors])
-    return Curve(curve_tenors, discount_factors)
+    discount_factors: np.ndarray(np.dtype(float)) = np.array([np.exp(-rate * t) for t in flat_zero_rate_curve_tenors])
+    return Curve(flat_zero_rate_curve_tenors, discount_factors)
 
 
 def test_get_single_discount_factor(single_curve, ql_curve):

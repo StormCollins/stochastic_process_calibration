@@ -10,6 +10,6 @@ class HullWhiteSimulationMethod(Enum):
     """
     SLOWANALYTICAL = 1
     FASTANALYTICAL = 2
-    SLOWAPPROXIMATE = 3
+    DISCRETISED_SDE = 3
 
 

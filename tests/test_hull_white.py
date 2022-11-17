@@ -1,7 +1,6 @@
 """
 Hull-White unit tests.
 """
-import numpy as np
 import pytest
 import QuantLib as ql
 from scipy.stats import normaltest
@@ -14,9 +13,8 @@ from test_utils import file_and_test_annotation
 @pytest.fixture
 def flat_zero_rate_curve_tenors():
     """
-    Curve tenors.
+    Curve tenors for flat zero rate curve.
     """
-    # return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
     return np.arange(0.00, 30.25, 0.25)
 
 
@@ -239,7 +237,7 @@ def test_fit_to_initial_flat_zero_rate_curve(flat_zero_rate_curve):
     alpha: float = 0.1
     sigma: float = 0.1
     maturity: float = 5
-    number_of_time_steps: int = 100
+    number_of_time_steps: int = 1000
     number_of_paths: int = 100_000
     short_rate_tenor: float = maturity / (number_of_time_steps + 1)
     hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=short_rate_tenor)
@@ -481,7 +479,7 @@ def test_get_fixings_with_flat_curve_and_nonzero_vol_and_zero_alpha(flat_zero_ra
     assert averaged_fixings == pytest.approx(expected_forward_rate, abs=0.005)
 
 
-def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
+def test_simulate_short_term(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
     alpha: float = 0.8
     sigma: float = 0.1
     hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
@@ -492,6 +490,7 @@ def test_simulate(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
         paths=short_rates,
         title='Hull-White Simulation',
         additional_annotation=file_and_test_annotation())
+
 
 
 def test_convert_simulated_short_rates_to_curves_at_simulation_time_zero(flat_zero_rate_curve):
@@ -615,7 +614,7 @@ def test_simulate_long_term(flat_zero_rate_curve):
             number_of_paths=number_of_paths,
             number_of_time_steps=number_of_time_steps,
             plot_results=TestsConfig.plots_on,
-            method=HullWhiteSimulationMethod.SLOWAPPROXIMATE)
+            method=HullWhiteSimulationMethod.DISCRETISED_SDE)
 
 
 @pytest.mark.skip(reason='Long running.')
@@ -632,8 +631,8 @@ def test_plot_for_different_alphas_and_sigmas(real_zero_rate_curve):
 def test_simulated_vs_quantlib(flat_zero_rate_curve):
     alpha: float = 0.1
     sigma: float = 0.1
-    timestep = 360
-    length = 10  # in years
+    timestep = 100
+    maturity: float = 10.0
     forward_rate = 0.10126048209771543
     day_count = ql.Thirty360()
     todays_date = ql.Date(1, 1, 2020)
@@ -642,7 +641,7 @@ def test_simulated_vs_quantlib(flat_zero_rate_curve):
     spot_curve_handle = ql.YieldTermStructureHandle(spot_curve)
     hw_process = ql.HullWhiteProcess(spot_curve_handle, alpha, sigma)
     rng = ql.GaussianRandomSequenceGenerator(ql.UniformRandomSequenceGenerator(timestep, ql.UniformRandomGenerator()))
-    seq = ql.GaussianPathGenerator(hw_process, length, timestep, rng, False)
+    seq = ql.GaussianPathGenerator(hw_process, maturity, timestep, rng, False)
 
     num_paths = 1_000
     arr = np.zeros((num_paths, timestep+1))
@@ -654,4 +653,20 @@ def test_simulated_vs_quantlib(flat_zero_rate_curve):
         arr[i, :] = np.array(value)
 
     time_steps = np.array(time)
-    PlotUtils.plot_monte_carlo_paths(time_steps, arr, title='QuantLib Hull-White simulation')
+    PlotUtils.plot_monte_carlo_paths(time_steps, arr, title='QuantLib Hull-White Simulation')
+
+
+def test_simulate_medium_term(flat_zero_rate_curve_tenors, flat_zero_rate_curve):
+    alpha: float = 0.1
+    sigma: float = 0.1
+    hull_white_process: HullWhite = HullWhite(alpha, sigma, flat_zero_rate_curve, 0.01)
+    np.random.seed(999)
+    maturity: float = 10.0
+    number_of_time_steps: int = 1_000
+    simulation_tenors, short_rates, stochastic_discount_factors = \
+        hull_white_process.simulate(maturity, 1_000, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+    PlotUtils.plot_monte_carlo_paths(
+        time_steps=simulation_tenors,
+        paths=short_rates,
+        title='Hull-White Simulation',
+        additional_annotation=file_and_test_annotation())

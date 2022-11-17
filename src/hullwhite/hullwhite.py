@@ -79,20 +79,18 @@ class HullWhite:
         # return np.exp(self.theta_interpolator(tenor))
         return self.theta_interpolator(tenor)
 
-    def plot_paths(self, paths, maturity, drift):
+    def plot_paths(self, paths, maturity) -> None:
         """
         Plots the monte carlo paths of Hull-White.
 
         :param paths: Short rate paths.
         :param maturity: Time to maturity.
-        :param drift: Drift.
-        :return:
-
+        :return: None
         """
 
         time_steps = np.linspace(0, maturity, paths.shape[1])
         PlotUtils. \
-            plot_monte_carlo_paths(time_steps, paths, f'$\\alpha$ = {self.alpha} & $\\sigma$ = {self.sigma}', drift)
+            plot_monte_carlo_paths(time_steps, paths, f'$\\alpha$ = {self.alpha} & $\\sigma$ = {self.sigma}')
 
     def simulate(
             self,
@@ -117,19 +115,21 @@ class HullWhite:
         dt: float = maturity / number_of_time_steps
         time_steps: np.ndarray = np.linspace(0, maturity, short_rates.shape[1])
 
-        if method == HullWhiteSimulationMethod.SLOWAPPROXIMATE:
+        if method == HullWhiteSimulationMethod.DISCRETISED_SDE:
             for j in range(number_of_time_steps):
                 z: np.ndarray = norm.ppf(np.random.uniform(0, 1, number_of_paths))
                 short_rates[:, j + 1] = \
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
                     self.sigma * z * np.sqrt(dt)
+
         elif method == HullWhiteSimulationMethod.SLOWANALYTICAL:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * dt) * short_rates[:, j] + \
-                    quad(lambda s: np.exp(self.alpha * (s - j * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
+                    quad(lambda s: np.exp(self.alpha * (s - (j + 1) * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
                     self.sigma * np.exp(-1 * self.alpha * dt) * \
-                    np.ndarray.flatten(self.exponential_stochastic_integral(j * dt, dt, number_of_paths))
+                    np.ndarray.flatten(self.exponential_stochastic_integral((j + 1) * dt, dt, number_of_paths))
+
         else:
             # TODO: Fix this.
             deterministic_part = \
@@ -148,7 +148,7 @@ class HullWhite:
             short_rates = deterministic_part + stochastic_part
 
         if plot_results:
-            self.plot_paths(short_rates, maturity, drift=None)
+            self.plot_paths(short_rates, maturity)
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
@@ -175,11 +175,11 @@ class HullWhite:
         :param number_of_paths: The number of paths in the simulation.
         :return: An array of integral values for each path.
         """
-        dt = time_step_size
-        random_variables: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
+        dt: float = time_step_size
+        z: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
         # TODO: Storm vs. Massi's approach - add toggle to switch between the two.
-        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * random_variables
-        # return np.exp(self.alpha * maturity) * random_variables * np.sqrt(dt)
+        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * z
+        # return (np.exp(self.alpha * maturity)) * z * np.sqrt(dt)
 
     def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: float | np.ndarray) -> float | np.ndarray:
         """
