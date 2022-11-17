@@ -67,7 +67,7 @@ def flat_zero_rate_curve_tenors():
     """
     Tenors for a curve.
     """
-    return np.array([0.00, 0.25, 0.50, 0.75, 1.00])
+    return np.arange(0, 30.25, 0.25)
 
 
 @pytest.fixture

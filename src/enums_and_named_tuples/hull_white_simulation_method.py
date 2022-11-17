@@ -8,7 +8,7 @@ class HullWhiteSimulationMethod(Enum):
     """
     Used to specify Hull-White simulation methods.
     """
-    SLOWANALYTICAL = 1
+    DISCRETISED_INTEGRAL = 1
     FASTANALYTICAL = 2
     DISCRETISED_SDE = 3
 

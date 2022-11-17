@@ -168,7 +168,7 @@ class PlotUtils:
                 theoretical_path_means,
                 label='Theoretical Path Average',
                 linestyle='solid',
-                linewidth='3',
+                linewidth='4',
                 color=colors_bright_green)
 
         ax.plot(
@@ -176,7 +176,7 @@ class PlotUtils:
             empirical_path_means,
             label='Empirical Path Average',
             linestyle='dashed',
-            linewidth='1',
+            linewidth='2',
             color=colors_teal)
 
         ax.grid(False)
@@ -231,10 +231,12 @@ class PlotUtils:
         ax.set_title(title)
         ax.grid(False)
         curve_colors: list[str] = [colors_teal, colors_green]
+        curve_sizes: list[int] = [2, 4]
+        curve_styles: list[str] = ['solid', 'dashed']
         y_min: float = np.min(curves[0][1])
         y_max: float = np.max(curves[0][1])
         for i, curve in enumerate(curves):
-            ax.plot(time_steps, curve[1], color=curve_colors[i], label=curve[0])
+            ax.plot(time_steps, curve[1], color=curve_colors[i], linestyle=curve_styles[i], linewidth=curve_sizes[i])
             y_min = np.min([y_min, np.min(curve[1])])
             y_max = np.max([y_max, np.max(curve[1])])
 

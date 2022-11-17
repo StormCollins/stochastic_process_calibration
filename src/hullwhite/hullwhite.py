@@ -1,20 +1,18 @@
 """
 Contains a class representing a Hull-White stochastic process.
 """
-import numpy as np
 from scipy.integrate import quad
 from scipy.stats import norm
 from src.curves.curve import *
-from src.utils.plot_utils import PlotUtils
-from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
 from src.curves.simulated_curves import SimulatedCurves
+from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
+from src.utils.plot_utils import PlotUtils
+
 
 class HullWhite:
     """
     A class representing a Hull-White stochastic process.
     """
-    current_discount_factor_interpolator: interp1d
-
     def __init__(
             self,
             alpha: float,
@@ -32,7 +30,8 @@ class HullWhite:
         self.alpha = alpha
         self.sigma = sigma
         self.initial_curve = initial_curve
-        # Small step used in numerical derivatives.
+
+        # Small step used in numerical derivatives e.g., in the calibration of theta.
         self.numerical_derivative_step_size: float = 0.001
         self.theta_interpolator = self.calibrate_theta(initial_curve.tenors)
         self.short_rate_tenor = short_rate_tenor
@@ -57,13 +56,7 @@ class HullWhite:
             self.alpha * zero_rates + \
             ((self.sigma ** 2) / (2 * self.alpha)) * (1 - np.exp(-2 * self.alpha * theta_times))
 
-        # forward_rates =\
-        #     (-1 / (theta_times[1:] - theta_times[0:-1])) * np.log(discount_factors[1:]/discount_factors[0:-1])
-        # forward_rates = np.concatenate(forward_rates[0], forward_rates)
-        #
-        # thetas = (forward_rates[1:] - forward_rates[0:-1])/(theta_times[1:] - theta_times[0:-1]) + self.alpha * forward_rates[0:-1] + self.sigma**2 /(2*self.alpha) * (1 - np.exp(-2*self.alpha * theta_times[0:-1]))
-        # # Given the discount curve like nature of theta, 'log-linear' interpolation seems the most reasonable.
-        # # TODO: Check extrapolation.
+        # The extrapolation does NOT work well for theta.
         theta_interpolator: interp1d = \
             interp1d(theta_times, thetas, kind='linear', fill_value='extrapolate')
 
@@ -76,7 +69,6 @@ class HullWhite:
         :param tenor: The volatility_tenor for which to calculate theta.
         :return: Theta for the given volatility_tenor.
         """
-        # return np.exp(self.theta_interpolator(tenor))
         return self.theta_interpolator(tenor)
 
     def plot_paths(self, paths, maturity) -> None:
@@ -97,7 +89,7 @@ class HullWhite:
             maturity: float,
             number_of_paths: int,
             number_of_time_steps: int,
-            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.SLOWANALYTICAL,
+            method: HullWhiteSimulationMethod = HullWhiteSimulationMethod.DISCRETISED_INTEGRAL,
             plot_results: bool = False) -> [np.ndarray, np.ndarray, np.ndarray]:
         """
         Generates simulated short rates for the given Hull-White parameters.
@@ -122,14 +114,13 @@ class HullWhite:
                     short_rates[:, j] + (self.theta(j * dt) - self.alpha * short_rates[:, j]) * dt + \
                     self.sigma * z * np.sqrt(dt)
 
-        elif method == HullWhiteSimulationMethod.SLOWANALYTICAL:
+        elif method == HullWhiteSimulationMethod.DISCRETISED_INTEGRAL:
             for j in range(0, number_of_time_steps):
                 short_rates[:, j + 1] = \
                     np.exp(-1 * self.alpha * dt) * short_rates[:, j] + \
                     quad(lambda s: np.exp(self.alpha * (s - (j + 1) * dt)) * self.theta(s), j * dt, (j + 1) * dt)[0] + \
-                    self.sigma * np.exp(-1 * self.alpha * dt) * \
+                    self.sigma * np.exp(-1 * self.alpha * (j + 1) * dt) * \
                     np.ndarray.flatten(self.exponential_stochastic_integral((j + 1) * dt, dt, number_of_paths))
-
         else:
             # TODO: Fix this.
             deterministic_part = \
@@ -152,6 +143,14 @@ class HullWhite:
 
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
+
+    def theta_integration(self, lower_bound: float, upper_bound: float, number_of_partitions: int = 10) -> float:
+        time_steps: np.ndarray = np.linspace(lower_bound, upper_bound, number_of_partitions)
+        dt: float = time_steps[1] - time_steps[0]
+        total = 0
+        for t in time_steps:
+            total += np.exp(self.alpha * (t - upper_bound)) * self.theta(t) * dt
+        return total
 
     def convert_simulated_short_rates_to_curves(
             self,

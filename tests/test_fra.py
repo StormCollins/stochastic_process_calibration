@@ -128,7 +128,7 @@ def test_get_monte_carlo_values_shorted_dated_fra(flat_zero_rate_curve, short_da
     tenors, short_rates, stochastic_dfs = \
         hull_white_process.simulate(
             short_dated_atm_fra.start_tenor,
-            number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.SLOWANALYTICAL)
+            number_of_paths, number_of_time_steps, HullWhiteSimulationMethod.DISCRETISED_INTEGRAL)
 
     dt = short_dated_atm_fra.start_tenor / number_of_time_steps
     stochastic_discount_factors = np.prod(np.exp(-1 * short_rates * dt), 1)
