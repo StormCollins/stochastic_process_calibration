@@ -6,6 +6,7 @@ from scipy.stats import norm
 from src.curves.curve import *
 from src.curves.simulated_curves import SimulatedCurves
 from src.enums_and_named_tuples.hull_white_simulation_method import HullWhiteSimulationMethod
+from src.enums_and_named_tuples.hull_white_stochastic_integral_method import HullWhiteStochasticIntegralMethod
 from src.utils.plot_utils import PlotUtils
 
 
@@ -144,14 +145,6 @@ class HullWhite:
         stochastic_discount_factors: np.ndarray = np.cumprod(np.exp(-1 * short_rates * dt), 1)
         return time_steps, short_rates, stochastic_discount_factors
 
-    def theta_integration(self, lower_bound: float, upper_bound: float, number_of_partitions: int = 10) -> float:
-        time_steps: np.ndarray = np.linspace(lower_bound, upper_bound, number_of_partitions)
-        dt: float = time_steps[1] - time_steps[0]
-        total = 0
-        for t in time_steps:
-            total += np.exp(self.alpha * (t - upper_bound)) * self.theta(t) * dt
-        return total
-
     def convert_simulated_short_rates_to_curves(
             self,
             simulation_tenors: np.ndarray,
@@ -163,22 +156,28 @@ class HullWhite:
 
     def exponential_stochastic_integral(
             self,
-            maturity: float,
-            time_step_size: float,
-            number_of_paths: int) -> np.ndarray:
+            lower_bound: float,
+            upper_bound: float,
+            number_of_paths: int,
+            method: HullWhiteStochasticIntegralMethod = HullWhiteStochasticIntegralMethod.ITO_ISOMETRY) -> np.ndarray:
         """
         Calculates the stochastic integral of the exponential term in the Hull-White analytical formula.
 
-        :param maturity: The maturity/upper bound of the integral.
-        :param time_step_size: The discretized step size for the integral.
+        :param lower_bound: The lower bound fo the integral.
+        :param upper_bound: The maturity/upper bound of the integral.
         :param number_of_paths: The number of paths in the simulation.
+        :param method: The method of integration to employ: 1. Based on a Riemann sum, 2. Based on Ito's Isometry.
         :return: An array of integral values for each path.
         """
-        dt: float = time_step_size
         z: np.ndarray = norm.ppf(np.random.uniform(0, 1, (number_of_paths, 1)))
-        # TODO: Storm vs. Massi's approach - add toggle to switch between the two.
-        return np.sqrt((1/(2 * self.alpha)) * (np.exp(2 * self.alpha * maturity) - np.exp(2 * self.alpha * (maturity - dt)))) * z
-        # return (np.exp(self.alpha * maturity)) * z * np.sqrt(dt)
+        if method == HullWhiteStochasticIntegralMethod.ITO_ISOMETRY:
+            return \
+                np.sqrt(
+                    (1/(2 * self.alpha)) *
+                    (np.exp(2 * self.alpha * upper_bound) - np.exp(2 * self.alpha * lower_bound))) * z
+        else:
+            dt: float = upper_bound - lower_bound
+            return (np.exp(self.alpha * upper_bound)) * z * np.sqrt(dt)
 
     def b_function(self, simulation_tenors: float | np.ndarray, end_tenors: float | np.ndarray) -> float | np.ndarray:
         """
@@ -218,36 +217,6 @@ class HullWhite:
             (4 * self.alpha ** 3)
 
         return forward_discount_factors * np.exp(discount_factor_derivative - complex_factor)
-
-    # TODO: Check if this function is used.
-    def get_discount_curve(
-            self,
-            short_rate: float,
-            simulation_tenors: float | np.ndarray) -> Curve:
-        """
-        Gets the discount curve at the given time-step in the Hull-White simulation.
-
-        :param short_rate: The short rate at the current point in the Hull-White simulation.
-        :param simulation_tenors: The time point(s) in the Hull-White simulation.
-        :return: A discount curve at the time point(s) in the Hull-White simulation.
-        """
-        tenors = self.initial_curve.tenors
-        b = self.b_function(simulation_tenors, tenors)
-        a = self.a_function(simulation_tenors, tenors)
-        discount_factors: np.ndarray = a * np.transpose(np.exp(-np.outer(b, short_rate)))
-        current_tenors = tenors[tenors >= simulation_tenors] - simulation_tenors
-        current_discount_factors = discount_factors[:, (discount_factors.shape[1] - len(current_tenors)):]
-        return Curve(current_tenors, current_discount_factors)
-
-    # TODO: Check if this function is used.
-    def get_discount_factors(self, tenors: float | np.ndarray) -> float | np.ndarray:
-        """
-        Gets the discount factors
-
-        :param tenors: Tenors.
-        :return:
-        """
-        return np.exp(self.current_discount_factor_interpolator(tenors) * tenors)
 
     def get_forward_discount_factors(self, start_tenors, end_tenors, short_rates):
         return self.a_function(start_tenors, end_tenors) * \

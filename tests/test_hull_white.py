@@ -303,7 +303,7 @@ def test_exponential_stochastic_integral_for_small_alpha(flat_zero_rate_curve):
     hw = HullWhite(alpha=alpha, sigma=sigma, initial_curve=flat_zero_rate_curve, short_rate_tenor=0.25)
     np.random.seed(999)
     time_step_size = 0.01
-    x = hw.exponential_stochastic_integral(maturity=1.0, time_step_size=time_step_size, number_of_paths=10_000)
+    x = hw.exponential_stochastic_integral(upper_bound=1.0, time_step_size=time_step_size, number_of_paths=10_000)
     assert x.mean() == pytest.approx(0.0, abs=0.05)
     assert x.var() == pytest.approx(1 * time_step_size, abs=0.02)
 
