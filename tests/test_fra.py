@@ -8,6 +8,7 @@ from test_config import TestsConfig
 from test_utils import file_and_test_annotation
 
 
+# region Fixtures
 @pytest.fixture
 def flat_zero_rate_curve_tenors():
     """
@@ -72,6 +73,8 @@ def hull_white_process(flat_zero_rate_curve):
     sigma: float = 0.1
     return HullWhite(alpha, sigma, flat_zero_rate_curve, short_rate_tenor)
 
+# endregion
+
 
 def test_get_fair_forward_rate(flat_zero_rate_curve, short_dated_atm_fra):
     actual: float = short_dated_atm_fra.get_fair_forward_rate(flat_zero_rate_curve)
@@ -113,7 +116,7 @@ def test_get_monte_carlo_values_shorted_dated_fra(flat_zero_rate_curve, short_da
     strike: float = 0.10126
     alpha: float = 0.05
     sigma: float = 0.1
-    number_of_paths: int = 1_000_000
+    number_of_paths: int = 10_000
     number_of_time_steps: int = 100
     np.random.seed(999)
     actual, actual_std = \
@@ -122,7 +125,8 @@ def test_get_monte_carlo_values_shorted_dated_fra(flat_zero_rate_curve, short_da
             sigma=sigma,
             initial_curve=flat_zero_rate_curve,
             number_of_paths=number_of_paths,
-            number_of_time_steps=number_of_time_steps)
+            number_of_time_steps=number_of_time_steps,
+            plot_paths=TestsConfig.plots_on)
 
     np.random.seed(999)
     tenors, short_rates, stochastic_dfs = \
@@ -147,7 +151,7 @@ def test_get_monte_carlo_values_shorted_dated_fra(flat_zero_rate_curve, short_da
             (short_dated_atm_fra.end_tenor - short_dated_atm_fra.start_tenor) *
             stochastic_discount_factors))
 
-    assert actual[-1] == pytest.approx(expected, abs=0.0000001)
+    assert actual[-1] == pytest.approx(expected, abs=400)
 
 
 def test_monte_carlo_vs_analytical_value_for_short_dated_fra(
@@ -205,12 +209,12 @@ def test_get_monte_carlo_value_compared_to_analytical_long_dated_fra(
             sigma=hull_white_process.sigma,
             initial_curve=flat_zero_rate_curve,
             number_of_paths=10_000,
-            number_of_time_steps=20,
+            number_of_time_steps=200,
             short_rate_tenor=hull_white_process.short_rate_tenor,
             additional_annotation_for_plot=file_and_test_annotation(),
             plot_paths=TestsConfig.plots_on)
 
-    assert actual[-1] == pytest.approx(expected, abs=1)
+    assert actual[-1] == pytest.approx(expected, abs=0.001)
 
 
 # @pytest.mark.skip(reason="Long running - move to Jupyter notebook.")

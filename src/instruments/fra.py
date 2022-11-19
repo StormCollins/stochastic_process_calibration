@@ -54,7 +54,7 @@ class Fra:
                 maturity=self.start_tenor,
                 number_of_paths=number_of_paths,
                 number_of_time_steps=number_of_time_steps,
-                method=HullWhiteSimulationMethod.DISCRETISED_INTEGRAL)
+                method=HullWhiteSimulationMethod.DISCRETISED_SDE)
 
         start_discount_factors: np.ndarray = \
             hw.a_function(simulation_tenors, self.start_tenor) * \

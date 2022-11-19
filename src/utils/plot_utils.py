@@ -139,7 +139,8 @@ class PlotUtils:
             paths: np.ndarray,
             title: str,
             drift: float = None,
-            additional_annotation: str = None) -> None:
+            additional_annotation: str = None,
+            y_limits: list[float] = None) -> None:
         """
         Used to plot Monte Carlo paths.
 
@@ -148,7 +149,8 @@ class PlotUtils:
         :param title: The title of the plot.
         :param drift: The (constant) drift, if applicable, of the process. Applying this to Hull-White is not trivial.
         :param additional_annotation: Any additional annotation to add to the plot. Default = None.
-        :return:
+        :param y_limits: The y-limits of the plot. If 'None' leaves it up to PyPlot.
+        :return: None.
         """
         plt.style.use(['ggplot', 'fast'])
         plt.rcParams['font.family'] = 'calibri'
@@ -184,6 +186,10 @@ class PlotUtils:
         ax.set_xlabel('Time')
         ax.set_ylabel('Value')
         ax.set_xlim([0, time_steps[-1]])
+
+        if y_limits:
+            ax.set_ylim(y_limits)
+
         ax.annotate(
             f'{paths.shape[0]:,} Sims\n'
             f'{paths.shape[1] - 1:,} Time Steps',
